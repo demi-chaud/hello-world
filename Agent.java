@@ -2,6 +2,7 @@ package driving1;
 
 import repast.simphony.annotate.AgentAnnot;
 import repast.simphony.context.Context;
+import repast.simphony.engine.schedule.ScheduleParameters;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.util.ContextUtils;
 
@@ -12,26 +13,28 @@ import repast.simphony.util.ContextUtils;
 
 @AgentAnnot(displayName = "Agent")
 public class Agent {
-	
-	// Initialize variables
-	//Parameters params = RunEnvironment.getInstance().getParameters();
-	//double vehRho = (double)params.getValue("veh_vol");
-	//double pedRho = (double)params.getValue("ped_vol");
-	//double vLimit = (double)params.getValue("v_limit");
-	//double timeStep = (double)params.getValue("time_step");
-	//TODO: put these within step() (will need to change to @extend) to allow updates on the fly
+
+	/**
+	 * Method to schedule all agent observations and actions. 
+	 * Details are overridden by subclasses
+	 */
+	@ScheduledMethod(start = 1, interval = 1, priority = 1)
+	public void calc() {
+		//overridden		
+	}
+	//TODO: maybe rewrite this as a for (i : allCars) to get it to behave
 	
 	/**
-	 * Method to schedule agent actions, details are overridden by subclasses
+	 * Moves agents - scheduled after all other actions
 	 */
-	@ScheduledMethod(start = 1, interval = 1)
-	public void step() {
+	@ScheduledMethod(start = 1, interval = 1, priority = ScheduleParameters.LAST_PRIORITY)
+	public void drive() {
 		//overridden
 	}
 	
     /**
      * Eliminates agents (called when agents move outside the space)
-	*/
+	 */
 	@SuppressWarnings("rawtypes")
 	public void die(){
 		if (this.isCar() == 1) {
