@@ -7,36 +7,65 @@ import javax.swing.*;
 
 import repast.simphony.ui.RSApplication;
 
+/*
+ * Class to implement the user panel and initialize model variables
+ * author: Darryl Michaud
+ */
+
 public class UserPanel implements ActionListener{
 
-//	static public boolean carsYes = true;		// turns cars on/off for testing
-//	static public boolean pedsYes = false;		// ditto for peds
-//	static public boolean reactDelay = true;	// delayed reactions
-	static public boolean estErr = true;		// estimation errors
-	static public double  sLimit = 45;			// km/hr		test: 45
-	static public int     vehRho = 600;			// veh/hr       test: 600
-	static public int     pedRho = 0;			// ppl/hr       test: 60
-	static public double  delayT = 0.5;			// seconds      test: .5
-	static public double  tStep  = 0.18;		// seconds
-	static public double  lambdaCar = vehRho * tStep / 3600;	// these four are recalculated here on edits
-	static public double  lambdaPed = pedRho * tStep / 3600;
-	static public double  poisExpV  = Math.exp(-lambdaCar);
-	static public double  poisExpP  = Math.exp(-lambdaPed);
-	static public double  Pof1Car = lambdaCar * poisExpV; // Poisson probability of 1 arrival in a tick (higher counts are negligible)
-	static public double  Pof1Ped = lambdaPed * poisExpP; // ditto for peds
+	// declare variables in real world units
+	static final  double pedVavgKH	= 5;		// km/hr		default:   5
+	static final  double maxaMS		= 1.4;		// m/s2			default:   1.4
+	static final  double minaMS		= 3.5;		// m/s2			default:   3.5
+	static final  double tGapS		= 1.9;		// s			default:   1.9
+	static final  double jamHeadM	= 2.5;		// m			default:   2.5
+	static public double sLimitKH	= 45;		// km/hr		default:  45
+	static public int    vehRho		= 200;		// veh/hr       default: 600
+	static public int    pedRho		= 200;		// ppl/hr       default:  60
+	static public double delayTs 	= 0.5;		// seconds      default:   0.5
 	
-	private String sLimits = String.valueOf(sLimit);
+	// declare model parameters
+	static final  double spaceScale	= RoadBuilder.spaceScale;
+	static public double tStep		= 0.05;		// duration of one tick in seconds	
+	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
+		// vBase is the natural speed of the model (one unit per tick), converted to km/hr
+	
+	// convert variables to model units
+	static final  double pedVavg	= pedVavgKH/vBase;
+	static final  double maxa		= maxaMS*tStep/spaceScale;	// not sure why this doesn't have another
+	static final  double mina		= minaMS*tStep/spaceScale;	//	factor of tStep
+	static final  double tGap		= tGapS/tStep;
+	static final  double jamHead	= jamHeadM/spaceScale;
+	static public double sLimit 	= sLimitKH/vBase;
+	static public double lambdaCar	= vehRho * tStep / 3600;
+	static public double lambdaPed	= pedRho * tStep / 3600;
+	static public double poisExpV	= Math.exp(-lambdaCar);
+	static public double poisExpP	= Math.exp(-lambdaPed);
+	//TODO: calculate more terms in Poisson approximation (attempted beginning at bottom)
+	static public double Pof1Car	= lambdaCar * poisExpV;		// Poisson probability of 1 arrival in a tick (higher counts are negligible)
+	static public double Pof1Ped	= lambdaPed * poisExpP;		//  ditto for peds
+	
+	// declare parameters of error-making
+	static public boolean estErr 	= true;		// estimation errors
+	static final  double  Vs		= 0.1;		// relative standard deviation of headEst from head
+	static final  double  errPers	= 20;		// persistence time of estimation errors in seconds
+	static final  double  wien1		= Math.exp(-tStep/errPers);		// constants in the calculation
+	static final  double  wien2		= Math.sqrt(2*tStep/errPers);	//	of perception errors
+	
+	// convert initial values to strings for JPanel
+	private String sLimits = String.valueOf(sLimitKH);
 	private String vehRhos = String.valueOf(vehRho);
 	private String pedRhos = String.valueOf(pedRho);
-	private String delTs   = String.valueOf(delayT);
+	private String delTs   = String.valueOf(delayTs);
 	private String tSteps  = String.valueOf(tStep);
 	
-	
+	/*
+	 * Builds the GUI user panel
+	 */
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
-//		JCheckBox vehOn = new JCheckBox("Vehicles?", true);    
-//		JCheckBox pedOn = new JCheckBox("Pedestrians?", true);
-//		JCheckBox delOn = new JCheckBox("Delayed reactions?", true);
+		
 		JCheckBox errOn = new JCheckBox("Estimation Errors?", true);
 		
 		JLabel   sLabel = new JLabel("Speed limit in km/hr:");
@@ -54,10 +83,7 @@ public class UserPanel implements ActionListener{
 		JLabel   tckLab = new JLabel("Tick duration in sec:");
 		JTextField tckT = new JTextField(tSteps,  5);
 			tckT.setActionCommand("tckT");
-			
-//		vehOn.addActionListener(this);
-//		pedOn.addActionListener(this);
-//		delOn.addActionListener(this);
+		
 		errOn.addActionListener(this);
 		sLim.addActionListener(this);
 		pRho.addActionListener(this);
@@ -65,9 +91,6 @@ public class UserPanel implements ActionListener{
 		delT.addActionListener(this);
 		tckT.addActionListener(this);
 		
-//		newPanel.add(vehOn);
-//		newPanel.add(pedOn);
-//		newPanel.add(delOn);
 		newPanel.add(errOn);
 		newPanel.add(sLabel);
 		newPanel.add(sLim);
@@ -79,7 +102,8 @@ public class UserPanel implements ActionListener{
 		newPanel.add(delT);
 		newPanel.add(tckLab);
 		newPanel.add(tckT);
-				
+
+		//TODO: figure out how to change appearance
 //		newPanel.setSize(50,100);
 		RSApplication.getRSApplicationInstance().addCustomUserPanel(newPanel);	
 	}
@@ -92,18 +116,6 @@ public class UserPanel implements ActionListener{
 		case "CheckBoxUI":
 			JCheckBox checkSource = (JCheckBox)which;
 			switch (name) {
-//			case "Vehicles?":
-//				if (checkSource.isSelected()) carsYes = true;
-//				else carsYes = false;
-//				break;
-//			case "Pedestrians?":
-//				if (checkSource.isSelected()) pedsYes = true;
-//				else pedsYes = false;
-//				break;
-//			case "Delayed reactions?":
-//				if (checkSource.isSelected()) reactDelay = true;
-//				else reactDelay = false;
-//				break;
 			case "Estimation Errors?":
 				if (checkSource.isSelected()) estErr = true;
 				else estErr = false;
@@ -115,7 +127,8 @@ public class UserPanel implements ActionListener{
 			switch (name) {
 			case "sLim":
 				String newSVal = textSource.getText();
-				sLimit = Integer.parseInt(newSVal);
+				sLimitKH = Integer.parseInt(newSVal);
+				sLimit = sLimitKH/vBase;
 				break;
 			case "vRho":
 				String newVVal = textSource.getText();
@@ -129,7 +142,7 @@ public class UserPanel implements ActionListener{
 				break;
 			case "delT":
 				String newTVal = textSource.getText();
-				delayT = Double.parseDouble(newTVal);
+				delayTs = Double.parseDouble(newTVal);
 				break;
 			case "tckT":
 				String newTick = textSource.getText();

@@ -2,33 +2,34 @@ package driving1;
 
 import java.util.ArrayList;
 
+import repast.simphony.parameter.Parameter;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.space.continuous.NdPoint;
 
 /**
- * Pedestrian agent class - currently peds do not interact with each other
- * @author yawei
+ * Pedestrian agent class
+ * @author Darryl Michaud
  */
-
 public class Ped extends Agent{
-	private ContinuousSpace<Object> space;
-//	private Grid<Object> grid;
-	public double v;
-	private double xLoc, yLoc, maxV;
-	public int age, dir;  // dir = 1 walks up, -1 walks down
-	public int crossing; // 0=not yet, 1=waiting, 2=yes, 3=done
-	
-	//TODO: revisit this
+	private	ContinuousSpace<Object> space;
+//	private	Grid<Object> grid;
+	private	NdPoint myLoc;
+	private boolean go;
+	public	double v;
+	private	double xLoc, yLoc, maxV, disp, side, frogger, gap;
+	public	int age, dir;	// dir = 1 walks up, -1 walks down
+	public	int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
+	public	Turtle nearest;
+	//TODO: peds currently don't interact with each other. fix that
 	//double bubble = 0.5 / RoadBuilder.spaceScale; //gives .5m gap between peds at rest 
 	
 	//TODO: inroad() script/flag
-	@Override 
 	public void calc() {
-		NdPoint myLoc = space.getLocation(this);
+		myLoc = space.getLocation(this);
 		xLoc = myLoc.getX();
 		yLoc = myLoc.getY();
-		double disp = dir*v;
-		double side = RoadBuilder.sidewalk;
+		disp = dir*v;
+		side = RoadBuilder.sidewalk;
 		
 		switch (crossing) {
 		case 0: if (dir == 1) {
@@ -36,7 +37,7 @@ public class Ped extends Agent{
 						space.moveTo(this,xLoc,side);
 						myLoc = space.getLocation(this);
 //						grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
-						this.v = 0;
+						v = 0;
 						crossing = 1;}
 					else move(myLoc,disp);}
 				else {
@@ -48,11 +49,10 @@ public class Ped extends Agent{
 					else move(myLoc,disp);}
 				break;
 		case 1: disp = yield();
-				this.v = disp;
+				v    = Math.abs(disp);
 				if (disp != 0) move(myLoc,disp);
 				break;
-		case 2:	move (myLoc,disp);
-				myLoc = space.getLocation(this);
+		case 2:	move(myLoc,disp);
 				yLoc = myLoc.getY();
 				if (dir == 1) {
 					if (yLoc >= side + RoadBuilder.roadW) crossing = 3;}
@@ -71,17 +71,13 @@ public class Ped extends Agent{
 	 * TODO: still needs calc of car position in time
 	 */
 	
-	@SuppressWarnings("unused")
 	public double yield() {
-		double frogger;
-		int direction = dir;
-		boolean go;
 		ArrayList<Turtle> approaching = new ArrayList<Turtle>();
 //		ArrayList<Turtle> approaching0 = new ArrayList<Turtle>();
 //		ArrayList<Turtle> approaching1 = new ArrayList<Turtle>();
 //		ArrayList<Turtle> near = new ArrayList<Turtle>();
-		Turtle nearest = null;
-		double gap = RoadBuilder.roadL/2;
+		nearest = null;
+		gap = RoadBuilder.roadL/2;
 		for (Turtle m : Scheduler.allCars) {
 			if (m.xLoc < RoadBuilder.xWalkx) {
 				approaching.add(m);}}
@@ -99,30 +95,29 @@ public class Ped extends Agent{
 		if (nearest != null) {
 			go = gap(nearest);
 			if (go==true) {
-				frogger = this.dir * this.maxV;
-				this.crossing = 2;}
+				frogger = dir * maxV;
+				crossing = 2;}
 			//TODO: need to add acceleration time
 			else frogger = 0;}
 		else {
-			frogger = this.dir * this.maxV;
-			this.crossing = 2;}
+			frogger = dir * maxV;
+			crossing = 2;}
 		return frogger;
 	}
 	
 	//TODO: include estimation errors
 	public boolean gap(Turtle t) {
-		boolean go = false;
+		go = false;
 //		int approachL;
 		double approachV, approachX, dist, TTC;
-		double xTime = RoadBuilder.roadW / this.maxV; 
+		//TODO: xTime will need to be adapted when acceleration is added
+		double xTime = RoadBuilder.roadW / maxV; 
 		
-		Turtle nearest = t; 
-		approachX = nearest.xLoc;
-		approachV = nearest.v;
+		approachX = t.xLoc;
+		approachV = t.v;
 //		approachL = nearest.lane;
 		
-		//TODO: build gap acceptance code here
-		dist = Math.abs(xLoc - approachX)*RoadBuilder.spaceScale;	//distance to approaching car in m
+		dist = Math.abs(xLoc - approachX);
 		TTC  = dist/approachV;
 		if (xTime < TTC) go = true;
 		
@@ -141,8 +136,8 @@ public class Ped extends Agent{
 			die();}
 		else if (displacement != 0) {
 				space.moveByDisplacement(this,0,displacement);
-				loc = space.getLocation(this);
-//				grid.moveTo(this,(int)loc.getX(),(int)loc.getY());
+				myLoc = space.getLocation(this);
+//				grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
 		}
 	}
 	
@@ -160,7 +155,7 @@ public class Ped extends Agent{
 		space = contextSpace;
 //		grid  = contextGrid;
 		//v     = RoadBuilder.pedVavg * 1000 / 3600;
-		maxV  = RoadBuilder.pedVavg / RoadBuilder.vBase;
+		maxV  = UserPanel.pedVavg;
 		v     = maxV;
 		dir   = direction; // 1 moves up, -1 moves down
 		crossing = 0;
@@ -172,6 +167,17 @@ public class Ped extends Agent{
 	@Override
 	public int isPed() {
 		return 1;}
+	
+	/**
+	 * Parameter declarations for probe
+	 */
+	@Parameter(usageName="v", displayName="Current vel")
+	public double getVel() {
+		System.out.println(nearest);
+		return v;}
+	@Parameter(usageName="crossing", displayName="Crossing?")
+	public double getCrossing() {
+		return crossing;}
 }
 
 
