@@ -1,67 +1,104 @@
 package driving1;
 
 import java.util.ArrayList;
+import java.util.Random;
 
+import repast.simphony.parameter.Parameter;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.space.continuous.NdPoint;
-import repast.simphony.space.grid.Grid;
 
 /**
- * Pedestrian agent class - currently peds do not interact with each other
- * @author yawei
+ * Pedestrian agent class
+ * @author Darryl Michaud
  */
-
 public class Ped extends Agent{
-	private ContinuousSpace<Object> space;
-	private Grid<Object> grid;
-	public double v;
-	private double xLoc, yLoc, maxV;
-	public int dir;  // 1 walks up, -1 walks down
-	public int crossing; // 0=not yet, 1=waiting, 2=yes, 3=done
-	
-	//TODO: revisit this
+	private	ContinuousSpace<Object> space;
+//	private	Grid<Object> grid;
+	private	NdPoint myLoc, destin;
+	private boolean go;
+	public	double v;
+	private	double xLoc, yLoc, maxV, disp, side, frogger, gap;
+	private Random rnd = new Random();
+	private double wS, etaS, wV, etaV, sigR;
+	public	int age, dir;	// dir = 1 walks up, -1 walks down
+	public	int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
+	public	Turtle nearest;
+	//TODO: peds currently don't interact with each other. fix that
 	//double bubble = 0.5 / RoadBuilder.spaceScale; //gives .5m gap between peds at rest 
 	
 	//TODO: inroad() script/flag
-	@Override 
-	public void step() {
-		NdPoint myLoc = space.getLocation(this);
+	public void calc() {
+		myLoc = space.getLocation(this);
 		xLoc = myLoc.getX();
 		yLoc = myLoc.getY();
-		double disp = dir*v;
-		double side = RoadBuilder.sidewalk;
+		disp = dir*v;
+		side = RoadBuilder.sidewalk;
 		
 		switch (crossing) {
 		case 0: if (dir == 1) {
 					if (yLoc + disp >= side) {
-						space.moveTo(this,xLoc,side);
-						myLoc = space.getLocation(this);
-						grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
-						this.v = 0;
-						crossing = 1;}
-					else move(myLoc,disp);}
+						destin = new NdPoint(xLoc,side);}}
 				else {
 					if (yLoc + disp <= side + RoadBuilder.roadW) {
-						space.moveTo(this,xLoc, side+RoadBuilder.roadW);
-						myLoc = space.getLocation(this);
-						grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
-						crossing = 1;}
-					else move(myLoc,disp);}
+						destin = new NdPoint(xLoc, side+RoadBuilder.roadW);}}
 				break;
 		case 1: disp = yield();
-				this.v = disp;
-				if (disp != 0) move(myLoc,disp);
+				break;		
+		default: break;}
+	}
+	
+	/*
+	 * Scheduled movement method
+	 */
+	public void walk() {
+		switch (crossing) {
+		case 0:	if (destin != null) {
+					if (destin.getY() == side || destin.getY() == side + RoadBuilder.roadW) {
+						move(myLoc,destin);
+						v = 0;
+						crossing = 1;}
+					else move(myLoc,disp);}
+				else move(myLoc,disp);
 				break;
-		case 2:	move (myLoc,disp);
-				myLoc = space.getLocation(this);
+		case 2: v = Math.abs(disp);
+				if (disp != 0) move(myLoc,disp);
 				yLoc = myLoc.getY();
 				if (dir == 1) {
 					if (yLoc >= side + RoadBuilder.roadW) crossing = 3;}
-				else if (yLoc <= side) {crossing = 3;}
+				else if (yLoc <= side) crossing = 3;
 				break;
 		case 3: move(myLoc,disp);
 				break;
 		default: break;}
+	}
+	
+	/**
+	 * Moves peds and updates context
+	 * @param loc
+	 * overloaded. optional parameters:
+	 * @param displacement
+	 * @param destination
+	 */
+	public void move(NdPoint loc, double displacement) {
+		double yl = loc.getY();
+		if (yl + displacement > RoadBuilder.worldW || yl + displacement < 0) {
+			Scheduler.killListP.add(this);}
+		else if (displacement != 0) {
+				space.moveByDisplacement(this,0,displacement);
+				myLoc = space.getLocation(this);
+//				grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
+		}
+	}
+	public void move(NdPoint loc, NdPoint destination) {
+		double xd = destination.getX();
+		double yd = destination.getY();
+		if (yd > RoadBuilder.worldW || yd < 0) {
+			Scheduler.killListP.add(this);}
+		else if (loc != destination) {
+				space.moveTo(this,xd,yd);
+				myLoc = space.getLocation(this);
+//				grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
+		}
 	}
 	
 	/**
@@ -72,16 +109,13 @@ public class Ped extends Agent{
 	 * TODO: still needs calc of car position in time
 	 */
 	
-	@SuppressWarnings("unused")
 	public double yield() {
-		double frogger;
-		int direction = dir; 
 		ArrayList<Turtle> approaching = new ArrayList<Turtle>();
 //		ArrayList<Turtle> approaching0 = new ArrayList<Turtle>();
 //		ArrayList<Turtle> approaching1 = new ArrayList<Turtle>();
 //		ArrayList<Turtle> near = new ArrayList<Turtle>();
-		Turtle nearest = null;
-		double gap = RoadBuilder.roadL/2;
+		nearest = null;
+		gap = RoadBuilder.roadL/2;
 		for (Turtle m : Scheduler.allCars) {
 			if (m.xLoc < RoadBuilder.xWalkx) {
 				approaching.add(m);}}
@@ -97,27 +131,43 @@ public class Ped extends Agent{
 						gap = RoadBuilder.xWalkx - o.xLoc;
 						nearest = o;}}}
 		if (nearest != null) {
-			frogger = 0;}
+			go = gap(nearest);
+			if (go==true) {
+				frogger = dir * maxV;
+				crossing = 2;}
+			//TODO: need to add acceleration time
+			else frogger = 0;}
 		else {
-			frogger = this.dir * this.maxV;
-			this.crossing = 2;}
+			frogger = dir * maxV;
+			crossing = 2;}
 		return frogger;
 	}
 	
-	/**
-	 * Moves peds and updates context
-	 * @param loc
-	 * @param displacement
-	 */
-	
-	public void move(NdPoint loc, double displacement) {
-		double yl = loc.getY();
-		if (yl + displacement > RoadBuilder.worldW || yl + displacement < 0) {
-			die();}
-		else if (displacement != 0) {
-				space.moveByDisplacement(this,0,displacement);
-				loc = space.getLocation(this);
-				grid.moveTo(this,(int)loc.getX(),(int)loc.getY());}
+	//TODO: include estimation errors
+	public boolean gap(Turtle t) {
+		go = false;
+//		int approachL;
+		double approachV, approachX, dist, TTC;
+		//TODO: xTime will need to be adapted when acceleration is added
+		double xTime = RoadBuilder.roadW / maxV; 
+		
+		approachX = t.xLoc;
+		dist	  = Math.abs(xLoc - approachX); 
+		approachV = t.v;
+//		approachL = nearest.lane;
+		
+		if (UserPanel.estErr == true) {
+			etaS = rnd.nextGaussian();
+			etaV = rnd.nextGaussian();
+			wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
+			wV = UserPanel.wien1*wV + UserPanel.wien2*etaV;
+			approachV = t.v - dist*sigR*wV;
+			dist = dist*Math.exp(UserPanel.Vs*wS);}
+		
+		TTC  = dist/approachV;
+		if (xTime < TTC) go = true;
+		
+		return go;
 	}
 	
 	//TODO: give x-walk width, distribute peds, add interaction
@@ -129,14 +179,18 @@ public class Ped extends Agent{
 	 * @param contextGrid
 	 * @param direction
 	 */
-	public Ped(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid, int direction) {
+//	public Ped(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid, int direction) {
+	public Ped(ContinuousSpace<Object> contextSpace, int direction) {
 		space = contextSpace;
-		grid  = contextGrid;
+//		grid  = contextGrid;
 		//v     = RoadBuilder.pedVavg * 1000 / 3600;
-		maxV  = RoadBuilder.pedVavg / RoadBuilder.vBase;
+		maxV  = UserPanel.pedVavg;
 		v     = maxV;
 		dir   = direction; // 1 moves up, -1 moves down
 		crossing = 0;
+		wS = etaS = rnd.nextGaussian();
+		wV = etaV = rnd.nextGaussian();
+		sigR = 0.01; //standard deviation of relative approach rate TODO: should this vary?
 	}
 	
 	/**
@@ -145,6 +199,17 @@ public class Ped extends Agent{
 	@Override
 	public int isPed() {
 		return 1;}
+	
+	/**
+	 * Parameter declarations for probe
+	 */
+	@Parameter(usageName="v", displayName="Current vel")
+	public double getVel() {
+		System.out.println(nearest);
+		return v;}
+	@Parameter(usageName="crossing", displayName="Crossing?")
+	public double getCrossing() {
+		return crossing;}
 }
 
 
