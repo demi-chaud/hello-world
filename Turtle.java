@@ -18,20 +18,23 @@ public class Turtle extends Agent{
 	ContinuousSpace<Object> space;
 //	Grid<Object> grid;
 	private ArrayList<Turtle> sameDir, ahead, leaders, behind, followers;
+	private ArrayList<Ped> crossingP, waitingP;
 	public  Turtle leader, follower;
 	private List<double[]> storage = new ArrayList<double[]>();
 	private Random  rnd = new Random(); 			//initiates random number generator for vehicle properties
-	public  double	v, vNew, acc, xLoc;
+	public  double	v, vNew, acc, xLoc, length;
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, tail, wS, etaS, wV, etaV, sigR;
+	private double	pedDecel, stopBar;
 	private double	delayTs = UserPanel.delayTs;
 	private double	stamp, tStamp, delayedT, hiT;
-	public  int		age, lane; 				// lane = 0 -> outer lane,   1 -> inner lane
+	public  int		age, ying, yType, lane;	// lane = 0 -> outer lane,   1 -> inner lane
 	public	int		dir;					// dir  = 1 -> going right, -1 -> going left
 	private int		thisLane, thisDir;
-	private boolean	distracted = false; 		// 1 = yes, figure out how to implement this
-	private NdPoint	myLoc;
+	private int		pedYield;				// -1 = none, 0 = soft, 1 = hard
+	private boolean	distracted = false; 	// 1 = yes, figure out how to implement this
+	public  NdPoint	myLoc;
 	private double	tN = Math.floor(delayTs/UserPanel.tStep);
-	private double	tBeta = (delayTs/UserPanel.tStep) - tN;
+	private double	tBeta 	= (delayTs/UserPanel.tStep) - tN;	
 //	double vision;
 	
 	/**
@@ -42,6 +45,7 @@ public class Turtle extends Agent{
 		xLoc = myLoc.getX();
 		thisLane = lane;
 		thisDir  = dir;
+//		ying = 0;
 		
 		if (distracted == false) newAcc = accel(myLoc, thisLane, thisDir);
 		else newAcc = acc;
@@ -60,7 +64,7 @@ public class Turtle extends Agent{
 					hiT = storage.get(foo)[0];
 					foo++;}
 				double hiAcc = storage.get(foo-1)[1];
-				if (hiT != delayedT){	//linear interpolation (is there a better approx?)
+				if (hiT != delayedT){	//linear interpolation TODO: is there a better approx?
 					double loAcc = storage.get(foo-2)[1];
 					acc = tBeta*loAcc + (1-tBeta)*hiAcc;}
 				else acc = hiAcc;}
@@ -69,6 +73,7 @@ public class Turtle extends Agent{
 		else acc = newAcc;
 		
 		vNew = v + acc;
+//		vNew = v + (double)dir*acc;
 		if (vNew < 0) {vNew = 0;}
 		if (vNew > maxv) {vNew = maxv;}
 	}		
@@ -97,11 +102,11 @@ public class Turtle extends Agent{
 	 */
 	public double accel(NdPoint loc, int myLane, int myDir) {
 		double thisX = loc.getX();
-		double a, head, setSpeed, vDiff, safeHead;
-		sameDir = new ArrayList<Turtle>();
-		ahead	= new ArrayList<Turtle>();
-		leaders	= new ArrayList<Turtle>();
-		head	= RoadBuilder.roadL;
+		double a, head, setSpeed, vDiff, safeHead, newYield;
+		sameDir  = new ArrayList<Turtle>();
+		ahead	 = new ArrayList<Turtle>();
+		leaders  = new ArrayList<Turtle>();
+		head	 = RoadBuilder.roadL;
 		//TODO: this if loop will go away if lane-changes are included
 		if (follower == null) {
 			behind	  = new ArrayList<Turtle>();
@@ -135,14 +140,14 @@ public class Turtle extends Agent{
 		if (!leaders.isEmpty()) {
 			for (Turtle o : leaders) {
 				if(Math.abs(o.xLoc - thisX) < head) {
-					head = Math.abs(o.xLoc - thisX); //TODO: adjust this to include car length
+					head = Math.abs(o.xLoc - thisX); //TODO: adjust this to include car length?
 					leader = o;}}}
 		if (follower == null) {
 			if (!followers.isEmpty()) {
-				for (Turtle o : followers) {
-					if(Math.abs(o.xLoc - thisX) < tail) {
-						tail = Math.abs(o.xLoc - thisX); //TODO: adjust this to include car length
-						follower = o;}}}}
+				for (Turtle p : followers) {
+					if(Math.abs(p.xLoc - thisX) < tail) {
+						tail = Math.abs(p.xLoc - thisX); //TODO: adjust this to include car length?
+						follower = p;}}}}
 		else {
 			tail = Math.abs(follower.xLoc - thisX);}
 		if (leader != null) {
@@ -160,9 +165,57 @@ public class Turtle extends Agent{
 			a = maxa*(1 - Math.pow(v/maxv,4) - Math.pow(safeHead/head,2));}
 		else {a = maxa*(1 - Math.pow(v/maxv,4));}
 		
+		double xwalkD = stopBar - thisX;
+		double threat = Math.signum(dir*xwalkD);
+		if (threat == 1) {
+			yield(xwalkD);
+			if (ying == 1) {
+				double a0 = -v*v/(2*Math.abs(xwalkD));
+//				if (a0 < -mina) {
+//					a = -mina;}
+				if (a0 < a) {
+					a = a0;}}
+			else {
+				
+			}
+		}
 		return a;
 	}
 
+	/**
+	 * Determines driver yielding behavior
+	 * called within accel()
+	 * @return yType: -1 = none, 0 = soft, 1 = hard
+	 */
+	public void yield(double dist) {
+		//TODO: add yielding to crossing=1 peds
+		//TODO: add errors in distance and reading of ped v
+		//TODO: rewrite error-making code as method in Agent class
+		double	decelT		= v/mina;
+		double	TTCol		= Math.abs(dist/v);
+		double	TTClear		= TTCol + length/v; //TODO: add width of xwalk to this calculation
+		pedDecel  = 0;
+		waitingP  = new ArrayList<Ped>();
+		crossingP = new ArrayList<Ped>();
+		
+		for (Ped i : Scheduler.allPeds) {
+			if (i.crossing == 1) {
+				waitingP.add(i);}
+			if (i.crossing == 2) {
+				crossingP.add(i);}}
+		
+		//TODO: make this more realistic, include soft yield
+		if (crossingP.isEmpty()) {
+			ying = -1;}
+		else {
+			if (ying == -1) {
+				for (Ped j : crossingP) {
+//					if (!j.yielders.contains(this)) j.yielders.add(this);
+//					else yType = 1;
+					if (TTCol < j.xTime) {
+						ying = 1;}}}}
+	}
+	
 	/**
 	 * Creates vehicle agents and initializes values
 	 * Called by scheduler in Agent.java
@@ -172,10 +225,11 @@ public class Turtle extends Agent{
 	//TODO: add similar code to Ped.java to vary ped parameters
 //	public Turtle(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid) {
 	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir) {	
-		space = contextSpace;
-//		grid  = contextGrid;
-		lane  = whichLane;
-		dir   = whichDir;
+		space	= contextSpace;
+//		grid	= contextGrid;
+		lane	= whichLane;
+		dir		= whichDir;
+		length	= UserPanel.carLength;
 		//store parameters with heterogeneity (currently s.dev = 8% of mean)
 		//TODO: get theory for these numbers
 		maxa = rnd.nextGaussian()*(UserPanel.maxa*.08)+UserPanel.maxa;
@@ -189,6 +243,10 @@ public class Turtle extends Agent{
 		wS = etaS = rnd.nextGaussian();
 		wV = etaV = rnd.nextGaussian();
 		sigR = 0.01; //standard deviation of relative approach rate TODO: should this vary?
+		stopBar	= RoadBuilder.xWalkx - (double)dir*5/RoadBuilder.spaceScale; 
+		// 5 here is exaggerated to view effects
+		// should match pedbox (?) which is arbitrarily set to 2
+		ying = -1;
 	}
 	
 	/**
@@ -206,7 +264,7 @@ public class Turtle extends Agent{
 		return newAcc;}
 	@Parameter(usageName="v", displayName="Current vel")
 	public double getVel() {
-		System.out.println(leader);
+//		System.out.println(v);
 		return v;}
 	@Parameter(usageName="lane", displayName="Current lane")
 	public double getLane() {
@@ -214,6 +272,9 @@ public class Turtle extends Agent{
 	@Parameter(usageName="leader", displayName="Current leader")
 	public Turtle getLead() {
 		return leader;}
+	@Parameter(usageName="yielding", displayName="yielding?")
+	public int getYield() {
+		return yType;}
 }
 
 

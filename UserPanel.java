@@ -14,28 +14,30 @@ import repast.simphony.ui.RSApplication;
 
 public class UserPanel implements ActionListener{
 
-	// declare variables in real world units
-	static final  double pedVavgKH	= 5;		// km/hr			default:   5
-	static final  double maxaMS		= 1.4;		// m/s2				default:   1.4
-	static final  double minaMS		= 3.5;		// m/s2				default:   3.5
-	static final  double tGapS		= 1.9;		// s				default:   1.9
-	static final  double jamHeadM	= 2.5;		// m				default:   2.5
-	static public double sLimitKH	= 45;		// km/hr			default:  45
-	static public int    vehRho		= 1200;		// veh/hr each dir 	default: 600
-	static public int    pedRho		= 500;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
-	static public double delayTs 	= 0;		// seconds			default:   0.5
-	
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
 	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 		// vBase is the natural speed of the model (one unit per tick), converted to km/hr
+		
+	// declare variables in real world units
+	static final  double pedVavgKH	= 5;		// km/hr			default:   5
+	static final  double maxaMS		= 1.4;		// m/s2				default:   1.4
+	static final  double minaMS		= 3.5;		// m/s2				default:   3.5
+	static final  double tGapS		= 1.9;		// s				default:   1.9
+	static final  double carLengthM	= 4.5;		// m			TODO:source?
+	static final  double jamHeadM	= 2.5 + carLengthM;	// m				default:   2.5 + 4.5
+	static public double sLimitKH	= 45;		// km/hr			default:  45
+	static public int    vehRho		= 600;		// veh/hr each dir 	default: 600
+	static public int    pedRho		= 200;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public double delayTs 	= 0;		// seconds			default:   0.5
 	
 	// convert variables to model units
 	static final  double pedVavg	= pedVavgKH/vBase;
 	static final  double maxa		= maxaMS*tStep/spaceScale;	// not sure why this doesn't have another
 	static final  double mina		= minaMS*tStep/spaceScale;	//	factor of tStep
 	static final  double tGap		= tGapS/tStep;
+	static final  double carLength	= carLengthM/spaceScale;
 	static final  double jamHead	= jamHeadM/spaceScale;
 	static public double sLimit 	= sLimitKH/vBase;
 	static public double lambdaCar	= vehRho * tStep / 3600;
