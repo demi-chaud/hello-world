@@ -148,7 +148,8 @@ public class Scheduler extends Agent {
 	}
 	
 	/**
-	 * Initializes lists of all agents at start of run.
+	 * Initializes schedule agent
+	 * This holds lists of all other agents
 	 */
 	public Scheduler() {
 		allCars = new ArrayList<Turtle>();

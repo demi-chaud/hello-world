@@ -29,7 +29,7 @@ public class UserPanel implements ActionListener{
 	static final  double jamHeadM	= 2.5 + carLengthM;	// m				default:   2.5 + 4.5
 	static public double sLimitKH	= 45;		// km/hr			default:  45
 	static public int    vehRho		= 600;		// veh/hr each dir 	default: 600
-	static public int    pedRho		= 200;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public int    pedRho		= 400;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 	static public double delayTs 	= 0;		// seconds			default:   0.5
 	
 	// convert variables to model units
