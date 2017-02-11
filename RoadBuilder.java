@@ -20,7 +20,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	
 	// if unspecified, units are model space units and ticks 
 	static final  double spaceScale	= 7.5;		// m (length of 1 spatial unit)
-	static final  double roadL		= 200;
+	static final  double roadL		= 200;		//standard: 200 = 1.5km
 	static final  double laneW		= 3.3/spaceScale;
 	static final  double roadW		= 4*laneW;
 	static final  double sidewalk	= 4/spaceScale;				//TODO: move back to 2 (enough ppl should fit in 2m)

@@ -112,16 +112,21 @@ public class Scheduler extends Agent {
 		Context<Object> context = ContextUtils.getContext(this);
 		ContinuousSpace<Object> space = (ContinuousSpace<Object>) context.getProjection("space");
 //		Grid<Object> grid = (Grid) context.getProjection("grid");		
+		double carW = UserPanel.carWidth;
 		
 //		Turtle newTurtle = new Turtle(space,grid);
 		Turtle newTurtle = new Turtle(space,lane,dir);
 		context.add(newTurtle);
 		if (dir == 1) {				//1 = going right, -1 = going left
 			yPlacement = RoadBuilder.sidewalk + (double)lane * (RoadBuilder.laneW) + (RoadBuilder.laneW/2);
-			space.moveTo(newTurtle,0,yPlacement);}
+			space.moveTo(newTurtle,0,yPlacement);
+			newTurtle.yLoc = yPlacement;			//if lane-change is added, move this within calc
+			newTurtle.driverY = yPlacement + (double)dir*carW/6;}
 		else {
 			yPlacement = RoadBuilder.sidewalk + RoadBuilder.roadW - (double)lane * (RoadBuilder.laneW) - (RoadBuilder.laneW/2);
-			space.moveTo(newTurtle,RoadBuilder.roadL - 1,yPlacement);}
+			space.moveTo(newTurtle,RoadBuilder.roadL - 1,yPlacement);
+			newTurtle.yLoc = yPlacement;			//if lane-change is added, move this within calc
+			newTurtle.driverY = yPlacement - (double)dir*carW/6;}
 		return(newTurtle);
 	}
 	

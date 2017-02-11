@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.math3.util.FastMath;
+
 import repast.simphony.parameter.Parameter;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.space.continuous.NdPoint;
@@ -17,6 +19,7 @@ public class Turtle extends Agent{
 //	Grid<Object> grid;
 	private ArrayList<Turtle> sameDir, ahead, leaders, behind, followers;
 	private ArrayList<Ped> crossingP, waitingP;
+	private ArrayList<ViewAngle> obstructers, obstructees;
 	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
 	private List<double[]> storage = new ArrayList<double[]>();
 	private Random  rnd = new Random();	//initiates random number generator for vehicle properties
@@ -25,14 +28,16 @@ public class Turtle extends Agent{
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc;	//car-following
 	private double	wS, etaS, wV, etaV, sigR;					//errors
 	private double	stopBar, TTCol, lnTop, lnBot;				//yielding
+	private double	carW = UserPanel.carWidth;
 	private int		age;
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
-	public  double	v, vNew, acc, xLoc, length, tail;
+	public  double	v, vNew, acc, xLoc, yLoc, length, tail, driverX, driverY;
 	public  int		lane;	//  0 = outer lane, 1 = inner lane
 	public	int		dir;	//  1 = going right, -1 = going left
 	public	int		ying;	// -1 = none, 0 = soft, 1 = hard
 //	double vision;
+	//TODO: combine xLoc and thisX
 	
 	/**
 	* Calculates driver acceleration (if not distracted)
@@ -64,9 +69,9 @@ public class Turtle extends Agent{
 					double loAcc = storage.get(foo-2)[1];
 					acc = tBeta*loAcc + (1-tBeta)*hiAcc;}
 				else acc = hiAcc;}
-			else acc = newAcc;
-			age++;}
+			else acc = newAcc;}
 		else acc = newAcc;
+		age++;
 		
 		vNew = v + acc;
 		if (vNew < 0) {vNew = 0;}
@@ -166,23 +171,24 @@ public class Turtle extends Agent{
 				head = head*Math.exp(UserPanel.Vs*wS);
 				setSpeed = leader.v - head*sigR*wV;}
 			else setSpeed = leader.v;
-			vDiff = setSpeed - v;
+			vDiff = v - setSpeed;
 			safeHead = (jamHead + v*(tGap) +
 					((v*vDiff)/(2*Math.sqrt(maxa*mina))));
 			a = maxa*(1 - Math.pow(v/maxv,4) - Math.pow(safeHead/head,2));}
 		else {a = maxa*(1 - Math.pow(v/maxv,4));}
 		
 		//Calculate yielding acceleration
-		double xwalkD	= stopBar - thisX;
-		double xwalkDab	= Math.abs(xwalkD);
+		
+		double stopD	= stopBar - thisX;
+		double stopDab	= Math.abs(stopD);
+		double xwalkD	= RoadBuilder.xWalkx - thisX;
 		double threat	= Math.signum(dir*xwalkD);
 		if (threat == 1) {
-			double a0 = yield(xwalkDab);
+			double a0 = yield(stopDab);
 //			if (a0 < -mina) {
 //				a = -mina;}
 			if (a0 < a) {
 				a = a0;}}
-		
 		return a;
 	}
 
@@ -197,6 +203,8 @@ public class Turtle extends Agent{
 //		double	TTClear	= TTCol + length/v; //TODO: add width of xwalk to this calculation
 		waitingP  = new ArrayList<Ped>();
 		crossingP = new ArrayList<Ped>();
+		obstructers = new ArrayList<ViewAngle>();
+		obstructees = new ArrayList<ViewAngle>();
 		double	threatBeg, threatEnd;
 		double	lnW		 = RoadBuilder.laneW;
 		double	decelT	 = v/mina;
@@ -204,9 +212,10 @@ public class Turtle extends Agent{
 		double	hardYield	= -v*v/(2*dist);
 		double	tHardYield	= 2*dist/v;
 		TTCol = dist/v;
+		driverX = xLoc-(double)dir*length/2;
 		threatBeg = 0;
 		threatEnd = -1;
-		int thisYing = -1;
+		ying = -1;
 		
 		//make list of waiting/crossing peds
 		for (Ped i : Scheduler.allPeds) {
@@ -215,60 +224,118 @@ public class Turtle extends Agent{
 			if (i.crossing == 2) {
 				crossingP.add(i);}}
 		
+		//double threat
+		for (Turtle i : ahead) {				//are there any cars potentially blocking view?
+			double otherD	= RoadBuilder.xWalkx - i.xLoc;
+			double threat	= Math.signum(dir*otherD);
+			ViewAngle thisView = null;
+			if (i.lane != lane && threat == 1) {		//TODO: make this only happen if the car is close enough for it to matter
+				double front	= i.xLoc - (double)dir*i.length/3;
+				double back		= i.xLoc - (double)dir*i.length;
+				double inside	= i.yLoc + (double)dir*carW/2;
+				double outside	= i.yLoc - (double)dir*carW/2;
+				Double thisTheta1, thisTheta2;
+				if (lane == 0) {
+					thisTheta1 = FastMath.atan2((outside - driverY), (front - driverX));
+					thisTheta2 = FastMath.atan2((inside  - driverY), (back  - driverX));}
+				else {
+					thisTheta1 = FastMath.atan2((outside - driverY), (back  - driverX));
+					thisTheta2 = FastMath.atan2((inside  - driverY), (front - driverX));}
+				if (thisTheta1 != null) {
+					if (thisTheta1 < 0) {
+						thisTheta1 = thisTheta1 + 2*Math.PI;}
+					if (thisTheta2 < 0) {
+						thisTheta2 = thisTheta2 + 2*Math.PI;}
+					thisView = new ViewAngle(i,thisTheta1,thisTheta2);
+					obstructers.add(thisView);}}}
+		if (!obstructers.isEmpty()){
+			for (Ped j : crossingP) {				//calculate angle to any relevant peds
+				Double thisTheta = null;
+				if (dir == j.dir && lane == 1) {
+					thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
+				else if (dir != j.dir && lane == 0) {
+					thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
+				if (thisTheta != null) {
+					if (thisTheta < 0) {
+						thisTheta = thisTheta + 2*Math.PI;}
+					ViewAngle thisView = new ViewAngle(j,thisTheta);
+					obstructees.add(thisView);}}}
+		if (!obstructees.isEmpty()) {
+			for (ViewAngle i : obstructers) {
+				double theta1 = i.theta1;
+				double theta2 = i.theta2;
+				for (ViewAngle j : obstructees) {
+					Ped thisPed = j.ped;
+					double pedTheta = j.theta;
+					if (pedTheta >= theta1 && pedTheta <= theta2) {
+						crossingP.remove(thisPed);}}}}
+				
 		//TODO: add yielding to waiting peds
 		if (!crossingP.isEmpty()) {
-			for (Ped j : crossingP) {
-				double pedY = j.yLoc;
+			for (Ped k : crossingP) {
+				double pedY = k.yLoc;
 				double thisDecel = 1;
 				double endGauntlet = 0;
 				double oldDecel, clearY;
 				Yieldage oldVals = null;
 				oldDecel = clearY = 0;
+				int thisYing = -1;
 				
 				//calculate relevant times for this ped (note: in OR, cars have to wait until ped is >1 lane away)
-				for (Yieldage k : yieldage) {
-					if (k.yieldee == j) {			//check if already yielding to ped
-						oldDecel = k.calcAcc;
-						clearY   = k.endThreat;
-						oldVals  = k;
+				for (Yieldage m : yieldage) {
+					if (m.yieldee == k) {			//check if already yielding to ped
+						oldDecel = m.calcAcc;
+						clearY   = m.endThreat;
+//						oldYield = m.yState;
+						oldVals  = m;
 						break;}}
 				
 				//bring in old accel value if above is true
 				if (oldVals != null) {
 					double newDecel;
-					if (j.dir == 1 && clearY > pedY) {
-						threatEnd = j.accT*(1-j.v[1]/j.maxV) + (clearY - pedY)/j.maxV;
-						if (threatEnd > tHardYield) {
-							newDecel = hardYield;
-							thisYing = 1;}
+					if (k.dir == 1 && clearY > pedY) {
+						if (v != 0) {
+							threatEnd = k.accT*(1-k.v[1]/k.maxV) + (clearY - pedY)/k.maxV;
+							if (threatEnd > tHardYield) {
+								newDecel = hardYield;
+								thisYing = 1;}
+							else {
+								newDecel = -2*(v*threatEnd - dist) / (threatEnd*threatEnd);
+								thisYing = 0;}
+							oldVals.yState = thisYing;
+							if (newDecel < oldDecel) {
+								thisDecel = newDecel;
+								oldVals.calcAcc = newDecel;}
+							else {
+								thisDecel = oldDecel;}}
 						else {
-							newDecel = -2*(v*threatEnd - dist) / (threatEnd*threatEnd);
-							thisYing = 0;}
-						if (newDecel < oldDecel) {
-							thisDecel = newDecel;
-							oldVals.calcAcc = newDecel;}
+							thisDecel = 0;
+							thisYing  = 1;}}
+					else if (k.dir == -1 && clearY < pedY) {
+						if (v != 0) {
+							threatEnd = k.accT*(1-Math.abs(k.v[1]/k.maxV)) + (pedY - clearY)/k.maxV;
+							if (threatEnd > tHardYield) {
+								newDecel = hardYield;
+								thisYing = 1;}
+							else {
+								newDecel = -2*(v*threatEnd - dist) / (threatEnd*threatEnd);
+								thisYing = 0;}
+							oldVals.yState = thisYing;
+							if (newDecel < oldDecel) {
+								thisDecel = newDecel;
+								oldVals.calcAcc = newDecel;}
+							else {
+								thisDecel = oldDecel;}}
 						else {
-							thisDecel = oldDecel;}}
-					else if (j.dir == -1 && clearY < pedY) {
-						threatEnd = j.accT*(1-Math.abs(j.v[1]/j.maxV)) + (pedY - clearY)/j.maxV;
-						if (threatEnd > tHardYield) {
-							newDecel = hardYield;
-							thisYing = 1;}
-						else {
-							newDecel = -2*(v*threatEnd - dist) / (threatEnd*threatEnd);
-							thisYing = 0;}
-						if (newDecel < oldDecel) {
-							thisDecel = newDecel;
-							oldVals.calcAcc = newDecel;}
-						else {
-							thisDecel = oldDecel;}}
+							thisDecel = 0;
+							thisYing  = 1;}}
 					else {
 						yieldage.remove(oldVals);
 						thisYing = -1;}}
 				
 				//calculate necessary accel and add ped to list of yieldees
 				else {
-					if (j.dir == 1) {					//ped walking up
+					if (k.dir == 1) {					//ped walking up
 						endGauntlet = lnTop + lnW;
 						if (pedY > lnBot) {
 							if (pedY > lnTop) {
@@ -276,22 +343,22 @@ public class Turtle extends Agent{
 									threatEnd = 0;}										//bc crossing = 3 once ped is clear)
 								else {						//ped out of this lane, not yet clear
 									threatBeg = 0;
-									threatEnd = (lnTop + lnW - pedY)/j.maxV;}}
+									threatEnd = (lnTop + lnW - pedY)/k.maxV;}}
 							else {							//ped in this lane
 								threatBeg = 0;
-								threatEnd = j.accT + (lnTop + lnW - pedY)/j.maxV;}}
+								threatEnd = k.accT + (lnTop + lnW - pedY)/k.maxV;}}
 						else {
 							if (lane == 0) {
 								if (dir == 1) {				//car in bottom lane, ped hasn't started to cross
 									threatBeg = 0;
-									threatEnd = j.accT + 2*lnW/j.maxV;}
+									threatEnd = k.accT + 2*lnW/k.maxV;}
 								else {						//car in top lane, ped clear after just this lane
-									threatBeg	= (lnBot - lnW - pedY)/j.maxV;  //one lane buffer
-									threatEnd	= (lnTop - pedY)/j.maxV;
+									threatBeg	= (lnBot - lnW - pedY)/k.maxV;  //one lane buffer
+									threatEnd	= (lnTop - pedY)/k.maxV;
 									endGauntlet	= lnTop;}}
 							else {							//ped in or below same lane
-								threatBeg = (lnBot - lnW - pedY)/j.maxV;
-								threatEnd = j.accT + (lnTop + lnW - pedY)/j.maxV;}}}
+								threatBeg = (lnBot - lnW - pedY)/k.maxV;
+								threatEnd = k.accT + (lnTop + lnW - pedY)/k.maxV;}}}
 					else {								//ped walking down
 						endGauntlet = lnBot - lnW;
 						if (pedY < lnTop) {
@@ -300,22 +367,22 @@ public class Turtle extends Agent{
 									threatEnd = 0;}										//bc crossing = 3 once ped is clear)
 								else {						//ped out of this lane, not yet clear
 									threatBeg = 0;
-									threatEnd = (pedY - lnBot + lnW)/j.maxV;}}
+									threatEnd = (pedY - lnBot + lnW)/k.maxV;}}
 							else {							//ped in this lane
 								threatBeg = 0;
-								threatEnd = j.accT + (pedY - lnBot + lnW)/j.maxV;}}
+								threatEnd = k.accT + (pedY - lnBot + lnW)/k.maxV;}}
 						else {
 							if (lane == 0) {
 								if (dir == -1) {			//car in top lane, ped hasn't started to cross
 									threatBeg = 0;			
-									threatEnd = j.accT + 2*lnW/j.maxV;}
+									threatEnd = k.accT + 2*lnW/k.maxV;}
 								else {						//car in bottom lane, ped clear after just this lane
-									threatBeg	= (pedY - lnTop - lnW)/j.maxV;  //one lane buffer
-									threatEnd	= (pedY - lnBot)/j.maxV;
+									threatBeg	= (pedY - lnTop - lnW)/k.maxV;  //one lane buffer
+									threatEnd	= (pedY - lnBot)/k.maxV;
 									endGauntlet	= lnBot;}}
 							else {
-								threatBeg = (pedY - lnTop - lnW)/j.maxV;  //one lane buffer
-								threatEnd = j.accT + (pedY - lnBot + lnW)/j.maxV;}}}
+								threatBeg = (pedY - lnTop - lnW)/k.maxV;  //one lane buffer
+								threatEnd = k.accT + (pedY - lnBot + lnW)/k.maxV;}}}
 					if (threatBeg < 0) {
 						threatBeg = 0;}			//correction for ped within current lane
 					
@@ -335,8 +402,8 @@ public class Turtle extends Agent{
 							else {			//soft yield
 								thisDecel = -2*(v*threatEnd - dist) / (threatEnd*threatEnd);
 								thisYing  = 0;}
-							Yieldage thisYield = new Yieldage(j,thisDecel,endGauntlet);
-							j.yielders.add(this);
+							Yieldage thisYield = new Yieldage(k,thisDecel,endGauntlet,thisYing);
+							k.yielders.add(this);
 							yieldage.add(thisYield);}
 						else {
 							thisYing = -1;}}
@@ -344,8 +411,8 @@ public class Turtle extends Agent{
 						if (age > 1 && threatEnd > 0) {
 							thisDecel = 0;
 							thisYing = 1;
-							Yieldage thisYield = new Yieldage(j,thisDecel,endGauntlet);
-							j.yielders.add(this);
+							Yieldage thisYield = new Yieldage(k,thisDecel,endGauntlet,thisYing);
+							k.yielders.add(this);
 							yieldage.add(thisYield);}}}
 
 				//update final acceleration value and yielding state
@@ -420,10 +487,32 @@ public class Turtle extends Agent{
 		Ped yieldee;
 		double calcAcc;
 		double endThreat;
-		Yieldage(Ped yieldee, double calcAcc, double endThreat) {
+		int yState;
+		Yieldage(Ped yieldee, double calcAcc, double endThreat, int yState) {
 			this.yieldee = yieldee;
 			this.calcAcc = calcAcc;
-			this.endThreat = endThreat;}
+			this.endThreat = endThreat;
+			this.yState = yState;}
+	}
+	
+	/**
+	 * Class for storing viewing angle to peds or cars for calculating double threat
+	 * @author demi_chaud
+	 *
+	 */
+	class ViewAngle {
+		Ped ped;
+		Turtle car;
+		double theta;
+		double theta1;
+		double theta2;
+		ViewAngle(Ped ped, double theta) {
+			this.ped = ped;
+			this.theta = theta;}
+		ViewAngle(Turtle turtle, double theta1, double theta2) {
+			this.car = turtle;
+			this.theta1 = theta1;
+			this.theta2 = theta2;}
 	}
 	
 	/**
@@ -436,15 +525,9 @@ public class Turtle extends Agent{
 	public double getVel() {
 //		System.out.println(v);
 		return v;}
-	@Parameter(usageName="lane", displayName="Current lane")
-	public double getLane() {
-		return lane;}
-	@Parameter(usageName="leader", displayName="Current leader")
-	public Turtle getLead() {
-		return leader;}
-//	@Parameter(usageName="yielding", displayName="yielding?")
-//	public int getYield() {
-//		return ying;}
+	@Parameter(usageName="yielding", displayName="yielding?")
+	public int getYield() {
+		return ying;}
 	@Parameter(usageName="age", displayName="age")
 	public int getAge() {
 		return age;}

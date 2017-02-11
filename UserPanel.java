@@ -25,11 +25,12 @@ public class UserPanel implements ActionListener{
 	static final  double maxaMS		= 1.4;		// m/s2				default:   1.4
 	static final  double minaMS		= 3.5;		// m/s2				default:   3.5
 	static final  double tGapS		= 1.9;		// s				default:   1.9
-	static final  double carLengthM	= 4.5;		// m			TODO:source?
+	static final  double carLengthM	= 5.28;		// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
+	static final  double carWidthM	= 1.89;		// m					avg of lg sedan 1990 & 2007
 	static final  double jamHeadM	= 2.5 + carLengthM;	// m				default:   2.5 + 4.5
 	static public double sLimitKH	= 45;		// km/hr			default:  45
-	static public int    vehRho		= 600;		// veh/hr each dir 	default: 600
-	static public int    pedRho		= 400;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public int    vehRho		= 400;		// veh/hr each dir 	default: 600
+	static public int    pedRho		= 600;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 	static public double delayTs 	= 0;		// seconds			default:   0.5
 	
 	// convert variables to model units
@@ -38,6 +39,7 @@ public class UserPanel implements ActionListener{
 	static final  double mina		= minaMS*tStep/spaceScale;	//	factor of tStep
 	static final  double tGap		= tGapS/tStep;
 	static final  double carLength	= carLengthM/spaceScale;
+	static final  double carWidth	= carWidthM/spaceScale;
 	static final  double jamHead	= jamHeadM/spaceScale;
 	static public double sLimit 	= sLimitKH/vBase;
 	static public double lambdaCar	= vehRho * tStep / 3600;
