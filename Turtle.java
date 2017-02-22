@@ -29,6 +29,7 @@ public class Turtle extends Agent{
 	private double	wS, etaS, wV, etaV, sigR;					//errors
 	private double	stopBar, TTCol, lnTop, lnBot;				//yielding
 	private double	carW = UserPanel.carWidth;
+	private double  deltaIDM = 4;
 	private int		age;
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
@@ -110,7 +111,7 @@ public class Turtle extends Agent{
 	 */
 	public double accel(NdPoint loc, int myLane, int myDir) {
 		double thisX = loc.getX();
-		double a, head, setSpeed, vDiff, safeHead;
+		double a, head, setSpeed, vDiff, safeHead, aFree;
 		sameDir  = new ArrayList<Turtle>();
 		ahead	 = new ArrayList<Turtle>();
 		leaders  = new ArrayList<Turtle>();
@@ -172,10 +173,26 @@ public class Turtle extends Agent{
 				setSpeed = leader.v - head*sigR*wV;}
 			else setSpeed = leader.v;
 			vDiff = v - setSpeed;
-			safeHead = (jamHead + v*(tGap) +
-					((v*vDiff)/(2*Math.sqrt(maxa*mina))));
-			a = maxa*(1 - Math.pow(v/maxv,4) - Math.pow(safeHead/head,2));}
-		else {a = maxa*(1 - Math.pow(v/maxv,4));}
+			double safeHead0;
+			safeHead0 = v*(tGap) + (v*vDiff)/(2*Math.sqrt(maxa*mina));
+			safeHead = jamHead + Math.max(0,safeHead0);			//avoid negative values
+			if (UserPanel.IIDM == true) {
+				double z = safeHead / head;
+				if (v < maxv) {
+					aFree = maxa*(1-Math.pow(v/maxv,deltaIDM));
+					if (z >= 1) {
+						a = maxa*(1-z*z);}
+					else {
+						a = aFree*(1-Math.pow(z, 2*maxa/aFree));}}  //TODO: divides by 0 if v=v0
+				else {
+					aFree = -mina*(1-Math.pow(maxv/v, maxa*deltaIDM/mina));
+					if (z >= 1) {
+						a = aFree + maxa*(1-z*z);}
+					else {
+						a = aFree;}}}
+			else {
+				a = maxa*(1 - Math.pow(v/maxv,deltaIDM) - Math.pow(safeHead/head,2));}}
+		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
 		
 		//Calculate yielding acceleration
 		
@@ -184,11 +201,11 @@ public class Turtle extends Agent{
 		double xwalkD	= RoadBuilder.xWalkx - thisX;
 		double threat	= Math.signum(dir*xwalkD);
 		if (threat == 1) {
-			double a0 = yield(stopDab);
+			double aYield = yield(stopDab);
 //			if (a0 < -mina) {
 //				a = -mina;}
-			if (a0 < a) {
-				a = a0;}}
+			if (aYield < a) {
+				a = aYield;}}
 		return a;
 	}
 

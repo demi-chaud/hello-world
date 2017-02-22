@@ -35,8 +35,8 @@ public class UserPanel implements ActionListener{
 	
 	// convert variables to model units
 	static final  double pedVavg	= pedVavgKH/vBase;
-	static final  double maxa		= maxaMS*tStep/spaceScale;	// not sure why this doesn't have another
-	static final  double mina		= minaMS*tStep/spaceScale;	//	factor of tStep
+	static final  double maxa		= maxaMS*tStep*tStep/spaceScale;
+	static final  double mina		= minaMS*tStep*tStep/spaceScale;
 	static final  double tGap		= tGapS/tStep;
 	static final  double carLength	= carLengthM/spaceScale;
 	static final  double carWidth	= carWidthM/spaceScale;
@@ -57,6 +57,7 @@ public class UserPanel implements ActionListener{
 //	static public boolean bothPed	= false;
 	static public boolean pedsUp	= true;
 	static public boolean pedsDn	= true;
+	static public boolean IIDM		= true; //include Improved IDM?
 	
 	
 	// declare parameters of error-making
@@ -79,7 +80,8 @@ public class UserPanel implements ActionListener{
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
 		
-		JCheckBox errOn   = new JCheckBox("Estimation Errors?", true);
+		JCheckBox errOn   = new JCheckBox("Est Errors?",	true);
+		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
 		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
 //		JCheckBox ped2way = new JCheckBox("Peds both dir?", false);
 		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);
@@ -102,6 +104,7 @@ public class UserPanel implements ActionListener{
 			tckT.setActionCommand("tckT");
 		
 		errOn.addActionListener(this);
+		iidmOn.addActionListener(this);
 		car2way.addActionListener(this);
 //		ped2way.addActionListener(this);
 		pedUp.addActionListener(this);
@@ -113,6 +116,7 @@ public class UserPanel implements ActionListener{
 		tckT.addActionListener(this);
 		
 		newPanel.add(errOn);
+		newPanel.add(iidmOn);
 		newPanel.add(car2way);
 //		newPanel.add(ped2way);
 		newPanel.add(pedUp);
@@ -141,9 +145,13 @@ public class UserPanel implements ActionListener{
 		case "CheckBoxUI":
 			JCheckBox checkSource = (JCheckBox)which;
 			switch (name) {
-			case "Estimation Errors?":
+			case "Est Errors?":
 				if (checkSource.isSelected()) estErr = true;
 				else estErr = false;
+				break;
+			case "IIDM?":
+				if (checkSource.isSelected()) IIDM = true;
+				else IIDM = false;
 				break;
 			case "Cars both dir?":
 				if (checkSource.isSelected()) bothCar = true;
