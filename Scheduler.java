@@ -1,9 +1,12 @@
 package driving1;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
-
 import repast.simphony.context.Context;
+import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.util.ContextUtils;
@@ -14,20 +17,24 @@ import repast.simphony.util.ContextUtils;
  * Agents are created, they observe their surroundings, then move.
  * @author Darryl Michaud
  */
+
 public class Scheduler extends Agent {
 	
 	static  ArrayList<Turtle> allCars;
 	static  ArrayList<Ped>	 allPeds;
+	static	ArrayList<Turtle.Conflict> allConf;
 	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
 	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
-	double  rndC, rndP, rndC2, rndP2, yPlacement;
+	String	directory = "C:\\Users\\themi\\workspace\\driving1\\";
+	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
+	double  rndC, rndP, rndC2, rndP2, yPlacement, thisTick;
 	int     lane, dir;
 	boolean carsYes, pedsYes;
 	
-	/*
-	 * The scheduled method that contains all major steps.
+	/**
+	 * The scheduled method that contains all major steps
 	 */
 	@ScheduledMethod(start = 1, interval = 1, priority = 1)
 	public void doStuff() {
@@ -57,6 +64,9 @@ public class Scheduler extends Agent {
 		RoadBuilder.ticker ++;
 	}
 	
+	/**
+	 * Calculates Poisson arrival of agents, saves conflicts at end
+	 */
 	public void calc() {
 		if (UserPanel.vehRho > 0) {
 			rndC = rndCar.nextDouble();
@@ -77,13 +87,12 @@ public class Scheduler extends Agent {
 					allCars.add(addedTurtle1);
 					allCars.add(addedTurtle2);}
 				else if (rndC2 <= UserPanel.Pof1Car) {
-					lane = rndCar.nextInt(2);		// picks between 0 and 1 randomly
+					lane = rndCar.nextInt(2);	// picks between 0 and 1 randomly
 					Turtle addedTurtle = addCar(lane,-1);
 					allCars.add(addedTurtle);}}}
 		if (UserPanel.pedRho > 0) {
 			if (UserPanel.pedsUp == true) {
 				rndP = rndPed.nextDouble();
-//				if (RoadBuilder.ticker % 200 == 0) { // Constant stream for testing
 				if (rndP <=  UserPanel.Pof2Ped) {
 					Ped addedPed1 = addPed(1);
 					Ped addedPed2 = addPed(1);
@@ -102,19 +111,23 @@ public class Scheduler extends Agent {
 				else if (rndP2 <= UserPanel.Pof1Ped) {
 					Ped addedPed = addPed(-1);
 					allPeds.add(addedPed);}}}
+		thisTick = RoadBuilder.clock.getTickCount();
+		if (thisTick == UserPanel.simLength) {
+			Date date = new Date();
+			String now = dateFormat.format(date);
+			String fileName = directory + now + ".csv";
+			CSVWriter.writeCSV(fileName,allConf);}
 	}
 	
 	/**
-	 * Used to add cars to edge
+	 * Adds cars to edge
 	 */
 	@SuppressWarnings("unchecked")
 	public Turtle addCar(int lane, int dir) {
 		Context<Object> context = ContextUtils.getContext(this);
 		ContinuousSpace<Object> space = (ContinuousSpace<Object>) context.getProjection("space");
-//		Grid<Object> grid = (Grid) context.getProjection("grid");		
 		double carW = UserPanel.carWidth;
 		
-//		Turtle newTurtle = new Turtle(space,grid);
 		Turtle newTurtle = new Turtle(space,lane,dir);
 		context.add(newTurtle);
 		if (dir == 1) {				//1 = going right, -1 = going left
@@ -131,20 +144,17 @@ public class Scheduler extends Agent {
 	}
 	
 	/**
-	 * Used to add peds at x-walk
+	 * Adds peds at x-walk
 	 * @param direction: 1 walks up, -1 walks down
 	 */
 	@SuppressWarnings("unchecked")
 	public Ped addPed(int direction) {
 		Context<Object> context = ContextUtils.getContext(this);
 		ContinuousSpace<Object> space = (ContinuousSpace<Object>) context.getProjection("space");
-//		Grid<Object> grid = (Grid) context.getProjection("grid");
-//		int dir0 = rndPed.nextInt(2); //picks between 0 (walking up) and 1 (walking down)
-		double dir0 = direction == 1 ? 0 : 1;
+		double dir0 = (direction == 1) ? 0 : 0.9999999;
 		double yPlacement = dir0 * RoadBuilder.worldW;
 		if (direction == -1) yPlacement -= 1e-15;
 		
-//		Ped newPed = new Ped(space,grid,direction);
 		Ped newPed = new Ped(space,direction);
 		context.add(newPed);
 		space.moveTo(newPed,RoadBuilder.xWalkx,yPlacement);
@@ -153,11 +163,12 @@ public class Scheduler extends Agent {
 	}
 	
 	/**
-	 * Initializes schedule agent
-	 * This holds lists of all other agents
+	 * Initializes schedule agent to hold lists
 	 */
 	public Scheduler() {
 		allCars = new ArrayList<Turtle>();
 		allPeds = new ArrayList<Ped>();
+		allConf = new ArrayList<Turtle.Conflict>();
+		RunEnvironment.getInstance().endAt(UserPanel.simLength);
 	}
 }

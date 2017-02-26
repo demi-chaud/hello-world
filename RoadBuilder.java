@@ -19,18 +19,18 @@ import repast.simphony.engine.schedule.*;
 public class RoadBuilder extends DefaultContext<Object> implements ContextBuilder<Object> {
 	
 	// if unspecified, units are model space units and ticks 
-	static final  double spaceScale	= 7.5;		// m (length of 1 spatial unit)
-	static final  double roadL		= 200;		//standard: 200 = 1.5km
+	static final  double spaceScale	= 0.5;		// m (length of 1 spatial unit)
+	static final  double roadL		= 3000;		// standard: 200 = 1.5km
 	static final  double laneW		= 3.3/spaceScale;
 	static final  double roadW		= 4*laneW;
-	static final  double sidewalk	= 4/spaceScale;				//TODO: move back to 2 (enough ppl should fit in 2m)
+	static final  double sidewalk	= 4/spaceScale;
 	static final  double worldW		= roadW + 2*sidewalk;
 	static final  double xWalkx		= roadL/2;	// places x-walk in middle of environment
 	static public ISchedule clock;
 	static public Scheduler flowSource;
 	static public int ticker = 0;
 	
-	@SuppressWarnings({"unused" })
+	@SuppressWarnings({"unused"})
 	@Override
 	public Context<Object> build(Context<Object> context) {
 		context.setId("driving1");
@@ -39,11 +39,6 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		ContinuousSpace<Object> space =	
 				spaceFactory.createContinuousSpace("space",context, new SimpleCartesianAdder<Object>(),
 												   new StrictBorders(), roadL, worldW);
-//		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
-//		Grid<Object> grid = 
-//				gridFactory.createGrid("grid",context,
-//									   new GridBuilderParameters<Object>(new repast.simphony.space.grid.StrictBorders(),
-//					   							 new SimpleGridAdder<Object>(),true, (int)roadL, (int)worldW));
 		clock = RunEnvironment.getInstance().getCurrentSchedule();
 		flowSource = new Scheduler();
 		context.add(flowSource);

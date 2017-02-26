@@ -16,9 +16,11 @@ public class UserPanel implements ActionListener{
 
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
-	static public double tStep		= 0.05;		// duration of one tick in seconds	
+	static public double tStep		= 0.01;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
-		// vBase is the natural speed of the model (one unit per tick), converted to km/hr
+	static final  double simLength  = 60*60/tStep;	//in ticks (currently 1hr)
+	
+	// vBase is the natural speed of the model (one unit per tick), converted to km/hr
 		
 	// declare variables in real world units
 	static final  double pedVavgKH	= 5;		// km/hr			default:   5
@@ -29,9 +31,11 @@ public class UserPanel implements ActionListener{
 	static final  double carWidthM	= 1.89;		// m					avg of lg sedan 1990 & 2007
 	static final  double jamHeadM	= 2.5 + carLengthM;	// m				default:   2.5 + 4.5
 	static public double sLimitKH	= 45;		// km/hr			default:  45
-	static public int    vehRho		= 400;		// veh/hr each dir 	default: 600
-	static public int    pedRho		= 600;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public int    vehRho		= 600;		// veh/hr each dir 	default: 600
+	static public int    pedRho		= 400;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 	static public double delayTs 	= 0;		// seconds			default:   0.5
+	static public double confLimS	= 1.7;		// seconds			default:   1.7		//kinda arbitrary 
+	//TODO: add ped gap coefficients
 	
 	// convert variables to model units
 	static final  double pedVavg	= pedVavgKH/vBase;
@@ -54,7 +58,6 @@ public class UserPanel implements ActionListener{
 	//TODO: place agents created in later terms of Poisson approximation
 	
 	static public boolean bothCar	= true;
-//	static public boolean bothPed	= false;
 	static public boolean pedsUp	= true;
 	static public boolean pedsDn	= true;
 	static public boolean IIDM		= true; //include Improved IDM?
@@ -73,6 +76,7 @@ public class UserPanel implements ActionListener{
 	private String pedRhos = String.valueOf(pedRho);
 	private String delTs   = String.valueOf(delayTs);
 	private String tSteps  = String.valueOf(tStep);
+	private String confTs  = String.valueOf(confLimS);
 	
 	/*
 	 * Builds the GUI user panel
@@ -81,46 +85,46 @@ public class UserPanel implements ActionListener{
 		JPanel newPanel = new JPanel();
 		
 		JCheckBox errOn   = new JCheckBox("Est Errors?",	true);
-		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
-		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
-//		JCheckBox ped2way = new JCheckBox("Peds both dir?", false);
-		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);
-		JCheckBox pedDown = new JCheckBox("Peds down?",		true);
+//		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
+//		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
+//		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);
+//		JCheckBox pedDown = new JCheckBox("Peds down?",		true);
 		
 		JLabel   sLabel = new JLabel("Speed limit in km/hr:");
-		JTextField sLim = new JTextField(sLimits, 4);
+		JTextField sLim = new JTextField(sLimits, 6);
 			sLim.setActionCommand("sLim");
 		JLabel   vLabel = new JLabel("Vehicles per hour:");
-		JTextField vRho = new JTextField(vehRhos, 4);
+		JTextField vRho = new JTextField(vehRhos, 6);
 			vRho.setActionCommand("vRho");
 		JLabel   pLabel = new JLabel("Pedestrians per hour:");
-		JTextField pRho = new JTextField(pedRhos, 4);
+		JTextField pRho = new JTextField(pedRhos, 6);
 			pRho.setActionCommand("pRho");
 		JLabel   tLabel = new JLabel("Reaction time in sec:");
 		JTextField delT = new JTextField(delTs,   6);
 			delT.setActionCommand("delT");
+		JLabel	 cLabel = new JLabel("Conflict limit in sec:");
+		JTextField conf = new JTextField(confTs,  6);
 		JLabel   tckLab = new JLabel("Tick duration in sec:");
-		JTextField tckT = new JTextField(tSteps,  5);
+		JTextField tckT = new JTextField(tSteps,  6);
 			tckT.setActionCommand("tckT");
 		
 		errOn.addActionListener(this);
-		iidmOn.addActionListener(this);
-		car2way.addActionListener(this);
-//		ped2way.addActionListener(this);
-		pedUp.addActionListener(this);
-		pedDown.addActionListener(this);
+//		iidmOn.addActionListener(this);
+//		car2way.addActionListener(this);
+//		pedUp.addActionListener(this);
+//		pedDown.addActionListener(this);
 		sLim.addActionListener(this);
 		pRho.addActionListener(this);
 		vRho.addActionListener(this);
 		delT.addActionListener(this);
+		conf.addActionListener(this);
 		tckT.addActionListener(this);
 		
 		newPanel.add(errOn);
-		newPanel.add(iidmOn);
-		newPanel.add(car2way);
-//		newPanel.add(ped2way);
-		newPanel.add(pedUp);
-		newPanel.add(pedDown);
+//		newPanel.add(iidmOn);
+//		newPanel.add(car2way);
+//		newPanel.add(pedUp);
+//		newPanel.add(pedDown);
 		newPanel.add(sLabel);
 		newPanel.add(sLim);
 		newPanel.add(vLabel);
@@ -131,6 +135,8 @@ public class UserPanel implements ActionListener{
 		newPanel.add(delT);
 		newPanel.add(tckLab);
 		newPanel.add(tckT);
+		newPanel.add(cLabel);
+		newPanel.add(conf);
 
 		//TODO: figure out how to change appearance
 //		newPanel.setSize(50,100);
@@ -149,26 +155,22 @@ public class UserPanel implements ActionListener{
 				if (checkSource.isSelected()) estErr = true;
 				else estErr = false;
 				break;
-			case "IIDM?":
-				if (checkSource.isSelected()) IIDM = true;
-				else IIDM = false;
-				break;
-			case "Cars both dir?":
-				if (checkSource.isSelected()) bothCar = true;
-				else bothCar = false;
-				break;
-//			case "Peds both dir?":
-//				if (checkSource.isSelected()) bothPed = true;
-//				else bothPed = false;
+//			case "IIDM?":
+//				if (checkSource.isSelected()) IIDM = true;
+//				else IIDM = false;
 //				break;
-			case "Peds up?":
-				if (checkSource.isSelected()) pedsUp = true;
-				else pedsUp = false;
-				break;
-			case "Peds down?":
-				if (checkSource.isSelected()) pedsDn = true;
-				else pedsDn = false;
-				break;
+//			case "Cars both dir?":
+//				if (checkSource.isSelected()) bothCar = true;
+//				else bothCar = false;
+//				break;
+//			case "Peds up?":
+//				if (checkSource.isSelected()) pedsUp = true;
+//				else pedsUp = false;
+//				break;
+//			case "Peds down?":
+//				if (checkSource.isSelected()) pedsDn = true;
+//				else pedsDn = false;
+//				break;
 			default: break;}
 			break;
 		case "TextFieldUI":
@@ -198,6 +200,10 @@ public class UserPanel implements ActionListener{
 				tStep = Double.parseDouble(newTick);
 				calcCars();
 				calcPeds();
+				break;
+			case "conf":
+				String newConfLim = textSource.getText();
+				confLimS = Double.parseDouble(newConfLim);
 				break;}
 			break;
 		default: break;}

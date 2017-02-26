@@ -122,7 +122,6 @@ public class Ped extends Agent{
 	
 	/**
 	 * Determines value of curbed by calling lag() and/or gap() for each lane
-	 * TODO: will need fundamental rewriting to take double threat into account
 	 * @return output of accel() based on new value of curbed
 	 */
 	public double[] yield() {
@@ -131,8 +130,6 @@ public class Ped extends Agent{
 		ArrayList<Turtle> approaching1 = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching2 = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching3 = new ArrayList<Turtle>();		
-//		ArrayList<Turtle> near = new ArrayList<Turtle>();
-		//TODO: add double threat using theta to oncoming cars. if within range of same value, not seen
 		double gap0, gap1, gap2, gap3;
 		double[] frogger;
 		boolean go0, go1, go2, go3;
@@ -247,7 +244,7 @@ public class Ped extends Agent{
 		//TODO: xTime can be calculated more precisely (compare to HCM eq 18-17)
 		//TODO: make xTime lane-dependent for some peds
 		xTime 	  = accT + (endPtDist - side) / maxVY; 
-		sigR	  = 0.01*UserPanel.tStep;	//st. dev. of relative approach rate TODO: should this vary?
+		sigR	  = 0.01*UserPanel.tStep;	//st. dev. of relative approach rate
 		approachX = t.xLoc;
 		xDist	  = Math.abs(xLoc - approachX);
 		yDist	  = (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
@@ -284,7 +281,9 @@ public class Ped extends Agent{
 			else {
 				if (threatBeg + critGap < TTCol) {
 					goes = 1;}
-				else if (threatBeg > TTClear) {
+				else if (threatBeg > TTClear + 0.5/UserPanel.tStep && TTCol < t.decelT) { 
+					//TODO: .5 is arbitrary. scale w minGap, find literature
+					//TODO: decelT should be based on ped values
 					if (t.follower != null) {
 						goes = 0;}
 					else {
@@ -308,8 +307,7 @@ public class Ped extends Agent{
 		double threatBeg; //, threatEnd;
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
 		xTime = accT + (endPtDist - side) / maxVY; 
-		sigR = 0.01*UserPanel.tStep;	//standard deviation of relative approach rate 
-										//TODO: should this vary?
+		sigR = 0.01*UserPanel.tStep;	//standard deviation of relative approach rate
 		t1x		= t1.xLoc;
 		t2x 	= t2.xLoc;
 		t1d		= Math.abs(xLoc - t1x);
@@ -317,7 +315,6 @@ public class Ped extends Agent{
 		yDist	= (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
 		dist1	= space.getDistance(myLoc, t1.myLoc);
 		dist2	= space.getDistance(myLoc, t2.myLoc);
-//		t1v		= t1.v;
 		t2v		= t2.v;		
 		
 		//include errors
@@ -326,7 +323,6 @@ public class Ped extends Agent{
 			etaV	= rnd.nextGaussian();
 			wS		= UserPanel.wien1*wS + UserPanel.wien2*etaS;
 			wV		= UserPanel.wien1*wV + UserPanel.wien2*etaV;
-//			t1v		= t1v - dist1*sigR*wV;
 			t2v		= t2v - dist2*sigR*wV;
 			dist1	= dist1*Math.exp(UserPanel.Vs*wS);
 			dist2	= dist2*Math.exp(UserPanel.Vs*wS);
@@ -398,7 +394,7 @@ public class Ped extends Agent{
 		//calculate interactive forces
 		//TODO: write code to make a threshold for interaction instead of the arbitrary horizon
 		for (Ped a : Scheduler.allPeds) {
-			if (a != this) {
+			if (a != this && (a.dir == dir || a.crossing == 2)) {
 				NdPoint	otherLoc = space.getLocation(a);
 				double	otherY	 = otherLoc.getY();
 				double	visible	 = Math.signum((double)dir*(otherY-yLoc));
@@ -425,7 +421,7 @@ public class Ped extends Agent{
 			curbF = -(double)direct*(A*Math.exp((r-dCurb)/B) + k*(r-dCurb))/m;
 			forcesY.add(curbF);}
 
-		//keep peds within crossing box TODO: make world bigger to hold more peds?
+		//keep peds within crossing box
 		if (boxed) {
 			whichSide = Math.signum(RoadBuilder.xWalkx - xLoc); //1=left, -1=right
 			if (whichSide == 1) {dBox = xLoc - boxL;}
@@ -520,11 +516,8 @@ public class Ped extends Agent{
 	 */
 //	public Ped(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid, int direction) {
 	public Ped(ContinuousSpace<Object> contextSpace, int direction) {
-		//TODO: distribute peds in x to avoid pile-ups
 		yielders = new ArrayList<Turtle>();
 		space	 = contextSpace;
-//		grid	 = contextGrid;
-//		v		 = RoadBuilder.pedVavg * 1000 / 3600;
 		maxV	 = UserPanel.pedVavg;
 		dir		 = direction; // 1 moves up, -1 moves down
 		v		 = new double[] {0,(double)dir*.5*maxV};
@@ -546,11 +539,10 @@ public class Ped extends Agent{
 		accT  = 0.5/UserPanel.tStep;							//acceleration time
 		m     = 80;											//avg ped mass in kg
 		horiz = 5/RoadBuilder.spaceScale;					//distance at which peds affect each other
-		A     = 2000*UserPanel.tStep/RoadBuilder.spaceScale;	//ped interaction constant (kg*space units/time units)
+		A     = 2000*UserPanel.tStep*UserPanel.tStep/RoadBuilder.spaceScale;	//ped interaction constant (kg*space units/time units^2)
 		B     = 0.08/RoadBuilder.spaceScale;					//ped distance interaction constant (space units)
-		k	  = 120000*UserPanel.tStep;						//wall force constant
+		k	  = 120000*UserPanel.tStep*UserPanel.tStep;			//wall force constant
 		r     = 0.275/RoadBuilder.spaceScale;					//ped radius (space units)
-		//TODO: figure out A & k wrt one or two factors of time (currently one like acceleration)
 		
 		age = 0;
 		
@@ -572,7 +564,7 @@ public class Ped extends Agent{
 	@Parameter(usageName="v", displayName="Current yVel")
 	public double getVel() {
 		double vY = v[1];
-		return vY;}
+		return vY*UserPanel.vBase;}
 	@Parameter(usageName="crossing", displayName="Crossing?")
 	public double getCrossing() {
 		return crossing;}
@@ -584,5 +576,5 @@ public class Ped extends Agent{
 		return age;}
 	@Parameter(usageName="xTime",displayName="xTime")
 	public double getXtime() {
-		return xTime;}
+		return xTime*UserPanel.tStep;}
 }
