@@ -21,8 +21,10 @@ public class Turtle extends Agent{
 	private ArrayList<ViewAngle> obstructers, obstructees;
 	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
 	private List<double[]> storage = new ArrayList<double[]>();
-	private Random  rnd = new Random();	//initiates random number generator for vehicle properties
+	private Random  rnd  = new Random();	//initiates random number generator for vehicle properties
+	private Random  rndD = new Random();	//ditto for distraction
 	private boolean	distracted = false;
+	private double	timeD, durD, timeSinceD, interD, interDlam;		//distraction
 	private double	delayTs, tN, tBeta;							//delay
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc;	//car-following
 	private double	wS, etaS, wV, etaV, sigR;					//errors
@@ -32,6 +34,7 @@ public class Turtle extends Agent{
 	private int		age;
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
+	public	boolean v2v, v2i, auto;
 	public  double	v, vNew, acc, xLoc, yLoc, length, tail, driverX, driverY, decelT;
 	public  int		lane;	//  0 = outer lane, 1 = inner lane
 	public	int		dir;	//  1 = going right, -1 = going left
@@ -45,13 +48,28 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
-		if (distracted == false) newAcc = accel(myLoc, lane, dir);
+		if (interD != 0 && timeSinceD >= interD) {
+			distracted = true;
+			timeSinceD = 0;
+			interD = 0;}
+		if (durD != 0 && timeD >= durD) {
+			distracted = false;
+			timeD = 0;
+			durD = 0;}
+		if (distracted == false) {
+			if (timeSinceD == 0) {
+				double interD0 = (rndD.nextDouble() + Double.MIN_VALUE)*interDlam; //padded to avoid -inf
+				interD = -Math.log(interD0/interDlam)/interDlam;}
+			timeSinceD += 1;
+			newAcc = accel(myLoc, lane, dir);} //TODO: make sure autonomous don't get distracted}
 		else {
+			if (timeD == 0) {
+				durD = ;}	//TODO: calculate this
 			newAcc = acc;
+			timeD += 1;
 			if (v != 0) conflict();}
-		
 		//delayed reaction: implements acc calculated and stored delayT ago
-		if (UserPanel.delayTs > 0) {
+		if (UserPanel.delayTs > 0 && auto == false) { //TODO: probably give non-zero value for automated
 			double stamp, tStamp, delayedT, hiT;
 			stamp  = RoadBuilder.clock.getTickCount();
 			tStamp = stamp*UserPanel.tStep;
@@ -63,7 +81,8 @@ public class Turtle extends Agent{
 			delayedT = tStamp - delayTs;
 			hiT = 0;
 			int foo = 0;
-			if (storage.size() > 3 && storage.size() > tN+1) { 
+			int storSize = storage.size();
+			if (storSize > 3 && storSize > tN+1) { 
 				while (hiT < delayedT) {
 					hiT = storage.get(foo)[0];
 					foo++;}
@@ -71,14 +90,18 @@ public class Turtle extends Agent{
 				if (hiT != delayedT){	//linear interpolation TODO: is there a better approx?
 					double loAcc = storage.get(foo-2)[1];
 					acc = tBeta*loAcc + (1-tBeta)*hiAcc;}
-				else acc = hiAcc;}
+				else acc = hiAcc;
+				if (storSize > 5*tN) {		//TODO: make this less arbitrary
+					storage.remove(storSize - 1);}
+				}
 			else acc = newAcc;}
 		else acc = newAcc;
 		age++;
 		
 		vNew = v + acc;
 		if (vNew < 0) {vNew = 0;}
-		if (vNew > maxv) {vNew = maxv;}
+//		if (vNew > maxv) {
+//			vNew = maxv;}
 	}		
 	
 	/**
@@ -87,14 +110,16 @@ public class Turtle extends Agent{
 	public void drive() {
 		if (dir == 1) {
 			if (xLoc + vNew >= RoadBuilder.roadL - 1) {
-				Scheduler.killListC.add(this);}
+				Scheduler.killListC.add(this);
+				this.storage.clear();}
 			else if (vNew != 0) {
 				space.moveByDisplacement(this,vNew,0);
 				myLoc = space.getLocation(this);
 				xLoc = myLoc.getX();}}
 		else {
 			if (xLoc - vNew <= 0) {
-				Scheduler.killListC.add(this);}
+				Scheduler.killListC.add(this);
+				this.storage.clear();}
 			else if (vNew != 0) {
 				space.moveByDisplacement(this,-vNew,0);
 				myLoc = space.getLocation(this);
@@ -154,20 +179,22 @@ public class Turtle extends Agent{
 		if (!leaders.isEmpty()) {
 			for (Turtle o : leaders) {
 				if(Math.abs(o.xLoc - xLoc) < head) {
-					head = Math.abs(o.xLoc - xLoc);
+					head = Math.abs(o.xLoc - xLoc) - o.length; //TODO: change visualization to move icons to center of car
+					if (head < 0) {
+						head = 1e-5;}
 					leader = o;}}}
 		if (follower == null) {
 			if (!followers.isEmpty()) {
 				for (Turtle p : followers) {
-					if(Math.abs(p.xLoc - xLoc) < tail) {
-						tail = Math.abs(p.xLoc - xLoc);
+					if((Math.abs(p.xLoc - xLoc) - length) < tail) {
+						tail = Math.abs(p.xLoc - xLoc) - length;
 						follower = p;}}}}
 		else {
-			tail = Math.abs(follower.xLoc - xLoc);}
+			tail = Math.abs(follower.xLoc - xLoc) - length;}
 		
 		//calculate CF acceleration (with errors)
 		if (leader != null) {
-			if (UserPanel.estErr == true) {		//includes estimation error in headway measurement
+			if (UserPanel.estErr == true && auto == false) {		//includes estimation error in headway measurement
 				etaS = rnd.nextGaussian();
 				etaV = rnd.nextGaussian();
 				wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
@@ -179,7 +206,7 @@ public class Turtle extends Agent{
 			double safeHead0;
 			safeHead0 = v*(tGap) + (v*vDiff)/(2*Math.sqrt(maxa*mina));
 			safeHead = jamHead + Math.max(0,safeHead0);			//avoid negative values
-			if (UserPanel.IIDM == true) {
+//			if (UserPanel.IIDM == true) {
 				double z = safeHead / head;
 				if (v < maxv) {
 					aFree = maxa*(1-Math.pow(v/maxv,deltaIDM));
@@ -192,13 +219,14 @@ public class Turtle extends Agent{
 					if (z >= 1) {
 						a = aFree + maxa*(1-z*z);}
 					else {
-						a = aFree;}}}
-			else {
-				a = maxa*(1 - Math.pow(v/maxv,deltaIDM) - Math.pow(safeHead/head,2));}}
+						a = aFree;}}
+//				}
+//			else {
+//				a = maxa*(1 - Math.pow(v/maxv,deltaIDM) - Math.pow(safeHead/head,2));}
+		}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
-		
+
 		//Calculate yielding acceleration
-		
 		double stopD	= stopBar - xLoc;
 		double stopDab	= Math.abs(stopD);
 		double xwalkD	= RoadBuilder.xWalkx - xLoc;
@@ -225,13 +253,16 @@ public class Turtle extends Agent{
 		crossingP1	= new ArrayList<Ped>();
 		obstructers = new ArrayList<ViewAngle>();
 		obstructees = new ArrayList<ViewAngle>();
-		double	threatBeg, threatEnd;
+		double	threatBeg, threatEnd, tHardYield;
 		double	lnW		 = RoadBuilder.laneW;
 		double	yieldDec = 1;		//dummy value
-		double	tHardYield	= 2*stopDist/v;
-		if (v != 0) ttstopBar = stopDist/v;
-		else ttstopBar = 1e16;		//arbitrarily large
-		decelT		= v/mina;
+		if (v != 0) {
+			tHardYield = 2*stopDist/v;
+			ttstopBar  = stopDist/v;}
+		else {
+			ttstopBar  = 1e16;		//arbitrarily large
+			tHardYield = 1e16;}
+		decelT		= v/UserPanel.emergDec;
 		hardYield	= -v*v/(2*stopDist);
 		driverX		= xLoc-(double)dir*length/2;
 		threatBeg 	= 0;
@@ -248,50 +279,52 @@ public class Turtle extends Agent{
 		crossingP1 = crossingP;
 		
 		//double threat
-		for (Turtle i : ahead) {				//are there any cars potentially blocking view?
-			double otherD	= RoadBuilder.xWalkx - i.xLoc;
-			double threat	= Math.signum(dir*otherD);
-			ViewAngle thisView = null;
-			if (i.lane != lane && threat == 1) {		//TODO: make this only happen if the car is close enough for it to matter
-				double front	= i.xLoc - (double)dir*i.length/3;
-				double back		= i.xLoc - (double)dir*i.length;
-				double inside	= i.yLoc + (double)dir*carW/2;
-				double outside	= i.yLoc - (double)dir*carW/2;
-				Double thisTheta1, thisTheta2;
-				if (lane == 0) {
-					thisTheta1 = FastMath.atan2((outside - driverY), (front - driverX));
-					thisTheta2 = FastMath.atan2((inside  - driverY), (back  - driverX));}
-				else {
-					thisTheta1 = FastMath.atan2((outside - driverY), (back  - driverX));
-					thisTheta2 = FastMath.atan2((inside  - driverY), (front - driverX));}
-				if (thisTheta1 != null) {
-					if (thisTheta1 < 0) {
-						thisTheta1 = thisTheta1 + 2*Math.PI;}
-					if (thisTheta2 < 0) {
-						thisTheta2 = thisTheta2 + 2*Math.PI;}
-					thisView = new ViewAngle(i,thisTheta1,thisTheta2);
-					obstructers.add(thisView);}}}
-		if (!obstructers.isEmpty()){
-			for (Ped j : crossingP) {				//calculate angle to any relevant peds
-				Double thisTheta = null;
-				if (dir == j.dir && lane == 1) {
-					thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
-				else if (dir != j.dir && lane == 0) {
-					thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
-				if (thisTheta != null) {
-					if (thisTheta < 0) {
-						thisTheta = thisTheta + 2*Math.PI;}
-					ViewAngle thisView = new ViewAngle(j,thisTheta);
-					obstructees.add(thisView);}}}
-		if (!obstructees.isEmpty()) {
-			for (ViewAngle i : obstructers) {
-				double theta1 = i.theta1;
-				double theta2 = i.theta2;
-				for (ViewAngle j : obstructees) {
-					Ped thisPed = j.ped;
-					double pedTheta = j.theta;
-					if (pedTheta >= theta1 && pedTheta <= theta2) {
-						crossingP.remove(thisPed);}}}}
+		if (v2v == false) {		//TODO: find accuracy of passive ped detection, add v2i functionality
+			for (Turtle i : ahead) {				//are there any cars potentially blocking view?
+				double otherD	= RoadBuilder.xWalkx - i.xLoc;
+				double threat	= Math.signum(dir*otherD);
+				ViewAngle thisView = null;
+				if (i.lane != lane && threat == 1) {		//TODO: make this only happen if the car is close enough for it to matter
+					double front	= i.xLoc - (double)dir*i.length/3;
+					double back		= i.xLoc - (double)dir*i.length;
+					double inside	= i.yLoc + (double)dir*carW/2;
+					double outside	= i.yLoc - (double)dir*carW/2;
+					Double thisTheta1, thisTheta2;
+					if (lane == 0) {
+						thisTheta1 = FastMath.atan2((outside - driverY), (front - driverX));
+						thisTheta2 = FastMath.atan2((inside  - driverY), (back  - driverX));}
+					else {
+						thisTheta1 = FastMath.atan2((outside - driverY), (back  - driverX));
+						thisTheta2 = FastMath.atan2((inside  - driverY), (front - driverX));}
+					if (thisTheta1 != null) {
+						if (thisTheta1 < 0) {
+							thisTheta1 = thisTheta1 + 2*Math.PI;}
+						if (thisTheta2 < 0) {
+							thisTheta2 = thisTheta2 + 2*Math.PI;}
+						thisView = new ViewAngle(i,thisTheta1,thisTheta2);
+						obstructers.add(thisView);}}}
+			if (!obstructers.isEmpty()){
+				for (Ped j : crossingP) {				//calculate angle to any relevant peds
+					Double thisTheta = null;
+					if (dir == j.dir && lane == 1) {
+						thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
+					else if (dir != j.dir && lane == 0) {
+						thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
+					if (thisTheta != null) {
+						if (thisTheta < 0) {
+							thisTheta = thisTheta + 2*Math.PI;}
+						ViewAngle thisView = new ViewAngle(j,thisTheta);
+						obstructees.add(thisView);}}}
+			if (!obstructees.isEmpty()) {
+				for (ViewAngle i : obstructers) {
+					double theta1 = i.theta1;
+					double theta2 = i.theta2;
+					for (ViewAngle j : obstructees) {
+						Ped thisPed = j.ped;
+						double pedTheta = j.theta;
+						if (pedTheta >= theta1 && pedTheta <= theta2) {
+							crossingP.remove(thisPed);}}}}
+		}
 		
 		//yield to crossing peds
 		if (!crossingP.isEmpty()) {
@@ -579,7 +612,8 @@ public class Turtle extends Agent{
 	 */
 	//TODO: add similar code to Ped.java to vary ped parameters
 //	public Turtle(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid) {
-	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir) {	
+	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir,
+			boolean v2v, boolean v2i, boolean auto) {
 		space	= contextSpace;
 //		grid	= contextGrid;
 		lane	= whichLane;
@@ -596,7 +630,7 @@ public class Turtle extends Agent{
 		tN		= Math.floor(delayTs/UserPanel.tStep);
 		tBeta	= (delayTs/UserPanel.tStep) - tN;	
 		v		= maxv * (1 - .3*rnd.nextDouble());
-		decelT	= v/mina;
+		decelT	= v/UserPanel.emergDec;
 		wS		= etaS = rnd.nextGaussian();
 		wV		= rnd.nextGaussian();
 		etaV	= rnd.nextGaussian();
@@ -618,6 +652,9 @@ public class Turtle extends Agent{
 		confLim = UserPanel.confLimS/UserPanel.tStep;
 		age  = 0;
 		ying = -1;
+		timeD = -1;
+		timeSinceD = 0;
+		interDlam = UserPanel.interDlam;
 	}
 	
 	/**
@@ -690,7 +727,6 @@ public class Turtle extends Agent{
 		return newAcc*UserPanel.vBase/UserPanel.tStep;}
 	@Parameter(usageName="v", displayName="Current vel")
 	public double getVel() {
-//		System.out.println(v);
 		return v*UserPanel.vBase;}
 	@Parameter(usageName="maxv", displayName="Max vel")
 	public double getMaxV() {
@@ -704,4 +740,13 @@ public class Turtle extends Agent{
 	@Parameter(usageName="TTC", displayName="TTC")
 	public double getTTC() {
 		return ttstopBar*UserPanel.tStep;}
+	@Parameter(usageName="dir", displayName="dir")
+	public int getDir() {
+		return dir;}
+	@Parameter(usageName="lane", displayName="lane")
+	public int getLane() {
+		return lane;}
+	@Parameter(usageName="xLoc", displayName="xLoc")
+	public double getX() {
+		return xLoc;}
 }

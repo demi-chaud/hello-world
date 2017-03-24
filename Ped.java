@@ -34,7 +34,7 @@ public class Ped extends Agent{
 	public Turtle nearest, nearest0, nearest1, nearest2, nearest3;
 	public NdPoint myLoc;
 	public double[] v, dv, newV;
-	public double xTime, accT, maxV, xLoc, yLoc;
+	public double xTime, accT, maxV, xLoc, yLoc, whichSide;
 	public int dir;			// dir = 1 walks up, -1 walks down
 	public int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
 	
@@ -46,16 +46,14 @@ public class Ped extends Agent{
 		myLoc = space.getLocation(this);
 		xLoc  = myLoc.getX();
 		yLoc  = myLoc.getY();
-		if (age > 1) {
-			if (crossing == 0 || crossing == 1) {
-				if (xLoc + r + newV[0] > boxR || xLoc - r + newV[0] < boxL){
-					boxed = true;}
-				else {boxed = false;}}
-			else {boxed = false;}}
-		else {boxed = false;}
 		dv    = accel(myLoc,dir);
 		newV  = sumV(v,dv);
-		newV  = limitV(newV);
+		if (age > 1) {
+			if (xLoc + r + newV[0] > boxR || xLoc - r + newV[0] < boxL){
+				boxed = true;}
+			else {boxed = false;}}
+		else {boxed = false;}
+//		newV  = limitV(newV);
 		
 		switch (crossing) {
 		case 0: if (dir == 1) {
@@ -78,9 +76,11 @@ public class Ped extends Agent{
 				newV = sumV(v,dv);
 				if (dir == 1) {
 					if (yLoc + newV[1] > side) {
+						newV[0]  = 0;
 						crossing = 2;}}
 				else {
 					if (yLoc + newV[1] < side + RoadBuilder.roadW) {
+						newV[0]  = 0;
 						crossing = 2;}}
 				break;
 		case 2: if (curbed == true) {
@@ -89,6 +89,10 @@ public class Ped extends Agent{
 				break;
 		default: break;}
 		
+		if (v[0] != 0) {		//avoid bouncing off walls
+			double whichDir = Math.signum(v[0]);
+			if (whichSide == -whichDir && Math.signum(newV[0]) == -whichDir) {
+				newV[0] = 0;}}
 		newV = limitV(newV);
 	}
 	
@@ -281,8 +285,8 @@ public class Ped extends Agent{
 			else {
 				if (threatBeg + critGap < TTCol) {
 					goes = 1;}
-				else if (threatBeg > TTClear + 0.5/UserPanel.tStep && TTCol < t.decelT) { 
-					//TODO: .5 is arbitrary. scale w minGap, find literature
+				else if (threatBeg > TTClear + 1/UserPanel.tStep && TTCol < t.decelT) { 
+					//TODO: 1 is arbitrary. scale w minGap, find literature
 					//TODO: decelT should be based on ped values
 					if (t.follower != null) {
 						goes = 0;}
@@ -374,7 +378,7 @@ public class Ped extends Agent{
 	public double[] accel(NdPoint location, int direct) {
 		forcesX = new ArrayList<Double>();
 		forcesY = new ArrayList<Double>();
-		double xF, yF, curbF, boxF, dBox, whichSide;
+		double xF, yF, curbF, boxF, dBox;
 		double[] acc;
 		xF = yF = curbF = 0;
 		
@@ -423,6 +427,7 @@ public class Ped extends Agent{
 
 		//keep peds within crossing box
 		if (boxed) {
+			boxF = 0;
 			whichSide = Math.signum(RoadBuilder.xWalkx - xLoc); //1=left, -1=right
 			if (whichSide == 1) {dBox = xLoc - boxL;}
 			else {dBox = boxR - xLoc;}
@@ -434,10 +439,7 @@ public class Ped extends Agent{
 			xF += b;}
 		for (Double c : forcesY) {
 			yF += c;}
-		acc = new double[] {xF, yF}; 
-//		if ((double)dir*Math.signum(acc[1]) == 1) {
-//			double foo = 0;}
-		
+		acc = new double[] {xF, yF};
 		return acc;
 	}
 
@@ -485,8 +487,8 @@ public class Ped extends Agent{
 			if (input[1] > 0) {
 				input[1] = 0;}}
 		totalV = Math.sqrt(input[0]*input[0] + input[1]*input[1]);
-		if (totalV > this.maxV) {
-			norm = this.maxV/totalV;
+		if (totalV > maxV) {
+			norm = maxV/totalV;
 			input[0] = input[0]*norm;
 			input[1] = input[1]*norm;}
 		return input;
@@ -523,9 +525,9 @@ public class Ped extends Agent{
 		v		 = new double[] {0,(double)dir*.5*maxV};
 		crossing = 0;
 		curbed   = false;
+		age		 = 0;
 		wS = etaS = rnd.nextGaussian(); //TODO: separate these?
 		wV = etaV = rnd.nextGaussian();
-		
 		double gapParamA	= 6.2064; //TODO: email Brewer re: value for just convergent sets
 		double gapParamB	= 0.942;  //TODO: ditto
 		double gapMin		= 1/(1+Math.exp(gapParamA));
@@ -543,8 +545,6 @@ public class Ped extends Agent{
 		B     = 0.08/RoadBuilder.spaceScale;					//ped distance interaction constant (space units)
 		k	  = 120000*UserPanel.tStep*UserPanel.tStep;			//wall force constant
 		r     = 0.275/RoadBuilder.spaceScale;					//ped radius (space units)
-		
-		age = 0;
 		
 		//store endpoint
 		if (dir == 1) endPt = new NdPoint(RoadBuilder.xWalkx + 1/RoadBuilder.spaceScale, RoadBuilder.worldW);
@@ -571,9 +571,6 @@ public class Ped extends Agent{
 	@Parameter(usageName="cg", displayName="Critical gap")
 	public double getGap() {
 		return critGap*UserPanel.tStep;}
-	@Parameter(usageName="age", displayName="age")
-	public int getAge() {
-		return age;}
 	@Parameter(usageName="xTime",displayName="xTime")
 	public double getXtime() {
 		return xTime*UserPanel.tStep;}

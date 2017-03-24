@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.*;
 
+import repast.simphony.parameter.Parameter;
 import repast.simphony.ui.RSApplication;
 
 /*
@@ -16,31 +17,38 @@ public class UserPanel implements ActionListener{
 
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
-	static public double tStep		= 0.01;		// duration of one tick in seconds	
+	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
-	static final  double simLength  = 60*60/tStep;	//in ticks (currently 1hr)
-	
-	// vBase is the natural speed of the model (one unit per tick), converted to km/hr
-		
+						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
+	static final  double simLength  = 5*60*60/tStep;	//in ticks (currently 5hrs)
+	static public double percV2V	= 0;
+	static public double percV2I	= 0;
+	static public double percAuto	= 0;
+			
 	// declare variables in real world units
-	static final  double pedVavgKH	= 5;		// km/hr			default:   5
-	static final  double maxaMS		= 1.4;		// m/s2				default:   1.4
-	static final  double minaMS		= 3.5;		// m/s2				default:   3.5
-	static final  double tGapS		= 1.9;		// s				default:   1.9
-	static final  double carLengthM	= 5.28;		// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
-	static final  double carWidthM	= 1.89;		// m					avg of lg sedan 1990 & 2007
-	static final  double jamHeadM	= 2.5 + carLengthM;	// m				default:   2.5 + 4.5
-	static public double sLimitKH	= 45;		// km/hr			default:  45
-	static public int    vehRho		= 600;		// veh/hr each dir 	default: 600
-	static public int    pedRho		= 400;		// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
-	static public double delayTs 	= 0;		// seconds			default:   0.5
-	static public double confLimS	= 1.7;		// seconds			default:   1.7		//kinda arbitrary 
+	static final  double pedVavgKH	= 5;			// km/hr			default:   5 (source Zebala 2012)
+	static final  double maxaMS		= 1.4;			// m/s2				default:   1.4
+	static final  double minaMS		= 3.5;			// m/s2				default:   3.5
+	static final  double emergDecMS	= 4.5;			// m/s2				default:   4.5
+	static final  double tGapS		= 1.9;			// s				default:   1.9
+	static final  double carLengthM	= 5.28;			// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
+	static final  double carWidthM	= 1.89;			// m					avg of lg sedan 1990 & 2007
+	static final  double jamHeadM	= 2.5;			// m				default:   2.5
+	static public double sLimitKH	= 45;			// km/hr			default:  45
+	static public int    vehRho		= 400;			// veh/hr each dir 	default: 600
+	static public int    pedRho		= 100;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public double delayTs 	= 0.5;			// seconds			default:   0.5
+	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
+	static public double DmuHatS	= -0.4552452;	// distraction dist scale param (in seconds)
+	static public double DsigHat	= 0.6108071;	// distraction dist shape param (already in model units)
+	static public double interDlamS	= 0.3524525;	// interdistraction rate (in seconds^-1)
 	//TODO: add ped gap coefficients
 	
 	// convert variables to model units
 	static final  double pedVavg	= pedVavgKH/vBase;
 	static final  double maxa		= maxaMS*tStep*tStep/spaceScale;
 	static final  double mina		= minaMS*tStep*tStep/spaceScale;
+	static final  double emergDec	= emergDecMS*tStep*tStep/spaceScale;
 	static final  double tGap		= tGapS/tStep;
 	static final  double carLength	= carLengthM/spaceScale;
 	static final  double carWidth	= carWidthM/spaceScale;
@@ -54,6 +62,8 @@ public class UserPanel implements ActionListener{
 	static public double Pof1Ped	= lambdaPed * poisExpP;		//  ditto for peds
 	static public double Pof2Car	= Math.pow(lambdaCar,2)*poisExpV/2;
 	static public double Pof2Ped	= Math.pow(lambdaPed,2)*poisExpP/2;
+	static public double muHat		= DmuHatS + Math.log(tStep);
+	static public double interDlam	= interDlamS * tStep;
 //	static public ArrayList<Double> poisStoreV, poisStoreP;
 	//TODO: place agents created in later terms of Poisson approximation
 	
@@ -61,7 +71,6 @@ public class UserPanel implements ActionListener{
 	static public boolean pedsUp	= true;
 	static public boolean pedsDn	= true;
 	static public boolean IIDM		= true; //include Improved IDM?
-	
 	
 	// declare parameters of error-making
 	static public boolean estErr 	= true;		// estimation errors
@@ -71,12 +80,15 @@ public class UserPanel implements ActionListener{
 	static final  double  wien2		= Math.sqrt(2*tStep/errPers);	//	of perception errors
 	
 	// convert initial values to strings for JPanel
-	private String sLimits = String.valueOf(sLimitKH);
-	private String vehRhos = String.valueOf(vehRho);
-	private String pedRhos = String.valueOf(pedRho);
-	private String delTs   = String.valueOf(delayTs);
-	private String tSteps  = String.valueOf(tStep);
-	private String confTs  = String.valueOf(confLimS);
+	private String sLimits	= String.valueOf(sLimitKH);
+	private String vehRhos	= String.valueOf(vehRho);
+	private String pedRhos	= String.valueOf(pedRho);
+	private String delTs	= String.valueOf(delayTs);
+//	private String tSteps	= String.valueOf(tStep);
+	private String confTs	= String.valueOf(confLimS);
+	private String pV2Vs	= String.valueOf(percV2V);
+	private String pV2Is	= String.valueOf(percV2I);
+	private String pAutoS	= String.valueOf(percAuto);
 	
 	/*
 	 * Builds the GUI user panel
@@ -90,23 +102,33 @@ public class UserPanel implements ActionListener{
 //		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);
 //		JCheckBox pedDown = new JCheckBox("Peds down?",		true);
 		
-		JLabel   sLabel = new JLabel("Speed limit in km/hr:");
+		JLabel   sLabel = new JLabel("Speed limit (km/hr)");
 		JTextField sLim = new JTextField(sLimits, 6);
 			sLim.setActionCommand("sLim");
-		JLabel   vLabel = new JLabel("Vehicles per hour:");
+		JLabel   vLabel = new JLabel("Vehicles/hr");
 		JTextField vRho = new JTextField(vehRhos, 6);
 			vRho.setActionCommand("vRho");
-		JLabel   pLabel = new JLabel("Pedestrians per hour:");
+		JLabel   pLabel = new JLabel("Pedestrians/hr");
 		JTextField pRho = new JTextField(pedRhos, 6);
 			pRho.setActionCommand("pRho");
-		JLabel   tLabel = new JLabel("Reaction time in sec:");
+		JLabel   tLabel = new JLabel("Reaction time (sec)");
 		JTextField delT = new JTextField(delTs,   6);
 			delT.setActionCommand("delT");
-		JLabel	 cLabel = new JLabel("Conflict limit in sec:");
+		JLabel	 cLabel = new JLabel("Conflict limit (sec)");
 		JTextField conf = new JTextField(confTs,  6);
-		JLabel   tckLab = new JLabel("Tick duration in sec:");
-		JTextField tckT = new JTextField(tSteps,  6);
-			tckT.setActionCommand("tckT");
+			conf.setActionCommand("conf");
+		JLabel	 v2vLab = new JLabel("Percent V2V");
+		JTextField v2vF = new JTextField(pV2Vs,   3);
+			v2vF.setActionCommand("V2V");
+		JLabel	 v2iLab = new JLabel("Percent V2I");
+		JTextField v2iF = new JTextField(pV2Is,   3);
+			v2iF.setActionCommand("V2I");
+		JLabel	 autLab = new JLabel("Percent automated");
+		JTextField autF = new JTextField(pAutoS,  3);
+			autF.setActionCommand("Automated");
+//		JLabel   tckLab = new JLabel("Tick duration in sec:");
+//		JTextField tckT = new JTextField(tSteps,  6);
+//			tckT.setActionCommand("tckT");
 		
 		errOn.addActionListener(this);
 //		iidmOn.addActionListener(this);
@@ -118,7 +140,10 @@ public class UserPanel implements ActionListener{
 		vRho.addActionListener(this);
 		delT.addActionListener(this);
 		conf.addActionListener(this);
-		tckT.addActionListener(this);
+//		tckT.addActionListener(this);
+		v2vF.addActionListener(this);
+		v2iF.addActionListener(this);
+		autF.addActionListener(this);
 		
 		newPanel.add(errOn);
 //		newPanel.add(iidmOn);
@@ -133,10 +158,16 @@ public class UserPanel implements ActionListener{
 		newPanel.add(pRho);
 		newPanel.add(tLabel);
 		newPanel.add(delT);
-		newPanel.add(tckLab);
-		newPanel.add(tckT);
+//		newPanel.add(tckLab);
+//		newPanel.add(tckT);
 		newPanel.add(cLabel);
 		newPanel.add(conf);
+		newPanel.add(v2vLab);
+		newPanel.add(v2vF);
+		newPanel.add(v2iLab);
+		newPanel.add(v2iF);
+		newPanel.add(autLab);
+		newPanel.add(autF);
 
 		//TODO: figure out how to change appearance
 //		newPanel.setSize(50,100);
@@ -195,15 +226,27 @@ public class UserPanel implements ActionListener{
 				String newTVal = textSource.getText();
 				delayTs = Double.parseDouble(newTVal);
 				break;
-			case "tckT":
-				String newTick = textSource.getText();
-				tStep = Double.parseDouble(newTick);
-				calcCars();
-				calcPeds();
-				break;
+//			case "tckT":
+//				String newTick = textSource.getText();
+//				tStep = Double.parseDouble(newTick);
+//				calcCars();
+//				calcPeds();
+//				break;
 			case "conf":
 				String newConfLim = textSource.getText();
 				confLimS = Double.parseDouble(newConfLim);
+				break;
+			case "V2V":
+				String newPv2v = textSource.getText();
+				percV2V = Double.parseDouble(newPv2v);
+				break;
+			case "V2I":
+				String newPv2i = textSource.getText();
+				percV2I = Double.parseDouble(newPv2i);
+				break;
+			case "Automated":
+				String newPauto = textSource.getText();
+				percAuto = Double.parseDouble(newPauto);
 				break;}
 			break;
 		default: break;}
@@ -265,6 +308,27 @@ public class UserPanel implements ActionListener{
 		1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10,
 		1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11,
 		1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12};
+
+	@Parameter(usageName="sLimit", displayName="SpeedLimit (kph)")
+	public double getLimit() {
+		return sLimitKH;}
+	public void setLimit(double limit) {
+		sLimitKH = limit;}
+	@Parameter(usageName="vehDens", displayName="Vehicles per hour")
+	public int getVehRho() {
+		return vehRho;}
+	public void setVehRho(int vRho) {
+		vehRho = vRho;}
+	@Parameter(usageName="pedDens", displayName="Peds per hour")
+	public int getPedRho() {
+		return pedRho;}
+	public void setPedRho(int pRho) {
+		pedRho = pRho;}
+	@Parameter(usageName="delayT", displayName="Delay time (s)")
+	public double get() {
+		return delayTs;}
+	public void set(double delayTime) {
+		delayTs = delayTime;}
 }
 
 //double[] poisStoreV = new double[poisTerms];
