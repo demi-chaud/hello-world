@@ -21,10 +21,18 @@ public class UserPanel implements ActionListener{
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
 	static final  double simLength  = 5*60*60/tStep;	//in ticks (currently 5hrs)
-	static public double percV2V	= 0;
-	static public double percV2I	= 0;
+	static public double percV2X	= 0;
 	static public double percAuto	= 0;
-			
+	static public double percBoth	= 50;
+	
+	// calculate population range constants
+	static public double V2Xlo	= 0;
+	static public double V2Xhi	= percV2X/100;
+	static public double autLo	= V2Xhi;
+	static public double autHi	= autLo + percAuto/100;
+	static public double bothLo	= autHi;
+	static public double bothHi = bothLo + percBoth/100;
+	
 	// declare variables in real world units
 	static final  double pedVavgKH	= 5;			// km/hr			default:   5 (source Zebala 2012)
 	static final  double maxaMS		= 1.4;			// m/s2				default:   1.4
@@ -62,7 +70,7 @@ public class UserPanel implements ActionListener{
 	static public double Pof1Ped	= lambdaPed * poisExpP;		//  ditto for peds
 	static public double Pof2Car	= Math.pow(lambdaCar,2)*poisExpV/2;
 	static public double Pof2Ped	= Math.pow(lambdaPed,2)*poisExpP/2;
-	static public double muHat		= DmuHatS + Math.log(tStep);
+	static public double DmuHat		= DmuHatS - Math.log(tStep);
 	static public double interDlam	= interDlamS * tStep;
 //	static public ArrayList<Double> poisStoreV, poisStoreP;
 	//TODO: place agents created in later terms of Poisson approximation
@@ -86,9 +94,10 @@ public class UserPanel implements ActionListener{
 	private String delTs	= String.valueOf(delayTs);
 //	private String tSteps	= String.valueOf(tStep);
 	private String confTs	= String.valueOf(confLimS);
-	private String pV2Vs	= String.valueOf(percV2V);
-	private String pV2Is	= String.valueOf(percV2I);
+	private String pV2Xs	= String.valueOf(percV2X);
+//	private String pV2Is	= String.valueOf(percV2I);
 	private String pAutoS	= String.valueOf(percAuto);
+	private String pBothS	= String.valueOf(percBoth);
 	
 	/*
 	 * Builds the GUI user panel
@@ -117,15 +126,18 @@ public class UserPanel implements ActionListener{
 		JLabel	 cLabel = new JLabel("Conflict limit (sec)");
 		JTextField conf = new JTextField(confTs,  6);
 			conf.setActionCommand("conf");
-		JLabel	 v2vLab = new JLabel("Percent V2V");
-		JTextField v2vF = new JTextField(pV2Vs,   3);
-			v2vF.setActionCommand("V2V");
-		JLabel	 v2iLab = new JLabel("Percent V2I");
-		JTextField v2iF = new JTextField(pV2Is,   3);
-			v2iF.setActionCommand("V2I");
+		JLabel	 v2xLab = new JLabel("Percent V2X");
+		JTextField v2xF = new JTextField(pV2Xs,   3);
+			v2xF.setActionCommand("V2X");
+//		JLabel	 v2iLab = new JLabel("Percent V2I");
+//		JTextField v2iF = new JTextField(pV2Is,   3);
+//			v2iF.setActionCommand("V2I");
 		JLabel	 autLab = new JLabel("Percent automated");
 		JTextField autF = new JTextField(pAutoS,  3);
 			autF.setActionCommand("Automated");
+		JLabel	 bthLab = new JLabel("Percent CAV");
+		JTextField bthF = new JTextField(pBothS,  3);
+			bthF.setActionCommand("CAV");
 //		JLabel   tckLab = new JLabel("Tick duration in sec:");
 //		JTextField tckT = new JTextField(tSteps,  6);
 //			tckT.setActionCommand("tckT");
@@ -141,9 +153,10 @@ public class UserPanel implements ActionListener{
 		delT.addActionListener(this);
 		conf.addActionListener(this);
 //		tckT.addActionListener(this);
-		v2vF.addActionListener(this);
-		v2iF.addActionListener(this);
+		v2xF.addActionListener(this);
+//		v2iF.addActionListener(this);
 		autF.addActionListener(this);
+		bthF.addActionListener(this);
 		
 		newPanel.add(errOn);
 //		newPanel.add(iidmOn);
@@ -162,12 +175,14 @@ public class UserPanel implements ActionListener{
 //		newPanel.add(tckT);
 		newPanel.add(cLabel);
 		newPanel.add(conf);
-		newPanel.add(v2vLab);
-		newPanel.add(v2vF);
-		newPanel.add(v2iLab);
-		newPanel.add(v2iF);
+		newPanel.add(v2xLab);
+		newPanel.add(v2xF);
+//		newPanel.add(v2iLab);
+//		newPanel.add(v2iF);
 		newPanel.add(autLab);
 		newPanel.add(autF);
+		newPanel.add(bthLab);
+		newPanel.add(bthF);
 
 		//TODO: figure out how to change appearance
 //		newPanel.setSize(50,100);
@@ -236,17 +251,21 @@ public class UserPanel implements ActionListener{
 				String newConfLim = textSource.getText();
 				confLimS = Double.parseDouble(newConfLim);
 				break;
-			case "V2V":
-				String newPv2v = textSource.getText();
-				percV2V = Double.parseDouble(newPv2v);
+			case "V2X":
+				String newPv2x = textSource.getText();
+				percV2X = Double.parseDouble(newPv2x);
 				break;
-			case "V2I":
-				String newPv2i = textSource.getText();
-				percV2I = Double.parseDouble(newPv2i);
-				break;
+//			case "V2I":
+//				String newPv2i = textSource.getText();
+//				percV2I = Double.parseDouble(newPv2i);
+//				break;
 			case "Automated":
 				String newPauto = textSource.getText();
 				percAuto = Double.parseDouble(newPauto);
+				break;
+			case "CAV":
+				String newPboth = textSource.getText();
+				percBoth = Double.parseDouble(newPboth);
 				break;}
 			break;
 		default: break;}

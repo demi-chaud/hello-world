@@ -271,21 +271,19 @@ public class Ped extends Agent{
 		else {
 			threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}	//ped enters lane
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
-		TTCol	= Math.abs(xDist/approachV);
+		TTCol	= xDist/approachV;
 		TTClear	= TTCol + t.length/approachV; //TODO: add radius of ped to this calculation
 		
 		//decide if lag is big enough to start crossing
 		if (yielders.contains(t)) {
-//		if (t.ying == 1) {
-			goes = 1;
-			}
+			goes = 1;}
 		else {
 			if (t.ying == 1) {
 				goes = 1;}
 			else {
 				if (threatBeg + critGap < TTCol) {
 					goes = 1;}
-				else if (threatBeg > TTClear + 1/UserPanel.tStep && TTCol < t.decelT) { 
+				else if (threatBeg > TTClear + 1/UserPanel.tStep && TTCol < (t.decelT-1)) { 
 					//TODO: 1 is arbitrary. scale w minGap, find literature
 					//TODO: decelT should be based on ped values
 					if (t.follower != null) {
@@ -303,8 +301,8 @@ public class Ped extends Agent{
 	 * @param ln - lane car is in
 	 * @return: -1=don't go; 0=look to next car; 1=go
 	 */
-	public int gap(Turtle t1, int ln) {		//TODO: change the gap code to stop peds from stopping cars
-		int goes = 0;
+	public int gap(Turtle t1, int ln) {		//TODO: peds still fucking up the rolling gap
+		int goes = 0;						//TODO: make the perception of necessary stopping speed error-prone
 		Turtle t2 = t1.follower;
 		double t1x, dist1, t1d, yDist, TTCol, TTClear; //, t1v;
 		double t2v, t2x, dist2, t2d;
@@ -574,4 +572,7 @@ public class Ped extends Agent{
 	@Parameter(usageName="xTime",displayName="xTime")
 	public double getXtime() {
 		return xTime*UserPanel.tStep;}
+	@Parameter(usageName="loc",displayName="y")
+	public double getYloc() {
+		return yLoc;}
 }

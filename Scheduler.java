@@ -24,6 +24,7 @@ public class Scheduler extends Agent {
 	static  ArrayList<Turtle> allCars;
 	static  ArrayList<Ped>	 allPeds;
 	static	ArrayList<Turtle.Conflict> allConf;
+	static	ArrayList<Turtle.Crash> crashes;
 	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
 	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
@@ -70,78 +71,70 @@ public class Scheduler extends Agent {
 	 * Calculates Poisson arrival of agents, saves conflicts at end
 	 */
 	public void calc() {
-		double dieV2V1, dieV2V2, dieV2I1, dieV2I2, dieAut1, dieAut2;
-		double dieV2V3, dieV2V4, dieV2I3, dieV2I4, dieAut3, dieAut4;
-		boolean bV2V1 = false;
-		boolean bV2V2 = false;
-		boolean bV2I1 = false;
-		boolean bV2I2 = false;
-		boolean bAut1 = false;
-		boolean bAut2 = false;
-		boolean bV2V3 = false;
-		boolean bV2V4 = false;
-		boolean bV2I3 = false;
-		boolean bV2I4 = false;
-		boolean bAut3 = false;
-		boolean bAut4 = false;
+		double	rndType1, rndType2, rndType3, rndType4;
+		boolean bV2X1  = false;
+		boolean bV2X2  = false;
+		boolean bV2X3  = false;
+		boolean bV2X4  = false;
+		boolean bAut1  = false;
+		boolean bAut2  = false;
+		boolean bAut3  = false;
+		boolean bAut4  = false;
+		boolean bBoth1 = false;
+		boolean bBoth2 = false;
+		boolean bBoth3 = false;
+		boolean bBoth4 = false;
+		
 		if (UserPanel.vehRho > 0) {
 			rndC = rndCar.nextDouble();
-			dieV2V1 = rndCAV.nextDouble();
-			dieV2I1 = rndCAV.nextDouble();
-			dieAut1 = rndCAV.nextDouble();
-			if (dieV2V1 <= UserPanel.percV2V) {
-				bV2V1 = true;}
-			if (dieV2I1 <= UserPanel.percV2I) {
-				bV2I1 = true;}
-			if (dieAut1 <= UserPanel.percAuto) {
+			rndType1 = rndCAV.nextDouble();
+			if (rndType1 < UserPanel.V2Xhi) { //random selects from [0,1)
+				bV2X1 = true;}
+			if (rndType1 >= UserPanel.autHi && rndType1 < UserPanel.bothLo) {
 				bAut1 = true;}
+			if (rndType1 >= UserPanel.bothLo && rndType1 < UserPanel.bothHi) {
+				bBoth1 = true;}
 			if (rndC <=  UserPanel.Pof2Car) {
-				dieV2V2 = rndCAV.nextDouble();
-				dieV2I2 = rndCAV.nextDouble();
-				dieAut2 = rndCAV.nextDouble();
-				if (dieV2V2 <= UserPanel.percV2V) {
-					bV2V2 = true;}
-				if (dieV2I2 <= UserPanel.percV2I) {
-					bV2I2 = true;}
-				if (dieAut2 <= UserPanel.percAuto) {
+				rndType2 = rndCAV.nextDouble();
+				if (rndType2 < UserPanel.V2Xhi) { //random selects from [0,1)
+					bV2X2 = true;}
+				if (rndType2 >= UserPanel.autHi && rndType2 < UserPanel.bothLo) {
 					bAut2 = true;}
-				Turtle addedTurtle1 = addCar(0,1,bV2V1,bV2I1,bAut1);
-				Turtle addedTurtle2 = addCar(1,1,bV2V2,bV2I2,bAut2);
+				if (rndType2 >= UserPanel.bothLo && rndType2 < UserPanel.bothHi) {
+					bBoth2 = true;}
+				Turtle addedTurtle1 = addCar(0,1,bV2X1,bAut1,bBoth1);
+				Turtle addedTurtle2 = addCar(1,1,bV2X2,bAut2,bBoth2);
 				allCars.add(addedTurtle1);
 				allCars.add(addedTurtle2);}
 			else if (rndC <= UserPanel.Pof1Car) {
 				lane = rndCar.nextInt(2);		// picks between 0 and 1 randomly
-				Turtle addedTurtle = addCar(lane,1,bV2V1,bV2I1,bAut1);
+				Turtle addedTurtle = addCar(lane,1,bV2X1,bAut1,bBoth1);
 				allCars.add(addedTurtle);}
 			if (UserPanel.bothCar == true) {
 				rndC2 = rndCar.nextDouble();
-				dieV2V3 = rndCAV.nextDouble();
-				dieV2I3 = rndCAV.nextDouble();
-				dieAut3 = rndCAV.nextDouble();
-				if (dieV2V3 <= UserPanel.percV2V) {
-					bV2V3 = true;}
-				if (dieV2I3 <= UserPanel.percV2I) {
-					bV2I3 = true;}
-				if (dieAut3 <= UserPanel.percAuto) {
+				rndType3 = rndCAV.nextDouble();
+				if (rndType3 < UserPanel.V2Xhi) { //random selects from [0,1)
+					bV2X3 = true;}
+				if (rndType3 >= UserPanel.autHi && rndType3 < UserPanel.bothLo) {
 					bAut3 = true;}
+				if (rndType3 >= UserPanel.bothLo && rndType3 < UserPanel.bothHi) {
+					bBoth3 = true;}
 				if (rndC2 <=  UserPanel.Pof2Car) {
-					dieV2V4 = rndCAV.nextDouble();
-					dieV2I4 = rndCAV.nextDouble();
-					dieAut4 = rndCAV.nextDouble();
-					if (dieV2V4 <= UserPanel.percV2V) {
-						bV2V4 = true;}
-					if (dieV2I4 <= UserPanel.percV2I) {
-						bV2I4 = true;}
-					if (dieAut4 <= UserPanel.percAuto) {
+					rndType4 = rndCAV.nextDouble();
+					if (rndType4 < UserPanel.V2Xhi) { //random selects from [0,1)
+						bV2X4 = true;}
+					if (rndType4 >= UserPanel.autHi && rndType4 < UserPanel.bothLo) {
 						bAut4 = true;}
-					Turtle addedTurtle1 = addCar(0,-1,bV2V3,bV2I3,bAut3);
-					Turtle addedTurtle2 = addCar(1,-1,bV2V4,bV2I4,bAut4);
-					allCars.add(addedTurtle1);
-					allCars.add(addedTurtle2);}
+					if (rndType4 >= UserPanel.bothLo && rndType4 < UserPanel.bothHi) {
+						bBoth4 = true;}
+					Turtle addedTurtle3 = addCar(0,-1,bV2X3,bAut3,bBoth3);
+					Turtle addedTurtle4 = addCar(1,-1,bV2X4,bAut4,bBoth4);
+					allCars.add(addedTurtle3);
+					allCars.add(addedTurtle4);}
 				else if (rndC2 <= UserPanel.Pof1Car) {
-					lane = rndCar.nextInt(2);	// picks between 0 and 1 randomly
-					Turtle addedTurtle = addCar(lane,-1,bV2V3,bV2I3,bAut3);
-					allCars.add(addedTurtle);}}}
+					lane = rndCar.nextInt(2);		// picks between 0 and 1 randomly
+					Turtle addedTurtle3 = addCar(lane,-1,bV2X3,bAut3,bBoth3);
+					allCars.add(addedTurtle3);}}}
 		if (UserPanel.pedRho > 0) {
 			if (UserPanel.pedsUp == true) {
 				rndP = rndPed.nextDouble();
@@ -182,12 +175,14 @@ public class Scheduler extends Agent {
 	 * Adds cars to edge
 	 */
 	@SuppressWarnings("unchecked")
-	public Turtle addCar(int lane, int dir, boolean v2v, boolean v2i, boolean auto) {
+	public Turtle addCar(int lane, int dir, boolean connected, boolean autonomous, boolean both) {
 		Context<Object> context = ContextUtils.getContext(this);
 		ContinuousSpace<Object> space = (ContinuousSpace<Object>) context.getProjection("space");
 		double carW = UserPanel.carWidth;
-		
-		Turtle newTurtle = new Turtle(space,lane,dir,v2v,v2i,auto);
+		if (both == true) {
+			connected  = true;
+			autonomous = true;}
+		Turtle newTurtle = new Turtle(space,lane,dir,connected,autonomous);
 		context.add(newTurtle);
 		if (dir == 1) {				//1 = going right, -1 = going left
 			yPlacement = RoadBuilder.sidewalk + (double)lane * (RoadBuilder.laneW) + (RoadBuilder.laneW/2);
@@ -228,6 +223,7 @@ public class Scheduler extends Agent {
 		allCars = new ArrayList<Turtle>();
 		allPeds = new ArrayList<Ped>();
 		allConf = new ArrayList<Turtle.Conflict>();
+		crashes = new ArrayList<Turtle.Crash>();
 		RunEnvironment.getInstance().endAt(UserPanel.simLength); //TODO: add flag to only use this during batch runs
 	}
 }
