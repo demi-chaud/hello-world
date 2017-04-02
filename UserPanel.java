@@ -23,7 +23,7 @@ public class UserPanel implements ActionListener{
 	static final  double simLength  = 5*60*60/tStep;	//in ticks (currently 5hrs)
 	static public double percV2X	= 0;
 	static public double percAuto	= 0;
-	static public double percBoth	= 50;
+	static public double percBoth	= 0;
 	
 	// calculate population range constants
 	static public double V2Xlo	= 0;

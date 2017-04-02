@@ -30,7 +30,7 @@ public class Scheduler extends Agent {
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
-	String	directory = "C:\\Users\\demi_chaud\\workspace\\driving1\\";
+	String	directory = "C:\\Users\\themi\\workspace\\driving1\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement, thisTick;
 	int     lane, dir;

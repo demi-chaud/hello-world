@@ -95,8 +95,8 @@ public class Turtle extends Agent{
 					double loAcc = storage.get(foo-2)[1];
 					acc = tBeta*loAcc + (1-tBeta)*hiAcc;}
 				else acc = hiAcc;
-				if (storSize > 5*tN) {		//TODO: make this less arbitrary
-					storage.remove(storSize - 1);}}
+				if (storSize > 3*tN) {		//TODO: make this less arbitrary
+					storage.remove(0);}}
 			else acc = newAcc;}
 		else acc = newAcc;
 		age++;
@@ -180,10 +180,10 @@ public class Turtle extends Agent{
 						followers.add(n);}}}}
 		if (!leaders.isEmpty()) {
 			for (Turtle o : leaders) {
-				if(Math.abs(o.xLoc - xLoc) < head) {
+				if((Math.abs(o.xLoc - xLoc) - o.length) < head) {
 					head = Math.abs(o.xLoc - xLoc) - o.length; //TODO: change visualization to move icons to center of car
 					if (head < 0) {
-						head = 1e-5;}
+						head = 1e-10;}
 					leader = o;}}}
 		if (follower == null) {
 			if (!followers.isEmpty()) {
@@ -238,9 +238,7 @@ public class Turtle extends Agent{
 			aYield = yield(stopDab,xwalkD);
 			if (aYield < a) {
 				a = aYield;}}
-		if (age > 20 && a < -UserPanel.emergDec) {
-			a = -UserPanel.emergDec;}
-		if(a < -UserPanel.emergDec) {
+		if (xLoc > RoadBuilder.roadL/20 && xLoc < 19*RoadBuilder.roadL/20 && a < -UserPanel.emergDec) {
 			a = -UserPanel.emergDec;}
 		return a;
 	}
@@ -359,57 +357,53 @@ public class Turtle extends Agent{
 						break;}}
 				//bring in old accel value if above is true
 				if (oldVals != null) {
-					double newDecel;
+					double newDecel = 0;
 					if (k.dir == 1 && clearY > pedY) {
 						if (v != 0) {
-							threatBeg = 
 							threatEnd = k.accT*(1-k.v[1]/k.maxV) + (clearY - pedY)/k.maxV;
-							if (threatEnd > tHardYield) {
-								newDecel = hardYield;
-								thisYing = 1;
-								if (stopDist < 0) {
-									crash(k);}}
-							else {			//soft yield
-								if (stopDist >= 0) {
-									newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);
-									thisYing = 0;}
-								else {
+							if (stopDist >= 0) {
+								if (threatEnd > tHardYield) {
 									newDecel = hardYield;
-									thisYing = 1;
-									crash(k);}}
-							oldVals.yState = thisYing;
-							if (newDecel < oldDecel) {
-								thisDecel = newDecel;
-								oldVals.calcAcc = newDecel;}
+									thisYing = 1;}
+								else {			//soft yield
+									newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);
+									thisYing = 0;}}
 							else {
-								thisDecel = oldDecel;}}
+								newDecel = hardYield;
+								thisYing = 1;}}
 						else {
 							thisDecel = 0;
-							thisYing  = 1;}}
+							thisYing  = 1;}
+						if (newDecel < oldDecel) {
+							thisDecel = newDecel;
+							oldVals.calcAcc = newDecel;}
+						else {
+							thisDecel = oldDecel;}
+						if (thisYing > oldVals.yState) {
+							oldVals.yState = thisYing;}}
 					else if (k.dir == -1 && clearY < pedY) {
 						if (v != 0) {
 							threatEnd = k.accT*(1-Math.abs(k.v[1]/k.maxV)) + (pedY - clearY)/k.maxV;
-							if (threatEnd > tHardYield) {
-								newDecel = hardYield;
-								thisYing = 1;
-								if (stopDist < 0) {
-									crash(k);}}
-							else {			//soft yield
-								if (stopDist >= 0) {
-									newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);
-									thisYing = 0;}
-								else {
+							if (stopDist >= 0) {
+								if (threatEnd > tHardYield) {
 									newDecel = hardYield;
-									crash(k);}}
-							oldVals.yState = thisYing;
-							if (newDecel < oldDecel) {
-								thisDecel = newDecel;
-								oldVals.calcAcc = newDecel;}
+									thisYing = 1;}
+								else {			//soft yield
+									newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);
+									thisYing = 0;}}
 							else {
-								thisDecel = oldDecel;}}
+								newDecel = hardYield;
+								thisYing = 1;}}
 						else {
 							thisDecel = 0;
-							thisYing  = 1;}}
+							thisYing  = 1;}
+						if (newDecel < oldDecel) {
+							thisDecel = newDecel;
+							oldVals.calcAcc = newDecel;}
+						else {
+							thisDecel = oldDecel;}
+						if (thisYing > oldVals.yState) {
+							oldVals.yState = thisYing;}}
 					else {
 						yieldage.remove(oldVals);
 						thisYing = -1;}}
@@ -471,7 +465,7 @@ public class Turtle extends Agent{
 					if (v != 0) {				//ttstop is undefined if car is already stopped
 						if (stopDist >= 0) {
 							if (tClear < threatBeg) {	//can probably lose this first if
-								//if (ttstopBar <= decelT) {
+								//if (ttstopBar <= decelT) { TODO: bring this back?
 									threatEnd = 0;}
 								//}					//driver recognizes ped is accepting rolling gap
 							if (ttstopBar > threatEnd) {
@@ -493,7 +487,7 @@ public class Turtle extends Agent{
 						else {
 							if (tClear < threatBeg) {
 								threatEnd = 0;}							//driver recognizes ped is accepting rolling gap
-							if (threatEnd > 0) {
+							if (threatEnd > 0 && threatBeg == 0) {
 								thisDecel = hardYield;
 								thisYing  = 1;
 								Yieldage thisYield = new Yieldage(k,thisDecel,endGauntlet,thisYing);
@@ -508,7 +502,6 @@ public class Turtle extends Agent{
 							Yieldage thisYield = new Yieldage(k,thisDecel,endGauntlet,thisYing);
 							k.yielders.add(this);
 							yieldage.add(thisYield);}}}
-
 				//update final acceleration value and yielding state
 				if (thisDecel < yieldDec) {
 					yieldDec = thisDecel;}
