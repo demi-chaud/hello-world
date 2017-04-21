@@ -11,10 +11,10 @@ import java.util.Locale;
 public class CSVWriter {
 	
 	public static void writeCSV(String fileName, ArrayList<Turtle.Conflict> list) {
-		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, init;
+		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, range, init, sinceD, timeD;
 		String comma  = ",";
 		String nLine  = "\n";
-		String header = "turtle,dirC,lane,ped,dirP,ying,vel,dec,ttc,init" + nLine;
+		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,ttc,range,init" + nLine;
 		FileWriter fileWriter = null;
 		try {
 			fileWriter = new FileWriter(fileName);
@@ -28,12 +28,18 @@ public class CSVWriter {
 				String ped0		= Integer.toHexString(c.ped.hashCode());
 				String dirP0	= String.valueOf(c.dirP);
 				String ying0	= String.valueOf(c.ying);
+				Double sinceDS	= c.sinceD*UserPanel.tStep;
+				String sinceD0	= form.format(sinceDS);
+				Double timeDS	= c.timeD*UserPanel.tStep;
+				String timeD0	= form.format(timeDS);
 				Double vKH		= c.vel*UserPanel.vBase;
 				String v0		= form.format(vKH);
 				Double decMS	= c.yDec*UserPanel.spaceScale/(UserPanel.tStep*UserPanel.tStep);
 				String dec0		= form.format(decMS);
 				Double ttcS		= c.TTC*UserPanel.tStep;
 				String ttc0		= form.format(ttcS);
+				Double rangeM	= c.range*UserPanel.spaceScale;
+				String range0	= form.format(rangeM);
 				String init0	= String.valueOf(c.init);
 				turtle	= turtle0 + comma;
 				dirC	= dirC0 + comma;
@@ -41,11 +47,15 @@ public class CSVWriter {
 				ped		= ped0 + comma;
 				dirP	= dirP0 + comma;
 				ying	= ying0 + comma;
+				sinceD	= sinceD0 + comma;
+				timeD	= timeD0 + comma;
 				vel		= v0 + comma;
 				dec		= dec0 + comma;
 				ttc		= ttc0 + comma;
+				range	= range0 + comma;
 				init	= init0 + comma;
-				cString = turtle + dirC + lane + ped + dirP + ying + vel + dec + ttc + init + nLine;
+				cString = turtle + dirC + lane + ped + dirP + ying + sinceD + timeD + 
+						vel + dec + ttc + range + init + nLine;
 				fileWriter.append(cString);}}
 		catch (IOException e) {
 			System.out.print("Error in CSVWriter");

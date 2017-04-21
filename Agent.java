@@ -2,6 +2,8 @@ package driving1;
 
 import repast.simphony.annotate.AgentAnnot;
 import repast.simphony.context.Context;
+import repast.simphony.space.continuous.ContinuousSpace;
+import repast.simphony.space.continuous.NdPoint;
 import repast.simphony.util.ContextUtils;
 
 /**
@@ -11,15 +13,16 @@ import repast.simphony.util.ContextUtils;
 
 @AgentAnnot(displayName = "Agent")
 public class Agent {
+	ContinuousSpace<Object> space;
 	
     /**
      * Eliminates agents (called when agents move outside the space)
 	 */
 	@SuppressWarnings("rawtypes")
 	public void die(){
-		if (this.isCar() == 1) {
+		if (this.isCar()) {
 			Scheduler.allCars.remove(this);}
-		else if (this.isPed() == 1) {
+		else if (this.isPed()) {
 			Scheduler.allPeds.remove(this);}
 		Context context = ContextUtils.getContext(this);
 		context.remove(this);
@@ -29,8 +32,8 @@ public class Agent {
 	 * Bookkeeping methods
 	 * @return
 	 */
-	public int isCar() {
-		return 0;}
-	public int isPed() {
-		return 0;}
+	public boolean isCar() {
+		return false;}
+	public boolean isPed() {
+		return false;}
 }

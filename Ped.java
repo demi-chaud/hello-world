@@ -553,8 +553,8 @@ public class Ped extends Agent{
 	 * Getter for identification
 	 */
 	@Override
-	public int isPed() {
-		return 1;}
+	public boolean isPed() {
+		return true;}
 	
 	/**
 	 * Parameter declarations for probe
