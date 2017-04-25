@@ -81,7 +81,7 @@ public class UserPanel implements ActionListener{
 	static public boolean IIDM		= true; //include Improved IDM?
 	
 	// declare parameters of error-making
-	static public boolean estErr 	= true;		// estimation errors
+	static public boolean estErr 	= false;		// estimation errors
 	static final  double  Vs		= 0.1;		// relative standard deviation of headEst from head
 	static final  double  errPers	= 20;		// persistence time of estimation errors in seconds
 	static final  double  wien1		= Math.exp(-tStep/errPers);		// constants in the calculation
@@ -105,7 +105,7 @@ public class UserPanel implements ActionListener{
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
 		
-		JCheckBox errOn   = new JCheckBox("Est Errors?",	true);
+		JCheckBox errOn   = new JCheckBox("Est Errors?",	false);
 //		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
 //		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
 //		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);

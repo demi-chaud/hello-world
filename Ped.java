@@ -37,6 +37,7 @@ public class Ped extends Agent{
 	public double xTime, accT, maxV, xLoc, yLoc, whichSide;
 	public int dir;			// dir = 1 walks up, -1 walks down
 	public int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
+	public int front;		// 1=xing in front of car, -1=behind; for testing
 	
 	/**
 	 * Calculates ped acceleration
@@ -236,7 +237,7 @@ public class Ped extends Agent{
 	 * Calculates whether or not pedestrian will go before next car
 	 * If that car is passed, reassigns to following car
 	 * @param t  - next car
-	 * @param ln - lane car is in
+	 * @param ln - lane car is in relative to ped
 	 * @return:	-1=don't go; 0=look to next car; 1=go
 	 */
 	public int lag(Turtle t, int ln) {
@@ -245,7 +246,6 @@ public class Ped extends Agent{
 		double threatBeg; //, threatEnd;
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
 		int	goes = 0;
-		//TODO: xTime can be calculated more precisely (compare to HCM eq 18-17)
 		//TODO: make xTime lane-dependent for some peds
 		xTime 	  = accT + (endPtDist - side) / maxVY; 
 		sigR	  = 0.01*UserPanel.tStep;	//st. dev. of relative approach rate
@@ -272,24 +272,28 @@ public class Ped extends Agent{
 			threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}	//ped enters lane
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
 		TTCol	= xDist/approachV;
-		TTClear	= TTCol + t.length/approachV; //TODO: add radius of ped to this calculation
+		TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep; //TODO: add radius of ped to this calculation
 		
 		//decide if lag is big enough to start crossing
 		if (yielders.contains(t)) {
-			goes = 1;}
+			goes = 1;
+			front = 1;}
 		else {
 			if (t.ying == 1) {
-				goes = 1;}
+				goes = 1;
+				front = 1;}
 			else {
 				if (threatBeg + critGap < TTCol) {
-					goes = 1;}
+					goes = 1;
+					front = 1;}
 				else if (threatBeg > TTClear + 1/UserPanel.tStep && TTCol < (t.decelT-1)) { 
 					//TODO: 1 is arbitrary. scale w minGap, find literature
 					//TODO: decelT should be based on ped values
 					if (t.follower != null) {
 						goes = 0;}
 					else {
-						goes = 1;}}
+						goes = 1;
+						front = -1;}}
 				else {
 					goes = -1;}}}
 		return goes;
@@ -332,7 +336,7 @@ public class Ped extends Agent{
 			t2d		= Math.sqrt(dist2*dist2 - yDist*yDist);}
 		
 		//calculate relevant times
-		double thisTail   = Math.abs(t2d - t1d);
+		double thisTail   = Math.abs(t2d - t1d) - t1.length;
 		double thisTailT  = thisTail/t2v;
 		if (ln == 0) {
 			threatBeg = 0;}
@@ -340,14 +344,16 @@ public class Ped extends Agent{
 			threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;
 		TTCol	= Math.abs(t2d/t2v);
-		TTClear	= TTCol + t2.length/t2v; //TODO: add radius of ped to this calculation
+		TTClear	= TTCol + t2.length/t2v + 1/UserPanel.tStep; //TODO: add radius of ped to this calculation
 		
 		//decide if gap is big enough to start crossing
 		if (yielders.contains(t2)) {
-			goes = 1;}
+			goes = 1;
+			front = 1;}
 		else {
 			if (thisTailT > critGap) {
-				goes = 1;}
+				goes = 1;
+				front = 1;}
 			else if (threatBeg > TTClear) {
 				if (t2.follower != null) {	//switch to observing next car
 					switch (ln) {
@@ -361,7 +367,8 @@ public class Ped extends Agent{
 							break;	
 					default: break;}}
 				else {
-					goes = 1;}}
+					goes = 1;
+					front = -1;}}
 			else {
 				goes = -1;}}
 		return goes;
@@ -524,6 +531,7 @@ public class Ped extends Agent{
 		crossing = 0;
 		curbed   = false;
 		age		 = 0;
+		front	 = 0;
 		wS = etaS = rnd.nextGaussian(); //TODO: separate these?
 		wV = etaV = rnd.nextGaussian();
 		double gapParamA	= 6.2064; //TODO: email Brewer re: value for just convergent sets
@@ -553,8 +561,8 @@ public class Ped extends Agent{
 	 * Getter for identification
 	 */
 	@Override
-	public int isPed() {
-		return 1;}
+	public boolean isPed() {
+		return true;}
 	
 	/**
 	 * Parameter declarations for probe
@@ -575,4 +583,7 @@ public class Ped extends Agent{
 	@Parameter(usageName="loc",displayName="y")
 	public double getYloc() {
 		return yLoc;}
+	@Parameter(usageName="front", displayName="front")
+	public int getFront() {
+		return front;}
 }

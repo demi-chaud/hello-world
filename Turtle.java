@@ -1,6 +1,7 @@
 package driving1;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -25,10 +26,10 @@ public class Turtle extends Agent{
 	private Random  rndD = new Random();	//ditto for distraction
 	private boolean	distracted = false;
 	private double	timeD, durD, timeSinceD, interD, interDlam;		//distraction
-	private double	delayTs, tN, tBeta;							//delay
-	private double	tGap, jamHead, maxv, mina, maxa, newAcc;	//car-following
-	private double	wS, etaS, wV, etaV, sigR;					//errors
-	private double	confLim, stopBar, ttstopBar, lnTop, lnBot, hardYield;		//yielding
+	private double	delayTs, tN, tBeta;								//delay
+	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head;	//car-following
+	private double	wS, etaS, wV, etaV, sigR;						//errors
+	private double	confLim, stopBar, ttstopBar, lnTop, lnBot, hardYield, yieldDec;	//yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private int		age;
@@ -48,7 +49,7 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
-		if (interD != 0 && timeSinceD >= interD) {
+		if (interD != 0 && timeSinceD >= interD && ying == -1) { //don't get distracted if yielding
 			distracted = true;
 			timeSinceD = 0;
 			interD = 0;}
@@ -139,7 +140,7 @@ public class Turtle extends Agent{
 	 * @return accel
 	 */
 	public double accel(NdPoint loc, int myLane, int myDir) {
-		double a, head, setSpeed, vDiff, safeHead, aFree;
+		double a, setSpeed, vDiff, safeHead, aFree;
 		confLim	= UserPanel.confLimS/UserPanel.tStep;
 		sameDir	= new ArrayList<Turtle>();
 		ahead	= new ArrayList<Turtle>();
@@ -238,7 +239,7 @@ public class Turtle extends Agent{
 			aYield = yield(stopDab,xwalkD);
 			if (aYield < a) {
 				a = aYield;}}
-		if (xLoc > RoadBuilder.roadL/20 && xLoc < 19*RoadBuilder.roadL/20 && a < -UserPanel.emergDec) {
+		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
 			a = -UserPanel.emergDec;}
 		return a;
 	}
@@ -259,7 +260,7 @@ public class Turtle extends Agent{
 		double	threatBeg, threatEnd, tHardYield;
 		double	tCrash   = 0;
 		double	lnW		 = RoadBuilder.laneW;
-		double	yieldDec = 1;		//dummy value
+		yieldDec = 1;		//dummy value
 		if (stopDist >=0) {
 			if (v != 0) {
 				tHardYield = 2*stopDist/v;
@@ -273,7 +274,7 @@ public class Turtle extends Agent{
 			tHardYield = decelT;
 			 hardYield = -UserPanel.emergDec;
 			 if (v != 0) {
-				 tCrash = conDist/v;}}
+				 tCrash = Math.abs(conDist/v);}}
 		double tClear = (conDist + length)/v;
 		driverX		= xLoc-(double)dir*length/2;
 		threatBeg 	= 0;
@@ -527,57 +528,57 @@ public class Turtle extends Agent{
 		double pedY = p.yLoc;
 		double pedTlo = -1;		//time until ped at conflict point
 		double pedThi = -1;		//time until ped leaves CP
-		double ttc = Math.abs(pedX - xLoc)/v;
-		
-		if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
-			if (pedY >= (yLoc - carW/2)) {
-				pedTlo = 0;}
-			else {
-				pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}		//TODO: include ped r and make ped calc 2D
-			pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}
-		else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
-			if (pedY <= (yLoc + carW/2)) {
-				pedTlo = 0;}
-			else {
-				pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}		//TODO: include ped r and make ped calc 2D
-			pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}
-		if (pedTlo != -1) {
-			if (ttc >= pedTlo && ttc <= pedThi) {
-				if (ttc <= confLim) {
-					int init = 1;
-					int dup = 0;
-					int hasDup = 0;
-					Conflict thisConf = new Conflict(this,p,ttc,oldYing,hardYield,init,hasDup);
-					Conflict toAdd = null;
-					Conflict toRem = null;
-					for (Conflict c : Scheduler.allConf) {
-						if (c.car == this && c.ped == p) {
-							dup = 1;			//make sure no duplicates added unless lower TTC than first
-							if (c.init == 1) {
-								if (c.hasDup == 0) {
-									if (ttc < c.TTC) {
-										c.hasDup = 1;
-										thisConf.init = 0;
-										toAdd = thisConf;}}
-								else {
-									for (Conflict c1 : Scheduler.allConf) {
-										if (c1.car == this && c1.ped == p) {
-											if (c1 != c) {
-												if (ttc < c1.TTC) {
-													thisConf.init = 0;
-													toAdd = thisConf;
-													toRem = c1;}}}}}}}}
-					if (toAdd != null) {
-						Scheduler.allConf.add(thisConf);}
-					if (toRem != null) {
-						Scheduler.allConf.remove(toRem);}
-					if (dup == 0) {
-						Scheduler.allConf.add(thisConf);}}}}
+		double ttc = (double)dir*(pedX - xLoc)/v;
+		if (ttc >= 0) {
+			if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
+				if (pedY >= (yLoc - carW/2)) {
+					pedTlo = 0;}
+				else {
+					pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}		//TODO: include ped r and make ped calc 2D
+				pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}
+			else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
+				if (pedY <= (yLoc + carW/2)) {
+					pedTlo = 0;}
+				else {
+					pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}		//TODO: include ped r and make ped calc 2D
+				pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}
+			if (pedTlo != -1) {
+				if (ttc >= pedTlo && ttc <= pedThi) {
+					if (ttc <= confLim) {
+						int init = 1;
+						int dup = 0;
+						int hasDup = 0;
+						double range = (double)dir*(pedX - xLoc);
+						Conflict thisConf = new Conflict(this,p,ttc,range,oldYing,yieldDec,timeSinceD,timeD,init,hasDup);
+						Conflict toAdd = null;
+						Conflict toRem = null;
+						for (Conflict c : Scheduler.allConf) {
+							if (c.car == this && c.ped == p) {
+								dup = 1;			//make sure no duplicates added unless lower TTC than first
+								if (c.init == 1) {
+									if (c.hasDup == 0) {
+										if (ttc < c.TTC) {
+											c.hasDup = 1;
+											thisConf.init = 0;
+											toAdd = thisConf;}}
+									else {
+										for (Conflict c1 : Scheduler.allConf) {
+											if (c1.car == this && c1.ped == p) {
+												if (c1 != c) {
+													if (ttc < c1.TTC) {
+														thisConf.init = 0;
+														toAdd = thisConf;
+														toRem = c1;}}}}}}}}
+						if (toAdd != null) {
+							Scheduler.allConf.add(thisConf);}
+						if (toRem != null) {
+							Scheduler.allConf.remove(toRem);}
+						if (dup == 0) {
+							Scheduler.allConf.add(thisConf);}}}}}
 	}
 	public void conflict() {
 		double ttc	= 0;
 		crossingP2	= new ArrayList<Ped>();
-		
 		for (Ped i : Scheduler.allPeds) {
 			if (i.crossing == 2) {
 				crossingP2.add(i);}}
@@ -588,58 +589,59 @@ public class Turtle extends Agent{
 					double pedY	= n.yLoc;
 					double pedTlo = -1;		//time until ped at conflict point
 					double pedThi = -1;		//time until ped leaves CP
-					ttc	= Math.abs(pedX - xLoc)/v;
-					
-					if (n.dir == 1 && pedY <= (yLoc + carW/2)) {
-						if (pedY >= (yLoc - carW/2)) {
-							pedTlo = 0;}
-						else {
-							pedTlo = ((yLoc - carW/2) - n.yLoc)/n.v[1];}		//TODO: include ped r and make ped calc 2D
-						pedThi = ((yLoc + carW/2) - pedY)/n.v[1];}
-					else if (n.dir == -1 && pedY >= (yLoc - carW/2)) {
-						if (pedY <= (yLoc + carW/2)) {
-							pedTlo = 0;}
-						else {
-							pedTlo = -(n.yLoc - (yLoc + carW/2))/n.v[1];}		//TODO: include ped r and make ped calc 2D
-						pedThi = -(pedY - (yLoc - carW/2))/n.v[1];}
-					if (pedTlo != -1) {
-						if (ttc >= pedTlo && ttc <= pedThi) {
-							if (ttc < confLim) {
-								int init = 1;
-								int dup = 0;
-								int hasDup = 0;
-								Conflict thisConf = new Conflict(this,n,ttc,oldYing,hardYield,init,hasDup);
-								Conflict toAdd = null;
-								Conflict toRem = null;
-								for (Conflict c : Scheduler.allConf) {
-									if (c.car == this && c.ped == n) {
-										dup = 1;			//make sure no duplicates added unless lower TTC than first
-										if (c.init == 1) {
-											if (c.hasDup == 0) {
-												if (ttc < c.TTC) {
-													c.hasDup = 1;
-													thisConf.init = 0;
-													toAdd = thisConf;}}
-											else {
-												for (Conflict c1 : Scheduler.allConf) {
-													if (c1.car == this && c1.ped == n) {
-														if (c1 != c) {
-															if (ttc < c1.TTC) {
-																thisConf.init = 0;
-																toAdd = thisConf;
-																toRem = c1;}}}}}}}}
-								if (toAdd != null) {
-									Scheduler.allConf.add(thisConf);}
-								if (toRem != null) {
-									Scheduler.allConf.remove(toRem);}
-								if (dup == 0) {
-									Scheduler.allConf.add(thisConf);}}}}}}}
+					ttc	= (double)dir*(pedX - xLoc)/v;
+					if (ttc >= 0) {
+						if (n.dir == 1 && pedY <= (yLoc + carW/2)) {
+							if (pedY >= (yLoc - carW/2)) {
+								pedTlo = 0;}
+							else {
+								pedTlo = ((yLoc - carW/2) - n.yLoc)/n.v[1];}		//TODO: include ped r and make ped calc 2D
+							pedThi = ((yLoc + carW/2) - pedY)/n.v[1];}
+						else if (n.dir == -1 && pedY >= (yLoc - carW/2)) {
+							if (pedY <= (yLoc + carW/2)) {
+								pedTlo = 0;}
+							else {
+								pedTlo = -(n.yLoc - (yLoc + carW/2))/n.v[1];}		//TODO: include ped r and make ped calc 2D
+							pedThi = -(pedY - (yLoc - carW/2))/n.v[1];}
+						if (pedTlo != -1) {
+							if (ttc >= pedTlo && ttc <= pedThi) {
+								if (ttc < confLim) {
+									int init = 1;
+									int dup = 0;
+									int hasDup = 0;
+									double range = (double)dir*(pedX - xLoc);
+									Conflict thisConf = new Conflict(this,n,ttc,range,oldYing,acc,timeSinceD,timeD,init,hasDup);
+									Conflict toAdd = null;
+									Conflict toRem = null;
+									for (Conflict c : Scheduler.allConf) {
+										if (c.car == this && c.ped == n) {
+											dup = 1;			//make sure no duplicates added unless lower TTC than first
+											if (c.init == 1) {
+												if (c.hasDup == 0) {
+													if (ttc < c.TTC) {
+														c.hasDup = 1;
+														thisConf.init = 0;
+														toAdd = thisConf;}}
+												else {
+													for (Conflict c1 : Scheduler.allConf) {
+														if (c1.car == this && c1.ped == n) {
+															if (c1 != c) {
+																if (ttc < c1.TTC) {
+																	thisConf.init = 0;
+																	toAdd = thisConf;
+																	toRem = c1;}}}}}}}}
+									if (toAdd != null) {
+										Scheduler.allConf.add(thisConf);}
+									if (toRem != null) {
+										Scheduler.allConf.remove(toRem);}
+									if (dup == 0) {
+										Scheduler.allConf.add(thisConf);}}}}}}}}
 	}
-	
-	public void crash(Ped p) {
-		Crash newCrash = new Crash(this,p,1,0);
-		Scheduler.crashes.add(newCrash);
-	}
+//	
+//	public void crash(Ped p) {
+//		Crash newCrash = new Crash(this,p,1,0);
+//		Scheduler.crashes.add(newCrash);
+//	}
 
 	/**
 	 * Creates vehicle agents and initializes values
@@ -652,7 +654,6 @@ public class Turtle extends Agent{
 	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir,
 			boolean conn, boolean auto) {
 		space	= contextSpace;
-//		grid	= contextGrid;
 		lane	= whichLane;
 		dir		= whichDir;
 		//store parameters with heterogeneity (currently s.dev abitrarily = 8% of mean)
@@ -738,44 +739,81 @@ public class Turtle extends Agent{
 		Ped ped;
 		Turtle car;
 		int dirP, dirC, lane, ying, init, hasDup;
-		double TTC, yDec, vel;
-		Conflict(Turtle car, Ped ped, double ttc, int yieldState, double yieldDec, int init, int hasDup) {
+		double TTC, range, yDec, vel, timeD, sinceD;
+		ArrayList<double[]> pedVid;
+		ArrayList<Video> video;
+		double xWalkx = RoadBuilder.xWalkx;
+		double spaceScale = UserPanel.spaceScale;
+		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldDec, 
+				double timeSinceD, double timeD, int init, int hasDup) {
 			this.ped	= ped;
 			this.car	= car;
 			this.dirP	= ped.dir;
 			this.dirC	= car.dir;
 			this.lane	= car.lane;
 			this.TTC	= ttc;
+			this.range	= range;
 			this.ying	= yieldState;
 			this.vel	= car.v;
 			this.yDec	= yieldDec;
+			this.sinceD	= timeSinceD;
+			this.timeD	= timeD;
 			this.init	= init;
-			this.hasDup	= hasDup;}
+			this.hasDup	= hasDup;
+			this.video	= new ArrayList<Video>();
+			this.pedVid = new ArrayList<double[]>();
+			double[] thisPedVid = new double[2];
+			ped.myLoc.toDoubleArray(thisPedVid);
+			this.pedVid.add(thisPedVid);
+//			Iterable<Object> snapShot = space.getObjects();
+//			Iterator<Object> iterator = snapShot.iterator();
+			for (Turtle t : Scheduler.allCars) { 
+//			while (iterator.hasNext()) {
+//				Object element0 = iterator.next();
+//				Agent element = (Agent)element0;
+//				if (element.isCar()) {
+//					Turtle thisCar = (Turtle)element;
+				if (t.myLoc != null && t.dir == car.dir) {
+					double[] location = new double[2];
+					t.myLoc.toDoubleArray(location);
+					double thirty = 30/spaceScale; //30m should be enough to see all relevant cars
+					if (location[0] >= xWalkx - thirty && location[0] <= xWalkx + thirty) {
+						Video thisVideo = new Video(t,location);
+						this.video.add(thisVideo);}}}}
 	}
 	
-	public class Crash {
-		Ped ped;
+	public class Video {
 		Turtle car;
-		int dirP, dirC, lane, init, hasDup;
-		double v, curDec, sinceDist;
-		boolean distracted;
-		Crash(Turtle car, Ped ped, int init, int hasDup) {
-			this.ped	= ped;
-			this.car	= car;
-			this.dirP	= ped.dir;
-			this.dirC	= car.dir;
-			this.lane	= car.lane;
-			this.v		= car.v;
-			this.init	= init;
-			this.hasDup = hasDup;}
+		ArrayList<double[]> locs;
+		Video(Turtle agent, double[] loc) {
+			this.car = agent;
+			this.locs = new ArrayList<double[]>();
+			this.locs.add(loc);}
 	}
+	
+//	public class Crash {
+//		Ped ped;
+//		Turtle car;
+//		int dirP, dirC, lane, init, hasDup;
+//		double v, curDec, sinceDist;
+//		boolean distracted;
+//		Crash(Turtle car, Ped ped, int init, int hasDup) {
+//			this.ped	= ped;
+//			this.car	= car;
+//			this.dirP	= ped.dir;
+//			this.dirC	= car.dir;
+//			this.lane	= car.lane;
+//			this.v		= car.v;
+//			this.init	= init;
+//			this.hasDup = hasDup;}
+//	}
 	
 	/**
 	 * Getter for identification
 	 */
 	@Override
-	public int isCar() {
-		return 1;}
+	public boolean isCar() {
+		return true;}
 	
 	/**
 	 * Parameter declarations for probe
@@ -807,4 +845,10 @@ public class Turtle extends Agent{
 	@Parameter(usageName="xLoc", displayName="xLoc")
 	public double getX() {
 		return xLoc;}
+	@Parameter(usageName="dist", displayName="distr?")
+	public boolean getDistr() {
+		return distracted;}
+	@Parameter(usageName="headT", displayName="headT")
+	public double getHeadT() {
+		return head/v;}
 }
