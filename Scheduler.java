@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 
+import driving1.Turtle.Conflict;
+import driving1.Turtle.Video;
 import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
@@ -24,13 +26,12 @@ public class Scheduler extends Agent {
 	static  ArrayList<Turtle> allCars;
 	static  ArrayList<Ped>	 allPeds;
 	static	ArrayList<Turtle.Conflict> allConf;
-	static	ArrayList<Turtle.Crash> crashes;
 	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
 	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
-	String	directory = "C:\\Users\\themi\\workspace\\driving1\\";
+	String	directory = "C:\\Users\\demi_chaud\\workspace\\driving1\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement, thisTick;
 	int     lane, dir;
@@ -64,6 +65,17 @@ public class Scheduler extends Agent {
 			for (Ped c : killListP) {
 				c.die();}
 			killListP = new ArrayList<Ped>();}
+		if(!allConf.isEmpty()) {
+			for (Conflict d : allConf) {
+				int size = d.pedVid.size();
+				if (size < 5) {
+					double[] pedLoc = new double[2];
+					d.ped.myLoc.toDoubleArray(pedLoc);
+					d.pedVid.add(pedLoc);
+					for (Video v : d.video) {
+						double[] newLoc = new double[2];
+						v.car.myLoc.toDoubleArray(newLoc);
+						v.locs.add(newLoc);}}}}
 		RoadBuilder.ticker ++;
 	}
 	
@@ -223,7 +235,7 @@ public class Scheduler extends Agent {
 		allCars = new ArrayList<Turtle>();
 		allPeds = new ArrayList<Ped>();
 		allConf = new ArrayList<Turtle.Conflict>();
-		crashes = new ArrayList<Turtle.Crash>();
+//		crashes = new ArrayList<Turtle.Crash>();
 		RunEnvironment.getInstance().endAt(UserPanel.simLength); //TODO: add flag to only use this during batch runs
 	}
 }
