@@ -269,7 +269,7 @@ public class Ped extends Agent{
 		if (ln == 0) {
 			threatBeg = 0;}
 		else {
-			threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}	//ped enters lane
+			threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxVY;}	//ped enters lane //TODO:mention this 0.25 and 1 below in writeup
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
 		TTCol	= xDist/approachV;
 		TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep; //TODO: add radius of ped to this calculation

@@ -275,7 +275,7 @@ public class Turtle extends Agent{
 			 hardYield = -UserPanel.emergDec;
 			 if (v != 0) {
 				 tCrash = Math.abs(conDist/v);}}
-		double tClear = (conDist + length)/v;
+		double tClear = (Math.abs(conDist) + length)/v;
 		driverX		= xLoc-(double)dir*length/2;
 		threatBeg 	= 0;
 		threatEnd 	= -1;
@@ -850,5 +850,5 @@ public class Turtle extends Agent{
 		return distracted;}
 	@Parameter(usageName="headT", displayName="headT")
 	public double getHeadT() {
-		return head/v;}
+		return (head/v)*UserPanel.tStep;}
 }
