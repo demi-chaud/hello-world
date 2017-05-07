@@ -31,7 +31,8 @@ public class Scheduler extends Agent {
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
-	String	directory = "C:\\Users\\demi_chaud\\workspace\\driving1\\";
+	String  homeDir = System.getProperty("user.home");
+	String	directory = homeDir + "\\workspace\\driving1\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement, thisTick;
 	int     lane, dir;
@@ -148,7 +149,7 @@ public class Scheduler extends Agent {
 					Turtle addedTurtle3 = addCar(lane,-1,bV2X3,bAut3,bBoth3);
 					allCars.add(addedTurtle3);}}}
 		if (UserPanel.pedRho > 0) {
-			if (UserPanel.pedsUp == true) {
+//			if (UserPanel.pedsUp == true) {
 				rndP = rndPed.nextDouble();
 				if (rndP <=  UserPanel.Pof2Ped) {
 					Ped addedPed1 = addPed(1);
@@ -157,8 +158,9 @@ public class Scheduler extends Agent {
 					allPeds.add(addedPed2);}
 				else if (rndP <= UserPanel.Pof1Ped) {
 					Ped addedPed = addPed(1);
-					allPeds.add(addedPed);}}
-			if (UserPanel.pedsDn == true) {
+					allPeds.add(addedPed);}
+//				}
+//			if (UserPanel.pedsDn == true) {
 				rndP2 = rndPed.nextDouble();
 				if (rndP2 <=  UserPanel.Pof2Ped) {
 					Ped addedPed1 = addPed(-1);
@@ -167,7 +169,8 @@ public class Scheduler extends Agent {
 					allPeds.add(addedPed2);}
 				else if (rndP2 <= UserPanel.Pof1Ped) {
 					Ped addedPed = addPed(-1);
-					allPeds.add(addedPed);}}}
+					allPeds.add(addedPed);}}
+//			}
 		
 		//write log of conflicts at end
 		thisTick = RoadBuilder.clock.getTickCount();

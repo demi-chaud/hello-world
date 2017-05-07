@@ -239,7 +239,7 @@ public class Turtle extends Agent{
 			aYield = yield(stopDab,xwalkD);
 			if (aYield < a) {
 				a = aYield;}}
-		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
+		if (xLoc > RoadBuilder.roadL/5 && xLoc < 4*RoadBuilder.roadL/5 && a < -UserPanel.emergDec) {
 			a = -UserPanel.emergDec;}
 		return a;
 	}
@@ -293,28 +293,29 @@ public class Turtle extends Agent{
 		//double threat
 		if (connected == false) {		//TODO: find accuracy of passive ped detection, add v2i functionality
 			for (Turtle i : ahead) {				//are there any cars potentially blocking view?
-				double otherD	= RoadBuilder.xWalkx - i.xLoc;
-				double threat	= Math.signum(dir*otherD);
-				ViewAngle thisView = null;
-				if (i.lane != lane && threat == 1) {		//TODO: make this only happen if the car is close enough for it to matter
-					double front	= i.xLoc - (double)dir*i.length/3;
-					double back		= i.xLoc - (double)dir*i.length;
-					double inside	= i.yLoc + (double)dir*carW/2;
-					double outside	= i.yLoc - (double)dir*carW/2;
-					Double thisTheta1, thisTheta2;
-					if (lane == 0) {
-						thisTheta1 = FastMath.atan2((outside - driverY), (front - driverX));
-						thisTheta2 = FastMath.atan2((inside  - driverY), (back  - driverX));}
-					else {
-						thisTheta1 = FastMath.atan2((outside - driverY), (back  - driverX));
-						thisTheta2 = FastMath.atan2((inside  - driverY), (front - driverX));}
-					if (thisTheta1 != null) {
-						if (thisTheta1 < 0) {
-							thisTheta1 = thisTheta1 + 2*Math.PI;}
-						if (thisTheta2 < 0) {
-							thisTheta2 = thisTheta2 + 2*Math.PI;}
-						thisView = new ViewAngle(i,thisTheta1,thisTheta2);
-						obstructers.add(thisView);}}}
+				if (i.connected == false) {
+					double otherD	= RoadBuilder.xWalkx - i.xLoc;
+					double threat	= Math.signum(dir*otherD);
+					ViewAngle thisView = null;
+					if (i.lane != lane && threat == 1) {		//TODO: make this only happen if the car is close enough for it to matter
+						double front	= i.xLoc - (double)dir*i.length/3;
+						double back		= i.xLoc - (double)dir*i.length;
+						double inside	= i.yLoc + (double)dir*carW/2;
+						double outside	= i.yLoc - (double)dir*carW/2;
+						Double thisTheta1, thisTheta2;
+						if (lane == 0) {
+							thisTheta1 = FastMath.atan2((outside - driverY), (front - driverX));
+							thisTheta2 = FastMath.atan2((inside  - driverY), (back  - driverX));}
+						else {
+							thisTheta1 = FastMath.atan2((outside - driverY), (back  - driverX));
+							thisTheta2 = FastMath.atan2((inside  - driverY), (front - driverX));}
+						if (thisTheta1 != null) {
+							if (thisTheta1 < 0) {
+								thisTheta1 = thisTheta1 + 2*Math.PI;}
+							if (thisTheta2 < 0) {
+								thisTheta2 = thisTheta2 + 2*Math.PI;}
+							thisView = new ViewAngle(i,thisTheta1,thisTheta2);
+							obstructers.add(thisView);}}}}
 			if (!obstructers.isEmpty()){
 				for (Ped j : crossingP) {				//calculate angle to any relevant peds
 					Double thisTheta = null;
@@ -585,57 +586,59 @@ public class Turtle extends Agent{
 		if (!crossingP2.isEmpty()) {
 			if (ttstopBar < confLim) {
 				for (Ped n : crossingP2) {
-					double pedX = n.xLoc;
-					double pedY	= n.yLoc;
-					double pedTlo = -1;		//time until ped at conflict point
-					double pedThi = -1;		//time until ped leaves CP
-					ttc	= (double)dir*(pedX - xLoc)/v;
-					if (ttc >= 0) {
-						if (n.dir == 1 && pedY <= (yLoc + carW/2)) {
-							if (pedY >= (yLoc - carW/2)) {
-								pedTlo = 0;}
-							else {
-								pedTlo = ((yLoc - carW/2) - n.yLoc)/n.v[1];}		//TODO: include ped r and make ped calc 2D
-							pedThi = ((yLoc + carW/2) - pedY)/n.v[1];}
-						else if (n.dir == -1 && pedY >= (yLoc - carW/2)) {
-							if (pedY <= (yLoc + carW/2)) {
-								pedTlo = 0;}
-							else {
-								pedTlo = -(n.yLoc - (yLoc + carW/2))/n.v[1];}		//TODO: include ped r and make ped calc 2D
-							pedThi = -(pedY - (yLoc - carW/2))/n.v[1];}
-						if (pedTlo != -1) {
-							if (ttc >= pedTlo && ttc <= pedThi) {
-								if (ttc < confLim) {
-									int init = 1;
-									int dup = 0;
-									int hasDup = 0;
-									double range = (double)dir*(pedX - xLoc);
-									Conflict thisConf = new Conflict(this,n,ttc,range,oldYing,acc,timeSinceD,timeD,init,hasDup);
-									Conflict toAdd = null;
-									Conflict toRem = null;
-									for (Conflict c : Scheduler.allConf) {
-										if (c.car == this && c.ped == n) {
-											dup = 1;			//make sure no duplicates added unless lower TTC than first
-											if (c.init == 1) {
-												if (c.hasDup == 0) {
-													if (ttc < c.TTC) {
-														c.hasDup = 1;
-														thisConf.init = 0;
-														toAdd = thisConf;}}
-												else {
-													for (Conflict c1 : Scheduler.allConf) {
-														if (c1.car == this && c1.ped == n) {
-															if (c1 != c) {
-																if (ttc < c1.TTC) {
-																	thisConf.init = 0;
-																	toAdd = thisConf;
-																	toRem = c1;}}}}}}}}
-									if (toAdd != null) {
-										Scheduler.allConf.add(thisConf);}
-									if (toRem != null) {
-										Scheduler.allConf.remove(toRem);}
-									if (dup == 0) {
-										Scheduler.allConf.add(thisConf);}}}}}}}}
+					conflict(n);
+//					double pedX = n.xLoc;
+//					double pedY	= n.yLoc;
+//					double pedTlo = -1;		//time until ped at conflict point
+//					double pedThi = -1;		//time until ped leaves CP
+//					ttc	= (double)dir*(pedX - xLoc)/v;
+//					if (ttc >= 0) {
+//						if (n.dir == 1 && pedY <= (yLoc + carW/2)) {
+//							if (pedY >= (yLoc - carW/2)) {
+//								pedTlo = 0;}
+//							else {
+//								pedTlo = ((yLoc - carW/2) - n.yLoc)/n.v[1];}		//TODO: include ped r and make ped calc 2D
+//							pedThi = ((yLoc + carW/2) - pedY)/n.v[1];}
+//						else if (n.dir == -1 && pedY >= (yLoc - carW/2)) {
+//							if (pedY <= (yLoc + carW/2)) {
+//								pedTlo = 0;}
+//							else {
+//								pedTlo = -(n.yLoc - (yLoc + carW/2))/n.v[1];}		//TODO: include ped r and make ped calc 2D
+//							pedThi = -(pedY - (yLoc - carW/2))/n.v[1];}
+//						if (pedTlo != -1) {
+//							if (ttc >= pedTlo && ttc <= pedThi) {
+//								if (ttc < confLim) {
+//									int init = 1;
+//									int dup = 0;
+//									int hasDup = 0;
+//									double range = (double)dir*(pedX - xLoc);
+//									Conflict thisConf = new Conflict(this,n,ttc,range,oldYing,acc,timeSinceD,timeD,init,hasDup);
+//									Conflict toAdd = null;
+//									Conflict toRem = null;
+//									for (Conflict c : Scheduler.allConf) {
+//										if (c.car == this && c.ped == n) {
+//											dup = 1;			//make sure no duplicates added unless lower TTC than first
+//											if (c.init == 1) {
+//												if (c.hasDup == 0) {
+//													if (ttc < c.TTC) {
+//														c.hasDup = 1;
+//														thisConf.init = 0;
+//														toAdd = thisConf;}}
+//												else {
+//													for (Conflict c1 : Scheduler.allConf) {
+//														if (c1.car == this && c1.ped == n) {
+//															if (c1 != c) {
+//																if (ttc < c1.TTC) {
+//																	thisConf.init = 0;
+//																	toAdd = thisConf;
+//																	toRem = c1;}}}}}}}}
+//									if (toAdd != null) {
+//										Scheduler.allConf.add(thisConf);}
+//									if (toRem != null) {
+//										Scheduler.allConf.remove(toRem);}
+//									if (dup == 0) {
+//										Scheduler.allConf.add(thisConf);}}}}}
+					}}}
 	}
 //	
 //	public void crash(Ped p) {

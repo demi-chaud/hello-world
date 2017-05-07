@@ -23,7 +23,7 @@ public class UserPanel implements ActionListener{
 	static final  double simLength  = 5*60*60/tStep;	//in ticks (currently 5hrs)
 	static public double percV2X	= 0;
 	static public double percAuto	= 0;
-	static public double percBoth	= 0;
+	static public double percBoth	= 100;
 	
 	// calculate population range constants
 	static public double V2Xlo	= 0;
@@ -76,12 +76,12 @@ public class UserPanel implements ActionListener{
 	//TODO: place agents created in later terms of Poisson approximation
 	
 	static public boolean bothCar	= true;
-	static public boolean pedsUp	= true;
-	static public boolean pedsDn	= true;
+//	static public boolean pedsUp	= true;
+//	static public boolean pedsDn	= true;
 	static public boolean IIDM		= true; //include Improved IDM?
 	
 	// declare parameters of error-making
-	static public boolean estErr 	= true;		// estimation errors
+	static public boolean estErr 	= false;		// estimation errors
 	static final  double  Vs		= 0.1;		// relative standard deviation of headEst from head
 	static final  double  errPers	= 20;		// persistence time of estimation errors in seconds
 	static final  double  wien1		= Math.exp(-tStep/errPers);		// constants in the calculation
@@ -105,7 +105,7 @@ public class UserPanel implements ActionListener{
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
 		
-		JCheckBox errOn   = new JCheckBox("Est Errors?",	true);
+		JCheckBox errOn   = new JCheckBox("Est Errors?",	false);
 //		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
 //		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
 //		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);
