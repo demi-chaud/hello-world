@@ -50,6 +50,10 @@ public class UserPanel implements ActionListener{
 	static public double DmuHatS	= -0.4552452;	// distraction dist scale param (in seconds)
 	static public double DsigHat	= 0.6108071;	// distraction dist shape param (already in model units)
 	static public double interDlamS	= 0.3524525;	// interdistraction rate (in seconds^-1)
+	static public int	 cycleTimeS	= 90;
+	static public int	 greenDurS	= 60;			// duration of green light in sec
+	static public int	 amberDurS	= RedLight.amberT(sLimitKH);
+	static public int	 redDurS	= cycleTimeS - greenDurS - amberDurS;
 	//TODO: add ped gap coefficients
 	
 	// convert variables to model units
@@ -72,6 +76,10 @@ public class UserPanel implements ActionListener{
 	static public double Pof2Ped	= Math.pow(lambdaPed,2)*poisExpP/2;
 	static public double DmuHat		= DmuHatS - Math.log(tStep);
 	static public double interDlam	= interDlamS * tStep;
+	static public int	 cycleTime  = (int)(cycleTimeS / tStep);
+	static public int	 greenDur	= (int)(greenDurS / tStep);
+	static public int	 amberDur	= (int)(amberDurS / tStep);
+	static public int	 redDur		= (int)(redDurS / tStep);
 //	static public ArrayList<Double> poisStoreV, poisStoreP;
 	//TODO: place agents created in later terms of Poisson approximation
 	

@@ -11,6 +11,8 @@ import repast.simphony.parameter.Parameter;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.space.continuous.NdPoint;
 
+import driving1.RedLight.state;
+
 /**
 * Vehicle agent class. Defines creation and actions.
 * @author - Darryl Michaud
@@ -239,6 +241,41 @@ public class Turtle extends Agent{
 			aYield = yield(stopDab,xwalkD);
 			if (aYield < a) {
 				a = aYield;}}
+		
+		ArrayList<Turtle> queue = new ArrayList<Turtle>();
+		ArrayList<Turtle> rlAhead = new ArrayList<Turtle>();
+		double rlD;
+		double rlAcc = 100;
+		RedLight rl1 = RoadBuilder.rl1;
+		RedLight rl2 = RoadBuilder.rl2;
+		if (dir == 1 && xLoc < rl1.xLoc) {
+			rlD = rl1.xLoc - xLoc;
+			if (v != 0) {
+				for (Turtle t : Scheduler.allCars) {
+					if (t != this && t.dir == dir && t.lane == lane && t.xLoc <= rl1.xLoc && t.xLoc > xLoc) {
+						rlAhead.add(t);}}
+				if (rlAhead.size() < 2) {
+					if (rl1.myState == state.RED) {
+						rlAcc = -v*v/(2*rlD);}
+					else if (rl1.myState == state.AMBER) {
+						rlAcc = -v*v/(2*rlD);
+						if (rlAcc < -UserPanel.mina) {
+							rlAcc = 100;}}}}}
+		else if (dir == -1 && xLoc > rl2.xLoc) {
+			rlD = xLoc - rl2.xLoc;
+			if (v != 0) {
+				for (Turtle t : Scheduler.allCars) {
+					if (t != this && t.dir == dir && t.lane == lane && t.xLoc >= rl2.xLoc && t.xLoc < xLoc) {
+						rlAhead.add(t);}}
+				if (rlAhead.size() < 2) {
+					if (rl2.myState == state.RED) {
+						rlAcc = -v*v/(2*rlD);}
+					else if (rl2.myState == state.AMBER) {
+						rlAcc = -v*v/(2*rlD);
+						if (rlAcc < -UserPanel.mina) {
+							rlAcc = 100;}}}}}
+		if (rlAcc < a) {
+			a = rlAcc;}
 		if (xLoc > RoadBuilder.roadL/5 && xLoc < 4*RoadBuilder.roadL/5 && a < -UserPanel.emergDec) {
 			a = -UserPanel.emergDec;}
 		return a;
@@ -550,7 +587,7 @@ public class Turtle extends Agent{
 						int dup = 0;
 						int hasDup = 0;
 						double range = (double)dir*(pedX - xLoc);
-						Conflict thisConf = new Conflict(this,p,ttc,range,oldYing,yieldDec,timeSinceD,timeD,init,hasDup);
+						Conflict thisConf = new Conflict(this,p,ttc,range,oldYing,yieldDec,timeSinceD,timeD,init,hasDup,connected,autonomous);
 						Conflict toAdd = null;
 						Conflict toRem = null;
 						for (Conflict c : Scheduler.allConf) {
@@ -743,12 +780,13 @@ public class Turtle extends Agent{
 		Turtle car;
 		int dirP, dirC, lane, ying, init, hasDup;
 		double TTC, range, yDec, vel, timeD, sinceD;
+		boolean conn, auto;
 		ArrayList<double[]> pedVid;
 		ArrayList<Video> video;
 		double xWalkx = RoadBuilder.xWalkx;
 		double spaceScale = UserPanel.spaceScale;
 		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldDec, 
-				double timeSinceD, double timeD, int init, int hasDup) {
+				double timeSinceD, double timeD, int init, int hasDup, boolean conn, boolean auto) {
 			this.ped	= ped;
 			this.car	= car;
 			this.dirP	= ped.dir;
@@ -763,6 +801,8 @@ public class Turtle extends Agent{
 			this.timeD	= timeD;
 			this.init	= init;
 			this.hasDup	= hasDup;
+			this.conn	= conn;
+			this.auto	= auto;
 			this.video	= new ArrayList<Video>();
 			this.pedVid = new ArrayList<double[]>();
 			double[] thisPedVid = new double[2];

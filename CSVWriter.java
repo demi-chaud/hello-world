@@ -11,10 +11,10 @@ import java.util.Locale;
 public class CSVWriter {
 	
 	public static void writeCSV(String fileName, ArrayList<Turtle.Conflict> list) {
-		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, range, init, sinceD, timeD;
+		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, range, init, sinceD, timeD, conn, auto;
 		String comma  = ",";
 		String nLine  = "\n";
-		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,ttc,range,init" + nLine;
+		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,ttc,range,init,connected,automated" + nLine;
 		FileWriter fileWriter = null;
 		try {
 			fileWriter = new FileWriter(fileName);
@@ -41,6 +41,8 @@ public class CSVWriter {
 				Double rangeM	= c.range*UserPanel.spaceScale;
 				String range0	= form.format(rangeM);
 				String init0	= String.valueOf(c.init);
+				String conn0	= String.valueOf(c.conn);
+				String auto0	= String.valueOf(c.auto);
 				turtle	= turtle0 + comma;
 				dirC	= dirC0 + comma;
 				lane	= lane0 + comma;
@@ -54,8 +56,10 @@ public class CSVWriter {
 				ttc		= ttc0 + comma;
 				range	= range0 + comma;
 				init	= init0 + comma;
+				conn	= conn0 + comma;
+				auto	= auto0 + comma;
 				cString = turtle + dirC + lane + ped + dirP + ying + sinceD + timeD + 
-						vel + dec + ttc + range + init + nLine;
+						vel + dec + ttc + range + init + conn + auto + nLine;
 				fileWriter.append(cString);}}
 		catch (IOException e) {
 			System.out.print("Error in CSVWriter");

@@ -1,5 +1,8 @@
 package driving1;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 import repast.simphony.context.Context;
 import repast.simphony.context.DefaultContext;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactory;
@@ -26,9 +29,15 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	static final  double sidewalk	= 4/spaceScale;
 	static final  double worldW		= roadW + 2*sidewalk;
 	static final  double xWalkx		= roadL/2;	// places x-walk in middle of environment
+	static final  double rl1x		= roadL/4;	// places left red light
+	static final  double rl2x		= 3*roadL/4;// places right red light
+	static public ArrayList<RedLight> lights = new ArrayList<RedLight>();
+	static final  Random rnd		= new Random();
 	static public ISchedule clock;
 	static public Scheduler flowSource;
 	static public int ticker = 0;
+	static public RedLight rl1;
+	static public RedLight rl2;
 	
 	@SuppressWarnings({"unused"})
 	@Override
@@ -43,6 +52,23 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		flowSource = new Scheduler();
 		context.add(flowSource);
 		UserPanel panel = new UserPanel();
+		int rnd1  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
+		int rnd2  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
+		rl1 = new RedLight();
+		rl2 = new RedLight();
+		rl1.timeInState = rnd1;
+		rl1.myState = RedLight.state.GREEN;
+		rl1.xLoc = rl1x;
+		rl2.timeInState = rnd2;
+		rl2.myState = RedLight.state.GREEN;
+		rl2.xLoc = rl2x;
+		context.add(rl1);
+		context.add(rl2);
+		lights.add(rl1);
+		lights.add(rl2);
+		space.moveTo(rl1, rl1x, 0);
+		space.moveTo(rl2, rl2x, 0);
+		
 		return context;
 	}
 }

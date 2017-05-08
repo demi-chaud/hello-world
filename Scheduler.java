@@ -14,6 +14,8 @@ import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.util.ContextUtils;
 
+import driving1.RedLight.state;
+
 
 /**
  * Class created to contain schedule.
@@ -28,6 +30,7 @@ public class Scheduler extends Agent {
 	static	ArrayList<Turtle.Conflict> allConf;
 	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
 	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
+	static  ArrayList<RedLight> lights = RoadBuilder.lights;
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
@@ -35,8 +38,9 @@ public class Scheduler extends Agent {
 	String	directory = homeDir + "\\workspace\\driving1\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement, thisTick;
-	int     lane, dir;
+	int     lane, dir, greenDur, amberDur, redDur;
 	boolean carsYes, pedsYes;
+	
 	
 	/**
 	 * The scheduled method that contains all major steps
@@ -46,6 +50,8 @@ public class Scheduler extends Agent {
 		RoadBuilder.flowSource.calc();
 		carsYes = (allCars.size() > 0);
 		pedsYes = (allPeds.size() > 0);
+		for (RedLight l : lights) {
+			lightTick(l);}
 		if (carsYes) {
 			for (Turtle a : allCars) {
 				a.calc();}}
@@ -230,6 +236,34 @@ public class Scheduler extends Agent {
 		newPed.myLoc = space.getLocation(newPed);
 		return(newPed);
 	}
+	
+	/**
+	 * Runs red lights
+	 */
+	public void lightTick(RedLight l) {
+		int cycleTick = (int)(thisTick % UserPanel.cycleTime);
+		switch (l.myState) {
+		case GREEN:
+			if (cycleTick == UserPanel.greenDur) {
+				l.myState = state.AMBER;
+				l.timeInState = 0;}
+			else l.timeInState += 1;
+			break;
+		case AMBER:
+			if (cycleTick == UserPanel.amberDur) {
+				l.myState = state.RED;
+				l.timeInState = 0;}
+			else l.timeInState += 1;
+			break;
+		case RED:
+			if (cycleTick == UserPanel.redDur) {
+				l.myState = state.GREEN;
+				l.timeInState = 0;}
+			else l.timeInState += 1;
+			break;
+		default: break;}	
+	}
+	
 	
 	/**
 	 * Initializes schedule agent to hold lists
