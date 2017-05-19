@@ -241,41 +241,41 @@ public class Turtle extends Agent{
 			aYield = yield(stopDab,xwalkD);
 			if (aYield < a) {
 				a = aYield;}}
-		
-		ArrayList<Turtle> queue = new ArrayList<Turtle>();
-		ArrayList<Turtle> rlAhead = new ArrayList<Turtle>();
-		double rlD;
-		double rlAcc = 100;
-		RedLight rl1 = RoadBuilder.rl1;
-		RedLight rl2 = RoadBuilder.rl2;
-		if (dir == 1 && xLoc < rl1.xLoc) {
-			rlD = rl1.xLoc - xLoc;
-			if (v != 0) {
-				for (Turtle t : Scheduler.allCars) {
-					if (t != this && t.dir == dir && t.lane == lane && t.xLoc <= rl1.xLoc && t.xLoc > xLoc) {
-						rlAhead.add(t);}}
-				if (rlAhead.size() < 2) {
-					if (rl1.myState == state.RED) {
-						rlAcc = -v*v/(2*rlD);}
-					else if (rl1.myState == state.AMBER) {
-						rlAcc = -v*v/(2*rlD);
-						if (rlAcc < -UserPanel.mina) {
-							rlAcc = 100;}}}}}
-		else if (dir == -1 && xLoc > rl2.xLoc) {
-			rlD = xLoc - rl2.xLoc;
-			if (v != 0) {
-				for (Turtle t : Scheduler.allCars) {
-					if (t != this && t.dir == dir && t.lane == lane && t.xLoc >= rl2.xLoc && t.xLoc < xLoc) {
-						rlAhead.add(t);}}
-				if (rlAhead.size() < 2) {
-					if (rl2.myState == state.RED) {
-						rlAcc = -v*v/(2*rlD);}
-					else if (rl2.myState == state.AMBER) {
-						rlAcc = -v*v/(2*rlD);
-						if (rlAcc < -UserPanel.mina) {
-							rlAcc = 100;}}}}}
-		if (rlAcc < a) {
-			a = rlAcc;}
+		if (UserPanel.inclRL) {
+			ArrayList<Turtle> queue = new ArrayList<Turtle>();
+			ArrayList<Turtle> rlAhead = new ArrayList<Turtle>();
+			double rlD;
+			double rlAcc = 100;
+			RedLight rl1 = RoadBuilder.rl1;
+			RedLight rl2 = RoadBuilder.rl2;
+			if (dir == 1 && xLoc < rl1.xLoc) {
+				rlD = rl1.xLoc - xLoc;
+				if (v != 0) {
+					for (Turtle t : Scheduler.allCars) {
+						if (t != this && t.dir == dir && t.lane == lane && t.xLoc <= rl1.xLoc && t.xLoc > xLoc) {
+							rlAhead.add(t);}}
+					if (rlAhead.size() < 2) {
+						if (rl1.myState == state.RED) {
+							rlAcc = -v*v/(2*rlD);}
+						else if (rl1.myState == state.AMBER) {
+							rlAcc = -v*v/(2*rlD);
+							if (rlAcc < -UserPanel.mina) {
+								rlAcc = 100;}}}}}
+			else if (dir == -1 && xLoc > rl2.xLoc) {
+				rlD = xLoc - rl2.xLoc;
+				if (v != 0) {
+					for (Turtle t : Scheduler.allCars) {
+						if (t != this && t.dir == dir && t.lane == lane && t.xLoc >= rl2.xLoc && t.xLoc < xLoc) {
+							rlAhead.add(t);}}
+					if (rlAhead.size() < 2) {
+						if (rl2.myState == state.RED) {
+							rlAcc = -v*v/(2*rlD);}
+						else if (rl2.myState == state.AMBER) {
+							rlAcc = -v*v/(2*rlD);
+							if (rlAcc < -UserPanel.mina) {
+								rlAcc = 100;}}}}}
+			if (rlAcc < a) {
+				a = rlAcc;}}
 		if (xLoc > RoadBuilder.roadL/5 && xLoc < 4*RoadBuilder.roadL/5 && a < -UserPanel.emergDec) {
 			a = -UserPanel.emergDec;}
 		return a;

@@ -54,20 +54,21 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		UserPanel panel = new UserPanel();
 		int rnd1  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		int rnd2  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
-		rl1 = new RedLight();
-		rl2 = new RedLight();
-		rl1.timeInState = rnd1;
-		rl1.myState = RedLight.state.GREEN;
-		rl1.xLoc = rl1x;
-		rl2.timeInState = rnd2;
-		rl2.myState = RedLight.state.GREEN;
-		rl2.xLoc = rl2x;
-		context.add(rl1);
-		context.add(rl2);
-		lights.add(rl1);
-		lights.add(rl2);
-		space.moveTo(rl1, rl1x, 0);
-		space.moveTo(rl2, rl2x, 0);
+		if (UserPanel.inclRL) {
+			rl1 = new RedLight();
+			rl2 = new RedLight();
+			rl1.timeInState = rnd1;
+			rl1.myState = RedLight.state.GREEN;
+			rl1.xLoc = rl1x;
+			rl2.timeInState = rnd2;
+			rl2.myState = RedLight.state.GREEN;
+			rl2.xLoc = rl2x;
+			context.add(rl1);
+			context.add(rl2);
+			lights.add(rl1);
+			lights.add(rl2);
+			space.moveTo(rl1, rl1x, 0);
+			space.moveTo(rl2, rl2x, 0);}
 		
 		return context;
 	}

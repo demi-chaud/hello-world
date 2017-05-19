@@ -17,7 +17,7 @@ public class UserPanel implements ActionListener{
 
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
-	static public double tStep		= 0.05;		// duration of one tick in seconds	
+	static public double tStep		= 0.01;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
 	static final  double simLength  = 5*60*60/tStep;	//in ticks (currently 5hrs)
@@ -86,7 +86,8 @@ public class UserPanel implements ActionListener{
 	static public boolean bothCar	= true;
 //	static public boolean pedsUp	= true;
 //	static public boolean pedsDn	= true;
-	static public boolean IIDM		= true; //include Improved IDM?
+	static public boolean IIDM		= true;  //include Improved IDM?
+	static public boolean inclRL	= false; //include red lights?
 	
 	// declare parameters of error-making
 	static public boolean estErr 	= false;		// estimation errors
@@ -113,6 +114,7 @@ public class UserPanel implements ActionListener{
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
 		
+		JCheckBox rlOn	  = new JCheckBox("Red Lights?",	false);
 		JCheckBox errOn   = new JCheckBox("Est Errors?",	false);
 //		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
 //		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
@@ -150,6 +152,7 @@ public class UserPanel implements ActionListener{
 //		JTextField tckT = new JTextField(tSteps,  6);
 //			tckT.setActionCommand("tckT");
 		
+		rlOn.addActionListener(this);
 		errOn.addActionListener(this);
 //		iidmOn.addActionListener(this);
 //		car2way.addActionListener(this);
@@ -166,6 +169,7 @@ public class UserPanel implements ActionListener{
 		autF.addActionListener(this);
 		bthF.addActionListener(this);
 		
+		newPanel.add(rlOn);
 		newPanel.add(errOn);
 //		newPanel.add(iidmOn);
 //		newPanel.add(car2way);
@@ -205,6 +209,10 @@ public class UserPanel implements ActionListener{
 		case "CheckBoxUI":
 			JCheckBox checkSource = (JCheckBox)which;
 			switch (name) {
+			case "Red Lights?":
+				if (checkSource.isSelected()) inclRL = true;
+				else inclRL = false;
+				break;
 			case "Est Errors?":
 				if (checkSource.isSelected()) estErr = true;
 				else estErr = false;
