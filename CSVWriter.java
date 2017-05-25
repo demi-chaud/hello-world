@@ -11,15 +11,17 @@ import java.util.Locale;
 public class CSVWriter {
 	
 	public static void writeCSV(String fileName, ArrayList<Turtle.Conflict> list) {
-		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, range, init, sinceD, timeD, conn, auto;
+		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, range, time, init, sinceD, timeD, conn, auto;
 		String comma  = ",";
 		String nLine  = "\n";
-		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,ttc,range,init,connected,automated" + nLine;
+		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,ttc,range,time,init,connected,automated" + nLine;
 		FileWriter fileWriter = null;
 		try {
 			fileWriter = new FileWriter(fileName);
 			fileWriter.append(header);
 			NumberFormat form = new DecimalFormat("#.0####",
+					DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+			NumberFormat form1 = new DecimalFormat("#.0#",
 					DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 			for (Turtle.Conflict c : list) {
 				String turtle0	= Integer.toHexString(c.car.hashCode());
@@ -40,6 +42,8 @@ public class CSVWriter {
 				String ttc0		= form.format(ttcS);
 				Double rangeM	= c.range*UserPanel.spaceScale;
 				String range0	= form.format(rangeM);
+				Double tickS	= c.tick*UserPanel.tStep;
+				String time0	= form1.format(tickS);
 				String init0	= String.valueOf(c.init);
 				String conn0	= String.valueOf(c.conn);
 				String auto0	= String.valueOf(c.auto);
@@ -55,11 +59,12 @@ public class CSVWriter {
 				dec		= dec0 + comma;
 				ttc		= ttc0 + comma;
 				range	= range0 + comma;
+				time	= time0 + comma;
 				init	= init0 + comma;
 				conn	= conn0 + comma;
 				auto	= auto0 + comma;
 				cString = turtle + dirC + lane + ped + dirP + ying + sinceD + timeD + 
-						vel + dec + ttc + range + init + conn + auto + nLine;
+						vel + dec + ttc + range + time + init + conn + auto + nLine;
 				fileWriter.append(cString);}}
 		catch (IOException e) {
 			System.out.print("Error in CSVWriter");

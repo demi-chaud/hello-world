@@ -17,13 +17,13 @@ public class UserPanel implements ActionListener{
 
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
-	static public double tStep		= 0.01;		// duration of one tick in seconds	
+	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
 	static final  double simLength  = 5*60*60/tStep;	//in ticks (currently 5hrs)
 	static public double percV2X	= 0;
 	static public double percAuto	= 0;
-	static public double percBoth	= 100;
+	static public double percBoth	= 0;
 	
 	// calculate population range constants
 	static public double V2Xlo	= 0;
@@ -46,7 +46,7 @@ public class UserPanel implements ActionListener{
 	static public int    vehRho		= 400;			// veh/hr each dir 	default: 600
 	static public int    pedRho		= 100;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 	static public double delayTs 	= 0.5;			// seconds			default:   0.5
-	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
+	static public double confLimS	= 2;			// seconds			default:   1.7		//kinda arbitrary
 	static public double DmuHatS	= -0.4552452;	// distraction dist scale param (in seconds)
 	static public double DsigHat	= 0.6108071;	// distraction dist shape param (already in model units)
 	static public double interDlamS	= 0.3524525;	// interdistraction rate (in seconds^-1)
@@ -88,6 +88,7 @@ public class UserPanel implements ActionListener{
 //	static public boolean pedsDn	= true;
 	static public boolean IIDM		= true;  //include Improved IDM?
 	static public boolean inclRL	= false; //include red lights?
+	static public boolean calcFun	= true;  //build fundamental diagram
 	
 	// declare parameters of error-making
 	static public boolean estErr 	= false;		// estimation errors
@@ -115,6 +116,7 @@ public class UserPanel implements ActionListener{
 		JPanel newPanel = new JPanel();
 		
 		JCheckBox rlOn	  = new JCheckBox("Red Lights?",	false);
+		JCheckBox funDia  = new JCheckBox("Calc funDia?",	false);
 		JCheckBox errOn   = new JCheckBox("Est Errors?",	false);
 //		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
 //		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
@@ -152,6 +154,7 @@ public class UserPanel implements ActionListener{
 //		JTextField tckT = new JTextField(tSteps,  6);
 //			tckT.setActionCommand("tckT");
 		
+		funDia.addActionListener(this);
 		rlOn.addActionListener(this);
 		errOn.addActionListener(this);
 //		iidmOn.addActionListener(this);
@@ -169,6 +172,7 @@ public class UserPanel implements ActionListener{
 		autF.addActionListener(this);
 		bthF.addActionListener(this);
 		
+		newPanel.add(funDia);
 		newPanel.add(rlOn);
 		newPanel.add(errOn);
 //		newPanel.add(iidmOn);
@@ -209,6 +213,10 @@ public class UserPanel implements ActionListener{
 		case "CheckBoxUI":
 			JCheckBox checkSource = (JCheckBox)which;
 			switch (name) {
+			case "Calc funDia?":
+				if (checkSource.isSelected()) calcFun = true;
+				else calcFun = false;
+				break;
 			case "Red Lights?":
 				if (checkSource.isSelected()) inclRL = true;
 				else inclRL = false;

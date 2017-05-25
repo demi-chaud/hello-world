@@ -31,6 +31,10 @@ public class Scheduler extends Agent {
 	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
 	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
 	static  ArrayList<RedLight> lights = RoadBuilder.lights;
+	static	ArrayList<Turtle> passed = new ArrayList<Turtle>();
+	static	ArrayList<Turtle> justPassed = new ArrayList<Turtle>();
+	static	ArrayList<Double> speeds = new ArrayList<Double>();
+	static	ArrayList<Double[]> diagram = new ArrayList<Double[]>();
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
@@ -39,7 +43,10 @@ public class Scheduler extends Agent {
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement, thisTick;
 	int     lane, dir, greenDur, amberDur, redDur;
+	int		counter = 0;
 	boolean carsYes, pedsYes;
+	boolean calcFun = UserPanel.calcFun;
+	int		minute = (int)(60/UserPanel.tStep);
 	
 	
 	/**
@@ -64,6 +71,8 @@ public class Scheduler extends Agent {
 		if (pedsYes) {
 			for (Ped b : allPeds) {
 				b.walk();}}
+		if (calcFun) {
+			diagramIt();}
 		if (!killListC.isEmpty()) {
 			for (Turtle c : killListC) {
 				c.die();}
@@ -190,6 +199,36 @@ public class Scheduler extends Agent {
 			String now = dateFormat.format(date) + "_";
 			String fileName = directory + now + thisRun + ".csv";
 			CSVWriter.writeCSV(fileName,allConf);}
+	}
+	
+	public void diagramIt() {
+		justPassed.clear();
+		for (Turtle t : allCars) {
+			if (t.xLoc > RoadBuilder.xWalkx) {
+				justPassed.add(t);}}
+		if (!justPassed.isEmpty()) {
+			ArrayList<Turtle> diff = new ArrayList<Turtle>();
+			diff = justPassed;
+			diff.removeAll(passed);
+			passed.clear();
+			passed = justPassed;
+			for (Turtle s : diff) {
+				speeds.add(s.v);}}
+		counter++;
+		if (counter == minute) {
+			Object[] vArray0;
+			vArray0 = speeds.toArray();
+			Double[] vArray = (Double[])vArray0;
+			double n = (double)speeds.size();
+			double q = n*60; // veh/hr
+			double invSum = 0;
+			for (double i : speeds) {
+				invSum += 1/i;}
+			double u = 1/(invSum/n);
+			Double[] dataPt = {q,u};
+			diagram.add(dataPt);
+			speeds = new ArrayList<Double>();
+			counter = 0;}
 	}
 	
 	/**

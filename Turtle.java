@@ -51,10 +51,11 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
-		if (interD != 0 && timeSinceD >= interD && ying == -1) { //don't get distracted if yielding
-			distracted = true;
-			timeSinceD = 0;
-			interD = 0;}
+		if (interD != 0 && timeSinceD >= interD) {
+			if (ying == -1) { //don't get distracted if yielding
+				distracted = true;
+				timeSinceD = 0;
+				interD = 0;}}
 		if (durD != 0 && timeD >= durD) {
 			distracted = false;
 			timeD = 0;
@@ -779,7 +780,7 @@ public class Turtle extends Agent{
 		Ped ped;
 		Turtle car;
 		int dirP, dirC, lane, ying, init, hasDup;
-		double TTC, range, yDec, vel, timeD, sinceD;
+		double TTC, range, yDec, vel, timeD, sinceD, tick;
 		boolean conn, auto;
 		ArrayList<double[]> pedVid;
 		ArrayList<Video> video;
@@ -797,6 +798,7 @@ public class Turtle extends Agent{
 			this.ying	= yieldState;
 			this.vel	= car.v;
 			this.yDec	= yieldDec;
+			this.tick	= RoadBuilder.clock.getTickCount();
 			this.sinceD	= timeSinceD;
 			this.timeD	= timeD;
 			this.init	= init;
