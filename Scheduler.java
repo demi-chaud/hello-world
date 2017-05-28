@@ -45,7 +45,6 @@ public class Scheduler extends Agent {
 	int     lane, dir, greenDur, amberDur, redDur;
 	int		counter = 0;
 	boolean carsYes, pedsYes;
-	boolean calcFun = UserPanel.calcFun;
 	int		minute = (int)(60/UserPanel.tStep);
 	
 	
@@ -57,6 +56,7 @@ public class Scheduler extends Agent {
 		RoadBuilder.flowSource.calc();
 		carsYes = (allCars.size() > 0);
 		pedsYes = (allPeds.size() > 0);
+		boolean calcFun = UserPanel.calcFun;
 		for (RedLight l : lights) {
 			lightTick(l);}
 		if (carsYes) {
@@ -208,7 +208,7 @@ public class Scheduler extends Agent {
 				justPassed.add(t);}}
 		if (!justPassed.isEmpty()) {
 			ArrayList<Turtle> diff = new ArrayList<Turtle>();
-			diff = justPassed;
+			diff.addAll(justPassed);
 			diff.removeAll(passed);
 			passed.clear();
 			passed = justPassed;
@@ -216,18 +216,19 @@ public class Scheduler extends Agent {
 				speeds.add(s.v);}}
 		counter++;
 		if (counter == minute) {
-			Object[] vArray0;
-			vArray0 = speeds.toArray();
-			Double[] vArray = (Double[])vArray0;
-			double n = (double)speeds.size();
-			double q = n*60; // veh/hr
-			double invSum = 0;
-			for (double i : speeds) {
-				invSum += 1/i;}
-			double u = 1/(invSum/n);
-			Double[] dataPt = {q,u};
-			diagram.add(dataPt);
-			speeds = new ArrayList<Double>();
+			if (!speeds.isEmpty()) {
+				Object[] vArray0;
+				vArray0 = speeds.toArray();
+				Double[] vArray = (Double[])vArray0;
+				double n = (double)speeds.size();
+				double q = n*60; // veh/hr
+				double invSum = 0;
+				for (double i : speeds) {
+					invSum += 1/i;}
+				double u = 1/(invSum/n);
+				Double[] dataPt = {q,u};
+				diagram.add(dataPt);
+				speeds = new ArrayList<Double>();}
 			counter = 0;}
 	}
 	

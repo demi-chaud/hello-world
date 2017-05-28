@@ -88,7 +88,7 @@ public class UserPanel implements ActionListener{
 //	static public boolean pedsDn	= true;
 	static public boolean IIDM		= true;  //include Improved IDM?
 	static public boolean inclRL	= false; //include red lights?
-	static public boolean calcFun	= true;  //build fundamental diagram
+	static public boolean calcFun	= false;  //build fundamental diagram
 	
 	// declare parameters of error-making
 	static public boolean estErr 	= false;		// estimation errors
@@ -214,8 +214,12 @@ public class UserPanel implements ActionListener{
 			JCheckBox checkSource = (JCheckBox)which;
 			switch (name) {
 			case "Calc funDia?":
-				if (checkSource.isSelected()) calcFun = true;
-				else calcFun = false;
+				if (checkSource.isSelected()) {
+					calcFun = true;
+					bothCar = false;}
+				else {
+					calcFun = false;
+					bothCar = true;}
 				break;
 			case "Red Lights?":
 				if (checkSource.isSelected()) inclRL = true;
