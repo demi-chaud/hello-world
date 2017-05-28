@@ -46,6 +46,7 @@ public class Scheduler extends Agent {
 	int		counter = 0;
 	boolean carsYes, pedsYes;
 	boolean calcFun = UserPanel.calcFun;
+	boolean ready = false; 						//ready to calculate 
 	int		minute = (int)(60/UserPanel.tStep);
 	
 	

@@ -88,7 +88,7 @@ public class UserPanel implements ActionListener{
 //	static public boolean pedsDn	= true;
 	static public boolean IIDM		= true;  //include Improved IDM?
 	static public boolean inclRL	= false; //include red lights?
-	static public boolean calcFun	= true;  //build fundamental diagram
+	static public boolean calcFun	= false;  //build fundamental diagram
 	
 	// declare parameters of error-making
 	static public boolean estErr 	= false;		// estimation errors
