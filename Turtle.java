@@ -699,9 +699,9 @@ public class Turtle extends Agent{
 		dir		= whichDir;
 		//store parameters with heterogeneity (currently s.dev abitrarily = 8% of mean)
 		//TODO: get theory for these numbers
-		maxa	= rnd.nextGaussian()*(UserPanel.maxa*.08)+UserPanel.maxa;
-		mina	= rnd.nextGaussian()*(UserPanel.mina*.08)+UserPanel.mina;
-		maxv	= rnd.nextGaussian()*(.08*UserPanel.sLimit)+(UserPanel.sLimit);
+		maxa	= rnd.nextGaussian()*(UserPanel.maxa*.08)+UserPanel.maxa;			//TODO: change this stand Dev
+		mina	= rnd.nextGaussian()*(UserPanel.mina*.25)+UserPanel.mina;
+		maxv	= rnd.nextGaussian()*(.08*UserPanel.sLimit)+(UserPanel.sLimit);			//TODO: change this stand Dev
 		tGap	= rnd.nextGaussian()*(UserPanel.tGap*.08)+UserPanel.tGap;
 		jamHead	= rnd.nextGaussian()*(UserPanel.jamHead*.08)+UserPanel.jamHead;
 		length	= UserPanel.carLength;

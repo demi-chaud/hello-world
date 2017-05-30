@@ -10,7 +10,7 @@ import java.util.Locale;
 
 public class CSVWriter {
 	
-	public static void writeCSV(String fileName, ArrayList<Turtle.Conflict> list) {
+	public static void writeConfCSV(String fileName, ArrayList<Turtle.Conflict> list) {
 		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, range, time, init, sinceD, timeD, conn, auto;
 		String comma  = ",";
 		String nLine  = "\n";
@@ -75,4 +75,34 @@ public class CSVWriter {
 				fileWriter.close();}
 			catch (IOException e1) {
 				System.out.print("Error flushing CSVWriter");}}}
+	
+	public static void writeDiagCSV(String fn, ArrayList<Double[]> list) {
+		String dString, speed, flux, density;
+		String comma  = ",";
+		String nLine  = "\n";
+		String header = "density,speed,flux" + nLine;
+		FileWriter fileWriter = null;
+		try {
+			fileWriter = new FileWriter(fn);
+			fileWriter.append(header);
+			for (Double[] d : list) {
+				String speed0 = String.valueOf(d[0]*UserPanel.vBase);
+				String flux0 = String.valueOf(d[1]);
+				String density0 = String.valueOf(d[2]);
+				flux = flux0 + comma;
+				speed = speed0 + comma;
+				density = density0 + comma;
+				dString = density + speed + flux + nLine;
+				fileWriter.append(dString);}}
+		catch (IOException e) {
+			System.out.print("Error in CSVWriter");
+			e.printStackTrace();}
+		finally {
+			try {
+				fileWriter.flush();
+				fileWriter.close();}
+			catch (IOException e1) {
+				System.out.print("Error flushing CSVWriter");}}
+	}
 }
+

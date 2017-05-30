@@ -20,7 +20,8 @@ public class UserPanel implements ActionListener{
 	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
-	static final  double simLength  = 5*60*60/tStep;	//in ticks (currently 5hrs)
+	static final  double simHours	= 2;				//hours in sim (currently 5)
+	static final  double simLength  = simHours*60*60/tStep;	//in ticks
 	static public double percV2X	= 0;
 	static public double percAuto	= 0;
 	static public double percBoth	= 0;
@@ -43,7 +44,7 @@ public class UserPanel implements ActionListener{
 	static final  double carWidthM	= 1.89;			// m					avg of lg sedan 1990 & 2007
 	static final  double jamHeadM	= 2.5;			// m				default:   2.5
 	static public double sLimitKH	= 45;			// km/hr			default:  45
-	static public int    vehRho		= 400;			// veh/hr each dir 	default: 600
+	static public int    vehRho		= 1500;			// veh/hr each dir 	default: 600
 	static public int    pedRho		= 100;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 	static public double delayTs 	= 0.5;			// seconds			default:   0.5
 	static public double confLimS	= 2;			// seconds			default:   1.7		//kinda arbitrary
@@ -101,6 +102,7 @@ public class UserPanel implements ActionListener{
 	private String sLimits	= String.valueOf(sLimitKH);
 	private String vehRhos	= String.valueOf(vehRho);
 	private String pedRhos	= String.valueOf(pedRho);
+	private JTextField pRho;
 	private String delTs	= String.valueOf(delayTs);
 //	private String tSteps	= String.valueOf(tStep);
 	private String confTs	= String.valueOf(confLimS);
@@ -130,7 +132,7 @@ public class UserPanel implements ActionListener{
 		JTextField vRho = new JTextField(vehRhos, 6);
 			vRho.setActionCommand("vRho");
 		JLabel   pLabel = new JLabel("Pedestrians/hr");
-		JTextField pRho = new JTextField(pedRhos, 6);
+		pRho = new JTextField(pedRhos, 6);
 			pRho.setActionCommand("pRho");
 		JLabel   tLabel = new JLabel("Reaction time (sec)");
 		JTextField delT = new JTextField(delTs,   6);
@@ -216,10 +218,14 @@ public class UserPanel implements ActionListener{
 			case "Calc funDia?":
 				if (checkSource.isSelected()) {
 					calcFun = true;
-					bothCar = false;}
+					bothCar = false;
+					pedRho = 0;
+					calcPeds();}
 				else {
 					calcFun = false;
-					bothCar = true;}
+					bothCar = true;
+					JTextField pedInput = pRho;
+					pedRho = Integer.parseInt(pRho.getText());}
 				break;
 			case "Red Lights?":
 				if (checkSource.isSelected()) inclRL = true;
