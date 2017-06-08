@@ -206,8 +206,12 @@ public class Ped extends Agent{
 			go1 = true;}
 		if (nearest2 != null) {
 			goes2 = lag(nearest2,2);
+			int stop = 0;
 			while (goes2 == 0) {
-				goes2 = gap(nearest2,2);}
+				goes2 = gap(nearest2,2);
+				stop++;
+				if (stop > 5) {
+					break;}}
 			if (goes2 ==  1) {go2 = true;}
 			if (goes2 == -1) {go2 = false;}}
 		else {
@@ -271,8 +275,11 @@ public class Ped extends Agent{
 		else {
 			threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxVY;}	//ped enters lane //TODO:mention this 0.25 and 1 below in writeup
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
-		TTCol	= xDist/approachV;
-		TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep; //TODO: add radius of ped to this calculation
+		TTCol = 1000;
+		TTClear = 1000;
+		if (approachV != 0) {
+			TTCol	= xDist/approachV;
+			TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
 		
 		//decide if lag is big enough to start crossing
 		if (yielders.contains(t)) {
@@ -337,14 +344,19 @@ public class Ped extends Agent{
 		
 		//calculate relevant times
 		double thisTail   = Math.abs(t2d - t1d) - t1.length;
-		double thisTailT  = thisTail/t2v;
+		double thisTailT  = 1000;
+		if (t2v != 0) {
+			thisTailT  = thisTail/t2v;}
 		if (ln == 0) {
 			threatBeg = 0;}
 		else {
 			threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;
-		TTCol	= Math.abs(t2d/t2v);
-		TTClear	= TTCol + t2.length/t2v + 1/UserPanel.tStep; //TODO: add radius of ped to this calculation
+		TTCol	= 1000;
+		TTClear = 1000;
+		if (t2v != 0) {
+			TTCol	= Math.abs(t2d/t2v);
+			TTClear	= TTCol + t2.length/t2v + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
 		
 		//decide if gap is big enough to start crossing
 		if (yielders.contains(t2)) {

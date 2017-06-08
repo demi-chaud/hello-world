@@ -218,8 +218,9 @@ public class Scheduler extends Agent {
 	
 	public void diagramIt() {
 		justPassed.clear();
+		double line = 2*RoadBuilder.xWalkx/3;
 		for (Turtle t : allCars) {
-			if (t.xLoc >= RoadBuilder.xWalkx - dx) {
+			if (t.xLoc >= line - dx) {
 				boolean inIt = false;
 				for (DensityPt i : passed1) {
 					if (i.car == t) {
@@ -227,16 +228,16 @@ public class Scheduler extends Agent {
 						break;}}
 				if (!inIt) {
 					if (t.v != 0) {
-						double t1 = (double)RoadBuilder.ticker - (t.xLoc - RoadBuilder.xWalkx + dx)/t.v;
+						double t1 = (double)RoadBuilder.ticker - (t.xLoc - line + dx)/t.v;
 						DensityPt thisPt = new DensityPt(t,t1);
 						passed1.add(thisPt);}}
-				if (t.xLoc > RoadBuilder.xWalkx) {
+				if (t.xLoc > line) {
 					justPassed.add(t);}}}
 		ArrayList<DensityPt> pToRemove = new ArrayList<DensityPt>(); 
 		for (DensityPt p : passed1) {
-			if (p.car.xLoc > RoadBuilder.xWalkx) {
+			if (p.car.xLoc > line) {
 				if (p.car.v != 0) {
-					double t2 = (double)RoadBuilder.ticker - (p.car.xLoc - RoadBuilder.xWalkx)/p.car.v;
+					double t2 = (double)RoadBuilder.ticker - (p.car.xLoc - line)/p.car.v;
 					double dt = t2 - p.t1;
 					densities.add(dt);
 					pToRemove.add(p);}}}
@@ -281,6 +282,20 @@ public class Scheduler extends Agent {
 			connected  = true;
 			autonomous = true;}
 		Turtle newTurtle = new Turtle(space,lane,dir,connected,autonomous);
+		boolean blocked = false;
+		for (Turtle t : allCars) {
+			if (!t.equals(newTurtle)) {
+				if (t.lane == lane) {
+					if (t.dir == dir) {
+						if (dir == 1) {
+							if (t.xLoc < 0.1) {
+								blocked = true;
+								break;}}
+						else {
+							if (t.xLoc > RoadBuilder.roadL - 1.01) {
+								blocked = true;
+								break;}}}}}}
+		if (blocked) newTurtle.v = 0;
 		context.add(newTurtle);
 		if (dir == 1) {				//1 = going right, -1 = going left
 			yPlacement = RoadBuilder.sidewalk + (double)lane * (RoadBuilder.laneW) + (RoadBuilder.laneW/2);
