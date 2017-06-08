@@ -18,9 +18,11 @@ import driving1.RedLight.state;
 * @author - Darryl Michaud
 */
 public class Turtle extends Agent{
+	Boolean calcFun = UserPanel.calcFun;
 	ContinuousSpace<Object> space;
 	private ArrayList<Turtle> sameDir, ahead, leaders, behind, followers;
-	private ArrayList<Ped> crossingP, crossingP1, crossingP2, waitingP;
+	private ArrayList<Turtle> leaders2, followers2;
+	private ArrayList<Ped> crossingP, crossingP1, crossingP2;
 	private ArrayList<ViewAngle> obstructers, obstructees;
 	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
 	private List<double[]> storage = new ArrayList<double[]>();
@@ -29,16 +31,16 @@ public class Turtle extends Agent{
 	private boolean	distracted = false;
 	private double	timeD, durD, timeSinceD, interD, interDlam;		//distraction
 	private double	delayTs, tN, tBeta;								//delay
-	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head;	//car-following
+	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, tail;	//car-following
 	private double	wS, etaS, wV, etaV, sigR;						//errors
 	private double	confLim, stopBar, ttstopBar, lnTop, lnBot, hardYield, yieldDec;	//yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private int		age;
 	public  NdPoint	myLoc;
-	public  Turtle	leader, follower;
+	public  Turtle	leader, leader2, follower, follower2;
 	public	boolean connected, autonomous;
-	public  double	v, vNew, acc, xLoc, yLoc, length, tail, driverX, driverY, decelT;
+	public  double	v, vNew, acc, xLoc, yLoc, length, driverX, driverY, decelT;
 	public  int		lane;	//  0 = outer lane, 1 = inner lane
 	public	int		dir;	//  1 = going right, -1 = going left
 	public	int		ying, oldYing;	// -1 = none, 0 = soft, 1 = hard
@@ -132,7 +134,6 @@ public class Turtle extends Agent{
 		v = vNew;
 		decelT = v/UserPanel.emergDec;
 	}
-//	grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
 	
 	/**
 	 * Calculates acceleration based on car-following and yielding.
@@ -143,20 +144,35 @@ public class Turtle extends Agent{
 	 * @return accel
 	 */
 	public double accel(NdPoint loc, int myLane, int myDir) {
-		double a, setSpeed, vDiff, safeHead, aFree;
+		double a, setSpeed, vDiff, safeHead, aFree;			//this car, no lane change
+		double a2, setSpeed2, vDiff2, safeHead2, aFree2;	//this car, with lane change
+		double aFol, setSpeedFol, vDiffFol, safeHeadFol, aFreeFol;			//car behind, this lane, no lane change
+		double aFol2, setSpeedFol2, vDiffFol2, safeHeadFol2, aFreeFol2;		//car behind, next lane, no lane change
+		double aPrime, setSpeedPrime, vDiffPrime, safeHeadPrime, aFreePrime;		//car behind, this lane, with lane change
+		double aPrime2, setSpeedPrime2, vDiffPrime2, safeHeadPrime2, aFreePrime2;	//car behind, next lane, with lane change
+		double head2, tail2;
 		confLim	= UserPanel.confLimS/UserPanel.tStep;
 		sameDir	= new ArrayList<Turtle>();
 		ahead	= new ArrayList<Turtle>();
 		leaders	= new ArrayList<Turtle>();
+		leader	= null;
 		head	= RoadBuilder.roadL;
+		
+		behind	  = new ArrayList<Turtle>();
+		followers = new ArrayList<Turtle>();
+		follower  = null;
+		tail	  = RoadBuilder.roadL;
+
+		leaders2= new ArrayList<Turtle>();
+		leader2	= null;
+		head2	= RoadBuilder.roadL;
+		followers2= new ArrayList<Turtle>();
+		follower2 = null;
+		tail2	  = RoadBuilder.roadL;
 		//TODO: limit accel to physically possible values
 		
 		//Determine leader and follower
-		//TODO: this if loop will go away if lane-changes are included
-		behind	  = new ArrayList<Turtle>();
-		followers = new ArrayList<Turtle>();
-		leader	  = null;
-		tail	  = RoadBuilder.roadL;	
+
 		for (Turtle p : Scheduler.allCars) {
 			if (p.dir == myDir) {
 				sameDir.add(p);}}
@@ -173,11 +189,15 @@ public class Turtle extends Agent{
 		if (!ahead.isEmpty()) {
 			for (Turtle n : ahead) {
 				if (n.lane == myLane) {
-					leaders.add(n);}}}
+					leaders.add(n);}
+				else {
+					if (calcFun) leaders2.add(n);}}}
 		if (!behind.isEmpty()) {
 			for (Turtle n : behind) {
 				if (n.lane == myLane) {
-					followers.add(n);}}}
+					followers.add(n);}
+				else {
+					if (calcFun) followers2.add(n);}}}
 		if (!leaders.isEmpty()) {
 			for (Turtle o : leaders) {
 				if((Math.abs(o.xLoc - xLoc) - o.length) < head) {
@@ -185,31 +205,40 @@ public class Turtle extends Agent{
 					if (head < 0) {
 						head = 1e-10;}
 					leader = o;}}}
+		if (!leaders2.isEmpty() && calcFun) {
+			for (Turtle o : leaders2) {
+				if((Math.abs(o.xLoc - xLoc) - o.length) < head2) {
+					head2 = Math.abs(o.xLoc - xLoc) - o.length; //TODO: change visualization to move icons to center of car
+					if (head2 < 0) {
+						head2 = 1e-10;}
+					leader2 = o;}}}
 		if (!followers.isEmpty()) {
 			for (Turtle p : followers) {
 				if((Math.abs(p.xLoc - xLoc) - length) < tail) {
 					tail = Math.abs(p.xLoc - xLoc) - length;
 					follower = p;}}}
-//		else {
-//			tail = Math.abs(follower.xLoc - xLoc) - length;}
+		if (!followers2.isEmpty() && calcFun) {
+			for (Turtle p : followers2) {
+				if((Math.abs(p.xLoc - xLoc) - length) < tail2) {
+					tail2 = Math.abs(p.xLoc - xLoc) - length;
+					follower2 = p;}}}
 		
-		//calculate CF acceleration (with errors)
+		//calculate CF acceleration for this car in this lane (with errors)
 		if (leader != null) {
 			if (UserPanel.estErr == true && autonomous == false) {		//includes estimation error in headway measurement
 				etaS = rnd.nextGaussian();
 				etaV = rnd.nextGaussian();
 				wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
 				wV = UserPanel.wien1*wV + UserPanel.wien2*etaV;
-				head = head*Math.exp(UserPanel.Vs*wS);
-				setSpeed = leader.v - head*sigR*wV;}
+				setSpeed = leader.v - head*sigR*wV; //calc speed uncertainty before distance
+				head = head*Math.exp(UserPanel.Vs*wS);}
 			else setSpeed = leader.v;
 			vDiff = v - setSpeed;
 			double safeHead0;
 			safeHead0 = v*(tGap) + (v*vDiff)/(2*Math.sqrt(maxa*mina));
 			safeHead = jamHead + Math.max(0,safeHead0);			//avoid negative values
-			double z = 1000;
-			if (head != 0) {
-				z = safeHead / head;}
+			double z = safeHead / head;
+			//if (xLoc <= RoadBuilder.roadL/20 && UserPanel.calcFun == true) {}
 //			if (UserPanel.IIDM == true) {
 				if (v < maxv) {
 					aFree = maxa*(1-Math.pow(v/maxv,deltaIDM));
@@ -222,13 +251,132 @@ public class Turtle extends Agent{
 					if (z >= 1) {
 						a = aFree + maxa*(1-z*z);}
 					else {
-						a = aFree;}}
-//				}
-//			else {
-//				a = maxa*(1 - Math.pow(v/maxv,deltaIDM) - Math.pow(safeHead/head,2));}
-		}
+						a = aFree;}}}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
-
+		
+		//calculate CF acceleration for this car if it changes lanes (incl errors)
+		if (calcFun) {
+			if (leader2 != null) {
+				if (UserPanel.estErr == true && autonomous == false) {		//includes estimation error in headway measurement
+					etaS = rnd.nextGaussian();
+					etaV = rnd.nextGaussian();
+					wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
+					wV = UserPanel.wien1*wV + UserPanel.wien2*etaV;
+					double lnW = RoadBuilder.laneW;
+					setSpeed2 = leader2.v - Math.sqrt(head2*head2 + lnW*lnW)*sigR*wV; //farther away than in this lane -> more uncertain
+					head2 = head2*Math.exp(UserPanel.Vs*wS);} //equivalent ratio of expansion to all legs of triangle
+				else setSpeed2 = leader2.v;
+				vDiff2 = v - setSpeed2;
+				double safeHead02;
+				safeHead02 = v*(tGap) + (v*vDiff2)/(2*Math.sqrt(maxa*mina));
+				safeHead2 = jamHead + Math.max(0,safeHead02);			//avoid negative values
+				double z2 = safeHead2 / head2;
+				if (v < maxv) {
+					aFree2 = maxa*(1-Math.pow(v/maxv,deltaIDM));
+					if (z2 >= 1) {
+						a2 = maxa*(1-z2*z2);}
+					else {
+						a2 = aFree2*(1-Math.pow(z2, 2*maxa/aFree2));}}
+				else {
+					aFree2 = -mina*(1-Math.pow(maxv/v, maxa*deltaIDM/mina));
+					if (z2 >= 1) {
+						a2 = aFree2 + maxa*(1-z2*z2);}
+					else {
+						a2 = aFree2;}}}
+			else {a2 = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
+			
+			//calculate CF acceleration of car behind in this lane (w/o errors)
+			//this uses values from the active car in calculation
+			if (follower != null) {
+				//if this car does not change lanes:
+				setSpeedFol = v;
+				vDiffFol = follower.v - setSpeedFol;
+				double safeHeadFol0;
+				safeHeadFol0 = follower.v*(tGap) + (follower.v*vDiffFol)/(2*Math.sqrt(maxa*mina));
+				safeHeadFol = jamHead + Math.max(0,safeHeadFol0);			//avoid negative values
+				double zFol = safeHeadFol / tail;
+				if (follower.v < maxv) {
+					aFreeFol = maxa*(1-Math.pow(follower.v/maxv,deltaIDM));
+					if (zFol >= 1) {
+						aFol = maxa*(1-zFol*zFol);}
+					else {
+						aFol = aFreeFol*(1-Math.pow(zFol, 2*maxa/aFreeFol));}}
+				else {
+					aFreeFol = -mina*(1-Math.pow(maxv/follower.v, maxa*deltaIDM/mina));
+					if (zFol >= 1) {
+						aFol = aFreeFol + maxa*(1-zFol*zFol);}
+					else {
+						aFol = aFreeFol;}}
+				
+				//if this car does change lanes
+				setSpeedPrime = v;
+				vDiffPrime = follower.v - setSpeedPrime;
+				double safeHeadPrime0;
+				safeHeadPrime0 = follower.v*(tGap) + (follower.v*vDiffPrime)/(2*Math.sqrt(maxa*mina));
+				safeHeadPrime = jamHead + Math.max(0,safeHeadPrime0);			//avoid negative values
+				double zPrime = safeHeadPrime / (tail + head + length);
+				if (follower.v < maxv) {
+					aFreePrime = maxa*(1-Math.pow(follower.v/maxv,deltaIDM));
+					if (zPrime >= 1) {
+						aPrime = maxa*(1-zPrime*zPrime);}
+					else {
+						aPrime = aFreePrime*(1-Math.pow(zPrime, 2*maxa/aFreePrime));}}
+				else {
+					aFreePrime = -mina*(1-Math.pow(maxv/follower.v, maxa*deltaIDM/mina));
+					if (zPrime >= 1) {
+						aPrime = aFreePrime + maxa*(1-zPrime*zPrime);}
+					else {
+						aPrime = aFreePrime;}}}
+			else {
+				aFol = 0;
+				aPrime = 0;}
+			//TODO: adjustment to non-zero head&tail screws this up. add trueHead/trueTail variables
+			//calculate CF acceleration of car in next lane (w/o errors)
+			if (follower2 != null) {
+				//if this car does not change lanes
+				setSpeedFol2 = leader2.v;
+				vDiffFol2 = follower2.v - setSpeedFol2;
+				double safeHeadFol02;
+				safeHeadFol02 = follower2.v*(tGap) + (follower2.v*vDiffFol2)/(2*Math.sqrt(maxa*mina));
+				safeHeadFol2 = jamHead + Math.max(0,safeHeadFol02);			//avoid negative values
+				double zFol2 = safeHeadFol2 / (trueHead2 + trueTail2 + length);
+				if (follower2.v < maxv) {
+					aFreeFol2 = maxa*(1-Math.pow(follower2.v/maxv,deltaIDM));
+					if (zFol2 >= 1) {
+						aFol2 = maxa*(1-zFol2*zFol2);}
+					else {
+						aFol2 = aFreeFol2*(1-Math.pow(zFol2, 2*maxa/aFreeFol2));}}
+				else {
+					aFreeFol2 = -mina*(1-Math.pow(maxv/follower2.v, maxa*deltaIDM/mina));
+					if (zFol2 >= 1) {
+						aFol2 = aFreeFol2 + maxa*(1-zFol2*zFol2);}
+					else {
+						aFol2 = aFreeFol2;}}
+					
+				//if this car does change lanes
+				setSpeedPrime2 = v;
+				vDiffPrime2 = follower2.v - setSpeedPrime2;
+				double safeHeadPrime02;
+				safeHeadPrime02 = follower2.v*(tGap) + (follower2.v*vDiffPrime2)/(2*Math.sqrt(maxa*mina));
+				safeHeadPrime2 = jamHead + Math.max(0,safeHeadPrime02);			//avoid negative values
+				double zPrime2 = safeHeadPrime2 / (trueTail2);
+					if (follower2.v < maxv) {
+						aFreePrime2 = maxa*(1-Math.pow(follower2.v/maxv,deltaIDM));
+						if (zPrime2 >= 1) {
+							aPrime2 = maxa*(1-zPrime2*zPrime2);}
+						else {
+							aPrime2 = aFreePrime2*(1-Math.pow(zPrime2, 2*maxa/aFreePrime2));}}
+					else {
+						aFreePrime2 = -mina*(1-Math.pow(maxv/follower2.v, maxa*deltaIDM/mina));
+						if (zPrime2 >= 1) {
+							aPrime2 = aFreePrime2 + maxa*(1-zPrime2*zPrime2);}
+						else {
+							aPrime2 = aFreeFol2;}}}
+			else {
+				aFol2 = 0;
+				aPrime2 = 0;}}
+		
+		
 		//Calculate yielding acceleration
 		double stopD	= stopBar - xLoc;
 		double stopDab	= dir*stopD;
@@ -274,7 +422,7 @@ public class Turtle extends Agent{
 								rlAcc = 100;}}}}}
 			if (rlAcc < a) {
 				a = rlAcc;}}
-		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
+		if (xLoc > RoadBuilder.roadL/5 && xLoc < 4*RoadBuilder.roadL/5 && a < -UserPanel.emergDec) {
 			a = -UserPanel.emergDec;}
 		return a;
 	}
@@ -303,18 +451,14 @@ public class Turtle extends Agent{
 			else {
 				ttstopBar  = 1e16;		//arbitrarily large
 				tHardYield = 1e16;}
-			hardYield	= -1000;
-			if (stopDist != 0) {
-				hardYield	= -v*v/(2*stopDist);}}
+			hardYield	= -v*v/(2*stopDist);}
 		else {							//driver has already passed stopbar (probably distracted)
 			 ttstopBar = -1;
 			tHardYield = decelT;
 			 hardYield = -UserPanel.emergDec;
 			 if (v != 0) {
 				 tCrash = Math.abs(conDist/v);}}
-		double tClear = -1;
-		if (v != 0) {
-			tClear = (Math.abs(conDist) + length)/v;}
+		double tClear = (Math.abs(conDist) + length)/v;
 		driverX		= xLoc-(double)dir*length/2;
 		threatBeg 	= 0;
 		threatEnd 	= -1;
@@ -375,7 +519,8 @@ public class Turtle extends Agent{
 						Ped thisPed = j.ped;
 						double pedTheta = j.theta;
 						if (pedTheta >= theta1 && pedTheta <= theta2) {
-							crossingP.remove(thisPed);}}}}}
+							crossingP.remove(thisPed);}}}}
+		}
 		
 		//yield to crossing peds
 		if (!crossingP.isEmpty()) {
@@ -406,9 +551,7 @@ public class Turtle extends Agent{
 									newDecel = hardYield;
 									thisYing = 1;}
 								else {			//soft yield
-									newDecel = 0;
-									if (threatEnd != 0) {
-										newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);}
+									newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);
 									thisYing = 0;}}
 							else {
 								newDecel = hardYield;
@@ -431,9 +574,7 @@ public class Turtle extends Agent{
 									newDecel = hardYield;
 									thisYing = 1;}
 								else {			//soft yield
-									newDecel = 0;
-									if (threatEnd != 0) {
-										newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);}
+									newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);
 									thisYing = 0;}}
 							else {
 								newDecel = hardYield;
@@ -521,9 +662,7 @@ public class Turtle extends Agent{
 									thisDecel = hardYield;
 									thisYing = 1;}
 								else {			//soft yield
-									thisDecel = 0;
-									if (threatEnd != 0) {
-										thisDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);}
+									thisDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);
 									thisYing  = 0;}
 								Yieldage thisYield = new Yieldage(k,thisDecel,endGauntlet,thisYing);
 								k.yielders.add(this);
@@ -573,30 +712,20 @@ public class Turtle extends Agent{
 		double pedY = p.yLoc;
 		double pedTlo = -1;		//time until ped at conflict point
 		double pedThi = -1;		//time until ped leaves CP
-		double ttc = -1;
-		if (v != 0) {
-			ttc = (double)dir*(pedX - xLoc)/v;}
+		double ttc = (double)dir*(pedX - xLoc)/v;
 		if (ttc >= 0) {
 			if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
 				if (pedY >= (yLoc - carW/2)) {
 					pedTlo = 0;}
 				else {
-					pedTlo = 1000;
-					if (p.v[1] != 0) {
-						pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
-				pedThi = 1000;
-				if (p.v[1] != 0) {
-					pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
+					pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}		//TODO: include ped r and make ped calc 2D
+				pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}
 			else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
 				if (pedY <= (yLoc + carW/2)) {
 					pedTlo = 0;}
 				else {
-					pedTlo = 1000;
-					if (p.v[1] != 0) {
-						pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}}		//TODO: include ped r and make ped calc 2D
-				pedThi = 1000;
-				if (p.v[1] != 0) {
-					pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
+					pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}		//TODO: include ped r and make ped calc 2D
+				pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}
 			if (pedTlo != -1) {
 				if (ttc >= pedTlo && ttc <= pedThi) {
 					if (ttc <= confLim) {
@@ -911,7 +1040,5 @@ public class Turtle extends Agent{
 		return distracted;}
 	@Parameter(usageName="headT", displayName="headT")
 	public double getHeadT() {
-		if (v != 0) {
-			return (head/v)*UserPanel.tStep;}
-		else return 0;}
+		return (head/v)*UserPanel.tStep;}
 }

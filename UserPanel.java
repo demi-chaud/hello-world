@@ -90,6 +90,7 @@ public class UserPanel implements ActionListener{
 	static public boolean IIDM		= true;  //include Improved IDM?
 	static public boolean inclRL	= false; //include red lights?
 	static public boolean calcFun	= false;  //build fundamental diagram
+	static public double pedGapParamA = 6.2064;
 	
 	// declare parameters of error-making
 	static public boolean estErr 	= false;		// estimation errors
@@ -219,11 +220,13 @@ public class UserPanel implements ActionListener{
 				if (checkSource.isSelected()) {
 					calcFun = true;
 					bothCar = false;
-					pedRho = 0;
+					pedRho = 100;
+					pedGapParamA = 2;
 					calcPeds();}
 				else {
 					calcFun = false;
 					bothCar = true;
+					pedGapParamA = 6.2064;
 					JTextField pedInput = pRho;
 					pedRho = Integer.parseInt(pRho.getText());}
 				break;

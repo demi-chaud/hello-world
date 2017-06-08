@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
+import java.io.Console;
 
 import driving1.Turtle.Conflict;
 import driving1.Turtle.Video;
@@ -13,7 +14,6 @@ import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.util.ContextUtils;
-
 import driving1.RedLight.state;
 
 
@@ -53,8 +53,6 @@ public class Scheduler extends Agent {
 	int		prepT = (int)Math.ceil(60*RoadBuilder.roadL/UserPanel.sLimit);
 	double	dxM = 5.;
 	double	dx = dxM/RoadBuilder.spaceScale;
-	
-	
 	
 	/**
 	 * The scheduled method that contains all major steps
@@ -174,26 +172,26 @@ public class Scheduler extends Agent {
 					allCars.add(addedTurtle3);}}}
 		if (UserPanel.pedRho > 0) {
 //			if (UserPanel.pedsUp == true) {
-				rndP = rndPed.nextDouble();
-				if (rndP <=  UserPanel.Pof2Ped) {
-					Ped addedPed1 = addPed(1);
-					Ped addedPed2 = addPed(1);
-					allPeds.add(addedPed1);
-					allPeds.add(addedPed2);}
-				else if (rndP <= UserPanel.Pof1Ped) {
-					Ped addedPed = addPed(1);
-					allPeds.add(addedPed);}
+			rndP = rndPed.nextDouble();
+			if (rndP <=  UserPanel.Pof2Ped) {
+				Ped addedPed1 = addPed(1);
+				Ped addedPed2 = addPed(1);
+				allPeds.add(addedPed1);
+				allPeds.add(addedPed2);}
+			else if (rndP <= UserPanel.Pof1Ped) {
+				Ped addedPed = addPed(1);
+				allPeds.add(addedPed);}
 //				}
 //			if (UserPanel.pedsDn == true) {
-				rndP2 = rndPed.nextDouble();
-				if (rndP2 <=  UserPanel.Pof2Ped) {
-					Ped addedPed1 = addPed(-1);
-					Ped addedPed2 = addPed(-1);
-					allPeds.add(addedPed1);
-					allPeds.add(addedPed2);}
-				else if (rndP2 <= UserPanel.Pof1Ped) {
-					Ped addedPed = addPed(-1);
-					allPeds.add(addedPed);}}
+			rndP2 = rndPed.nextDouble();
+			if (rndP2 <=  UserPanel.Pof2Ped) {
+				Ped addedPed1 = addPed(-1);
+				Ped addedPed2 = addPed(-1);
+				allPeds.add(addedPed1);
+				allPeds.add(addedPed2);}
+			else if (rndP2 <= UserPanel.Pof1Ped) {
+				Ped addedPed = addPed(-1);
+				allPeds.add(addedPed);}}
 //			}
 		
 		//write log of conflicts at end
@@ -212,14 +210,14 @@ public class Scheduler extends Agent {
 			
 			CSVWriter.writeConfCSV(confFileName,allConf);
 			if (UserPanel.calcFun) {
-				CSVWriter.writeDiagCSV(diagFileName,diagram);}
-			}
+				CSVWriter.writeDiagCSV(diagFileName,diagram);}}
 	}
 	
 	public void diagramIt() {
 		justPassed.clear();
+		double line = 2*RoadBuilder.xWalkx/3;
 		for (Turtle t : allCars) {
-			if (t.xLoc >= RoadBuilder.xWalkx - dx) {
+			if (t.xLoc >= line - dx) {
 				boolean inIt = false;
 				for (DensityPt i : passed1) {
 					if (i.car == t) {
@@ -227,16 +225,16 @@ public class Scheduler extends Agent {
 						break;}}
 				if (!inIt) {
 					if (t.v != 0) {
-						double t1 = (double)RoadBuilder.ticker - (t.xLoc - RoadBuilder.xWalkx + dx)/t.v;
+						double t1 = (double)RoadBuilder.ticker - (t.xLoc - line + dx)/t.v;
 						DensityPt thisPt = new DensityPt(t,t1);
 						passed1.add(thisPt);}}
-				if (t.xLoc > RoadBuilder.xWalkx) {
+				if (t.xLoc > line) {
 					justPassed.add(t);}}}
 		ArrayList<DensityPt> pToRemove = new ArrayList<DensityPt>(); 
 		for (DensityPt p : passed1) {
-			if (p.car.xLoc > RoadBuilder.xWalkx) {
+			if (p.car.xLoc > line) {
 				if (p.car.v != 0) {
-					double t2 = (double)RoadBuilder.ticker - (p.car.xLoc - RoadBuilder.xWalkx)/p.car.v;
+					double t2 = (double)RoadBuilder.ticker - (p.car.xLoc - line)/p.car.v;
 					double dt = t2 - p.t1;
 					densities.add(dt);
 					pToRemove.add(p);}}}
@@ -281,6 +279,20 @@ public class Scheduler extends Agent {
 			connected  = true;
 			autonomous = true;}
 		Turtle newTurtle = new Turtle(space,lane,dir,connected,autonomous);
+//		boolean blocked = false;
+//		for (Turtle t : allCars) {
+//			if (!t.equals(newTurtle)) {
+//				if (t.lane == lane) {
+//					if (t.dir == dir) {
+//						if (dir == 1) {
+//							if (t.xLoc < 0.1) {
+//								blocked = true;
+//								break;}}
+//						else {
+//							if (t.xLoc > RoadBuilder.roadL - 1.01) {
+//								blocked = true;
+//								break;}}}}}}
+//		if (blocked) newTurtle.v = 0;
 		context.add(newTurtle);
 		if (dir == 1) {				//1 = going right, -1 = going left
 			yPlacement = RoadBuilder.sidewalk + (double)lane * (RoadBuilder.laneW) + (RoadBuilder.laneW/2);
