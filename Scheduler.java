@@ -31,12 +31,11 @@ public class Scheduler extends Agent {
 	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
 	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
 	static  ArrayList<RedLight> lights = RoadBuilder.lights;
-	static	ArrayList<Turtle> passed = new ArrayList<Turtle>();
+	//static	ArrayList<Turtle> passed = new ArrayList<Turtle>();
 	static	ArrayList<Turtle> justPassed = new ArrayList<Turtle>();
-	static	ArrayList<DensityPt> passed1 = new ArrayList<DensityPt>();
+	static	ArrayList<DensityPt> passed = new ArrayList<DensityPt>();
 	static	ArrayList<DensityPt> passed2 = new ArrayList<DensityPt>();
-	static	ArrayList<Double> speeds = new ArrayList<Double>();
-	static	ArrayList<Double> densities = new ArrayList<Double>();
+	static	ArrayList<Double> dxTimes = new ArrayList<Double>();
 	static	ArrayList<Double[]> diagram = new ArrayList<Double[]>();
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
@@ -49,8 +48,9 @@ public class Scheduler extends Agent {
 	int		counter = 0;
 	int		counter1 = 0;
 	boolean carsYes, pedsYes;
-	int		tSpan = (int)(15/UserPanel.tStep);
-	int		prepT = (int)Math.ceil(60*RoadBuilder.roadL/UserPanel.sLimit);
+	int		tSpan = UserPanel.calcTSpan;
+	int		tSpanS = (int)UserPanel.calcTSpanS;
+	int		prepT = (int)Math.ceil(2*RoadBuilder.roadL/UserPanel.sLimit);
 	double	dxM = 5.;
 	double	dx = dxM/RoadBuilder.spaceScale;
 	
@@ -208,18 +208,18 @@ public class Scheduler extends Agent {
 			String confFileName = directory + now + thisRunC + ".csv";
 			String diagFileName = directory + now + thisRunD + "fundDiagram.csv";
 			
-			CSVWriter.writeConfCSV(confFileName,allConf);
-			if (UserPanel.calcFun) {
+			if (!UserPanel.calcFun) {
+				CSVWriter.writeConfCSV(confFileName,allConf);}
+			else {
 				CSVWriter.writeDiagCSV(diagFileName,diagram);}}
 	}
 	
 	public void diagramIt() {
-		justPassed.clear();
-		double line = 2*RoadBuilder.xWalkx/3;
+		double line = 3*RoadBuilder.roadL/7;
 		for (Turtle t : allCars) {
-			if (t.xLoc >= line - dx) {
+			if (t.xLoc >= line - dx && t.xLoc < line) {
 				boolean inIt = false;
-				for (DensityPt i : passed1) {
+				for (DensityPt i : passed) {
 					if (i.car == t) {
 						inIt = true;
 						break;}}
@@ -227,43 +227,41 @@ public class Scheduler extends Agent {
 					if (t.v != 0) {
 						double t1 = (double)RoadBuilder.ticker - (t.xLoc - line + dx)/t.v;
 						DensityPt thisPt = new DensityPt(t,t1);
-						passed1.add(thisPt);}}
-				if (t.xLoc > line) {
-					justPassed.add(t);}}}
-		ArrayList<DensityPt> pToRemove = new ArrayList<DensityPt>(); 
-		for (DensityPt p : passed1) {
-			if (p.car.xLoc > line) {
-				if (p.car.v != 0) {
-					double t2 = (double)RoadBuilder.ticker - (p.car.xLoc - line)/p.car.v;
-					double dt = t2 - p.t1;
-					densities.add(dt);
-					pToRemove.add(p);}}}
-		passed1.removeAll(pToRemove);
-		if (!justPassed.isEmpty()) {
-			ArrayList<Turtle> diff = new ArrayList<Turtle>();
-			diff.addAll(justPassed);
-			diff.removeAll(passed);
-			passed.clear();
-			passed.addAll(justPassed);
-			for (Turtle s : diff) {
-				speeds.add(s.v);}}
+						passed.add(thisPt);}
+					else {
+						double t1 = (double)RoadBuilder.ticker;
+						DensityPt thisPt = new DensityPt(t,t1);
+						passed.add(thisPt);}}}}
+		ArrayList<DensityPt> pToRemove = new ArrayList<DensityPt>();
+		for (DensityPt d : passed) {
+			Turtle dCar = d.car;
+			if (dCar.xLoc >= line) {
+				if (dCar.v != 0) {
+					double t2 = (double)RoadBuilder.ticker - (dCar.xLoc - line)/dCar.v;
+					double dt = t2 - d.t1;
+					dxTimes.add(dt);}
+				else {
+					double t2 = (double)RoadBuilder.ticker;
+					double dt = t2 - d.t1;
+					dxTimes.add(dt);}
+				pToRemove.add(d);}}
+		passed.removeAll(pToRemove);
 		counter++;
 		if (counter == tSpan) {
-			if (!speeds.isEmpty()) {
-				double n = (double)speeds.size();
-				double q = n*60; // veh/hr
+			if (!dxTimes.isEmpty()) {
+				double n = (double)dxTimes.size();
+				double q0 = 3600/tSpanS;
+				double q = n*q0; // veh/hr
 				double invSum = 0;
-				for (double v : speeds) {
-					invSum += 1/v;}
-				double u = 1/(invSum/n);
 				double timeSum = 0;
-				for (double t : densities) {
-					timeSum += t;}
-				double density = timeSum/((double)tSpan*dx);
+				for (double dt : dxTimes) {
+					invSum += (dt*UserPanel.tStep)/dxM;
+					timeSum += dt;}
+				double u = 1/(invSum/n); // m/s
+				double density = timeSum/((double)tSpan*dxM);
 				Double[] dataPt = {u,q,density};
 				diagram.add(dataPt);
-				speeds = new ArrayList<Double>();
-				densities = new ArrayList<Double>();}
+				dxTimes = new ArrayList<Double>();}
 			counter = 0;}
 	}
 	

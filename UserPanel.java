@@ -38,23 +38,26 @@ public class UserPanel implements ActionListener{
 	static final  double pedVavgKH	= 5;			// km/hr			default:   5 (source Zebala 2012)
 	static final  double maxaMS		= 1.4;			// m/s2				default:   1.4
 	static final  double minaMS		= 3.5;			// m/s2				default:   3.5
-	static final  double emergDecMS	= 4.5;			// m/s2				default:   4.5
+	static final  double emergDecMS	= 7.4;			// m/s2				default:   7.4 (source Greibe 2007)
 	static final  double tGapS		= 1.9;			// s				default:   1.9
 	static final  double carLengthM	= 5.28;			// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
 	static final  double carWidthM	= 1.89;			// m					avg of lg sedan 1990 & 2007
 	static final  double jamHeadM	= 2.5;			// m				default:   2.5
 	static public double sLimitKH	= 45;			// km/hr			default:  45
-	static public int    vehRho		= 1500;			// veh/hr each dir 	default: 600
-	static public int    pedRho		= 100;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
-	static public double delayTs 	= 0.5;			// seconds			default:   0.5
-	static public double confLimS	= 2;			// seconds			default:   1.7		//kinda arbitrary
+	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
+	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public double delayTs 	= 1.2;			// seconds			default:   1.2
+	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
 	static public double DmuHatS	= -0.4552452;	// distraction dist scale param (in seconds)
 	static public double DsigHat	= 0.6108071;	// distraction dist shape param (already in model units)
 	static public double interDlamS	= 0.3524525;	// interdistraction rate (in seconds^-1)
+	static public double SmuHatM	= 1.419;		// stopBar dist scale param (in meters)
+	static public double SsigHat	= 0.486;		// stopBar dist shape param (already in model units)
 	static public int	 cycleTimeS	= 90;
 	static public int	 greenDurS	= 60;			// duration of green light in sec
 	static public int	 amberDurS	= RedLight.amberT(sLimitKH);
 	static public int	 redDurS	= cycleTimeS - greenDurS - amberDurS;
+	static public double calcTSpanS	= 15;
 	//TODO: add ped gap coefficients
 	
 	// convert variables to model units
@@ -77,10 +80,12 @@ public class UserPanel implements ActionListener{
 	static public double Pof2Ped	= Math.pow(lambdaPed,2)*poisExpP/2;
 	static public double DmuHat		= DmuHatS - Math.log(tStep);
 	static public double interDlam	= interDlamS * tStep;
+	static public double SmuHat		= SmuHatM - Math.log(RoadBuilder.spaceScale);
 	static public int	 cycleTime  = (int)(cycleTimeS / tStep);
 	static public int	 greenDur	= (int)(greenDurS / tStep);
 	static public int	 amberDur	= (int)(amberDurS / tStep);
 	static public int	 redDur		= (int)(redDurS / tStep);
+	static public int	 calcTSpan	= (int)(calcTSpanS / tStep);
 //	static public ArrayList<Double> poisStoreV, poisStoreP;
 	//TODO: place agents created in later terms of Poisson approximation
 	
@@ -221,12 +226,10 @@ public class UserPanel implements ActionListener{
 					calcFun = true;
 					bothCar = false;
 					pedRho = 100;
-					pedGapParamA = 2;
 					calcPeds();}
 				else {
 					calcFun = false;
 					bothCar = true;
-					pedGapParamA = 6.2064;
 					JTextField pedInput = pRho;
 					pedRho = Integer.parseInt(pRho.getText());}
 				break;

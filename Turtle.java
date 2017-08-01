@@ -26,6 +26,7 @@ public class Turtle extends Agent{
 	private List<double[]> storage = new ArrayList<double[]>();
 	private Random  rnd  = new Random();	//initiates random number generator for vehicle properties
 	private Random  rndD = new Random();	//ditto for distraction
+	private Random	rndS = new Random();
 	private boolean	distracted = false;
 	private double	timeD, durD, timeSinceD, interD, interDlam;		//distraction
 	private double	delayTs, tN, tBeta;								//delay
@@ -60,7 +61,7 @@ public class Turtle extends Agent{
 			distracted = false;
 			timeD = 0;
 			durD = 0;}
-		if (autonomous == false && distracted == true) {
+		if (autonomous == false && distracted == true && xLoc > RoadBuilder.roadL/10) {
 			if (timeD == 0) {
 				double durD0 = rndD.nextGaussian()*UserPanel.DsigHat + UserPanel.DmuHat;
 				durD = Math.exp(durD0);}
@@ -132,7 +133,6 @@ public class Turtle extends Agent{
 		v = vNew;
 		decelT = v/UserPanel.emergDec;
 	}
-//	grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
 	
 	/**
 	 * Calculates acceleration based on car-following and yielding.
@@ -152,7 +152,6 @@ public class Turtle extends Agent{
 		//TODO: limit accel to physically possible values
 		
 		//Determine leader and follower
-		//TODO: this if loop will go away if lane-changes are included
 		behind	  = new ArrayList<Turtle>();
 		followers = new ArrayList<Turtle>();
 		leader	  = null;
@@ -229,7 +228,7 @@ public class Turtle extends Agent{
 		}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
 
-		//Calculate yielding acceleration
+		//Calculate yielding and red light acceleration
 		double stopD	= stopBar - xLoc;
 		double stopDab	= dir*stopD;
 		double xwalkD	= RoadBuilder.xWalkx - xLoc;
@@ -307,11 +306,11 @@ public class Turtle extends Agent{
 			if (stopDist != 0) {
 				hardYield	= -v*v/(2*stopDist);}}
 		else {							//driver has already passed stopbar (probably distracted)
-			 ttstopBar = -1;
+			ttstopBar = -1;
 			tHardYield = decelT;
-			 hardYield = -UserPanel.emergDec;
-			 if (v != 0) {
-				 tCrash = Math.abs(conDist/v);}}
+			hardYield = -UserPanel.emergDec;
+			if (v != 0) {
+				tCrash = Math.abs(conDist/v);}}
 		double tClear = -1;
 		if (v != 0) {
 			tClear = (Math.abs(conDist) + length)/v;}
@@ -717,7 +716,7 @@ public class Turtle extends Agent{
 		//TODO: get theory for these numbers
 		maxa	= rnd.nextGaussian()*(UserPanel.maxa*.08)+UserPanel.maxa;			//TODO: change this stand Dev
 		mina	= rnd.nextGaussian()*(UserPanel.mina*.25)+UserPanel.mina;
-		maxv	= rnd.nextGaussian()*(.08*UserPanel.sLimit)+(UserPanel.sLimit);			//TODO: change this stand Dev
+		maxv	= rnd.nextGaussian()*(UserPanel.sLimit*.08)+(UserPanel.sLimit);			//TODO: change this stand Dev
 		tGap	= rnd.nextGaussian()*(UserPanel.tGap*.08)+UserPanel.tGap;
 		jamHead	= rnd.nextGaussian()*(UserPanel.jamHead*.08)+UserPanel.jamHead;
 		length	= UserPanel.carLength;
@@ -730,9 +729,7 @@ public class Turtle extends Agent{
 		wV		= rnd.nextGaussian();
 		etaV	= rnd.nextGaussian();
 		sigR 	= 0.01*UserPanel.tStep; //standard deviation of relative approach rate
-		stopBar	= RoadBuilder.xWalkx - (double)dir*5/RoadBuilder.spaceScale; 
-		// 5 here is exaggerated to view effects
-		// should match pedbox (?) which is arbitrarily set to 2
+		stopBar	= CalcStopBar(whichDir);
 		if (dir == 1) {
 			if (lane == 0) {
 				lnBot = RoadBuilder.sidewalk;}
@@ -743,10 +740,10 @@ public class Turtle extends Agent{
 				lnBot = RoadBuilder.sidewalk + 3*RoadBuilder.laneW;}
 			else {
 				lnBot = RoadBuilder.sidewalk + 2*RoadBuilder.laneW;}}
-		lnTop	= lnBot + RoadBuilder.laneW;
-		confLim	= UserPanel.confLimS/UserPanel.tStep;
-		age		= 0;
-		ying	= -1;
+		lnTop		= lnBot + RoadBuilder.laneW;
+		confLim		= UserPanel.confLimS/UserPanel.tStep;
+		age			= 0;
+		ying		= -1;
 		timeD		= 0;
 		durD		= 0;
 		timeSinceD	= 0;
@@ -754,6 +751,18 @@ public class Turtle extends Agent{
 		interDlam	= UserPanel.interDlam;
 		connected	= conn;
 		autonomous	= auto;
+	}
+	
+	/* Fits driver's distance from stopBar to lognormal distribution */
+	public double CalcStopBar(int dir) {
+		double stopDistance;
+		double dist0 = rndS.nextGaussian()*UserPanel.SsigHat + UserPanel.SmuHat;
+		double stopDistance0 = Math.exp(dist0);
+		if (stopDistance0 > 11) {
+			stopDistance0 = 11;}
+		stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
+		return stopDistance;
+		
 	}
 	
 	/**

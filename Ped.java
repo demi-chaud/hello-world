@@ -231,7 +231,6 @@ public class Ped extends Agent{
 				goes3 = gap(nearest3,3);
 				count3++;
 				if (count3 > 5) {
-					int foo = 0;
 					break;}}
 			if (goes3 ==  1) {go3 = true;}
 			if (goes3 == -1) {go3 = false;}}		
@@ -448,7 +447,7 @@ public class Ped extends Agent{
 						forcesY.add(interFy);}}}}
 		
 		//stop at curb if necessary
-		if (curbed == true) {
+		if (curbed == true && !UserPanel.calcFun) {
 			double dCurb;
 			if (direct == 1) {dCurb = side - yLoc;}
 			else {dCurb = yLoc - side - RoadBuilder.roadW;}
@@ -546,7 +545,6 @@ public class Ped extends Agent{
 	 * @param contextGrid
 	 * @param direction
 	 */
-//	public Ped(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid, int direction) {
 	public Ped(ContinuousSpace<Object> contextSpace, int direction) {
 		yielders = new ArrayList<Turtle>();
 		space	 = contextSpace;

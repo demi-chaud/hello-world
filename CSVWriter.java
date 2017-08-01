@@ -86,7 +86,7 @@ public class CSVWriter {
 			fileWriter = new FileWriter(fn);
 			fileWriter.append(header);
 			for (Double[] d : list) {
-				String speed0 = String.valueOf(d[0]*UserPanel.vBase);
+				String speed0 = String.valueOf(d[0]);
 				String flux0 = String.valueOf(d[1]);
 				String density0 = String.valueOf(d[2]);
 				flux = flux0 + comma;
