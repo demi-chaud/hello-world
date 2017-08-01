@@ -35,6 +35,7 @@ public class Turtle extends Agent{
 	private double	confLim, stopBar, ttstopBar, lnTop, lnBot, hardYield, yieldDec;	//yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
+	private double	tick;
 	private int		age;
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
@@ -49,6 +50,7 @@ public class Turtle extends Agent{
 	* Sets value of acc & vNew
 	*/
 	public void calc() {
+		tick	= Scheduler.thisTick;
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
@@ -83,7 +85,7 @@ public class Turtle extends Agent{
 			stamp  = RoadBuilder.clock.getTickCount();
 			tStamp = stamp*UserPanel.tStep;
 			delayTs = UserPanel.delayTs;
-			tN		= Math.floor(delayTs/UserPanel.tStep);
+			tN		= Math.floor(1e-14 + delayTs/UserPanel.tStep);
 			tBeta	= (delayTs/UserPanel.tStep) - tN;
 			//TODO: limit size of storage to limit memory use
 			storage.add(new double[] {tStamp, newAcc, v});
@@ -96,7 +98,7 @@ public class Turtle extends Agent{
 					hiT = storage.get(foo)[0];
 					foo++;}
 				double hiAcc = storage.get(foo-1)[1];
-				if (hiT != delayedT){	//linear interpolation TODO: is there a better approx?
+				if (Math.abs(hiT - delayedT) > 1e-14) {	//linear interpolation TODO: is there a better approx?
 					double loAcc = storage.get(foo-2)[1];
 					acc = tBeta*loAcc + (1-tBeta)*hiAcc;}
 				else acc = hiAcc;

@@ -43,7 +43,8 @@ public class Scheduler extends Agent {
 	String  homeDir = System.getProperty("user.home");
 	String	directory = homeDir + "\\workspace\\driving1\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
-	double  rndC, rndP, rndC2, rndP2, yPlacement, thisTick;
+	double  rndC, rndP, rndC2, rndP2, yPlacement;
+	public static double thisTick;
 	int     lane, dir, greenDur, amberDur, redDur;
 	int		counter = 0;
 	int		counter1 = 0;
