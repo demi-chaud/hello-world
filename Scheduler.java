@@ -200,9 +200,9 @@ public class Scheduler extends Agent {
 		if (thisTick == UserPanel.simLength) { //TODO: add flag to only use this during batch runs
 			String nP	= String.valueOf(UserPanel.pedRho) + "_";
 			String nC	= String.valueOf(UserPanel.vehRho) + "_";
-			String del	= String.valueOf(UserPanel.delayTs) + "_";
+//			String del	= String.valueOf(UserPanel.delayTs) + "_";
 			String lim	= String.valueOf(UserPanel.sLimitKH);
-			String thisRunC = nP + nC + del + lim;
+			String thisRunC = nP + nC + /*del +*/ lim;
 			String thisRunD = nC + lim;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";

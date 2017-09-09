@@ -46,7 +46,7 @@ public class UserPanel implements ActionListener{
 	static public double sLimitKH	= 45;			// km/hr			default:  45
 	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
 	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
-	static public double delayTs 	= 1.2;			// seconds			default:   1.2
+//	static public double delayTs 	= 1.2;			// seconds			default:   1.2
 	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
 	static public double DmuHatS	= -0.4552452;	// distraction dist scale param (in seconds)
 	static public double DsigHat	= 0.6108071;	// distraction dist shape param (already in model units)
@@ -92,6 +92,8 @@ public class UserPanel implements ActionListener{
 	static public boolean bothCar	= true;
 //	static public boolean pedsUp	= true;
 //	static public boolean pedsDn	= true;
+	static public boolean BRT		= true;
+	static public boolean ADRT		= true;
 	static public boolean IIDM		= true;  //include Improved IDM?
 	static public boolean inclRL	= false; //include red lights?
 	static public boolean calcFun	= false;  //build fundamental diagram
@@ -109,7 +111,7 @@ public class UserPanel implements ActionListener{
 	private String vehRhos	= String.valueOf(vehRho);
 	private String pedRhos	= String.valueOf(pedRho);
 	private JTextField pRho;
-	private String delTs	= String.valueOf(delayTs);
+//	private String delTs	= String.valueOf(delayTs);
 //	private String tSteps	= String.valueOf(tStep);
 	private String confTs	= String.valueOf(confLimS);
 	private String pV2Xs	= String.valueOf(percV2X);
@@ -126,6 +128,8 @@ public class UserPanel implements ActionListener{
 		JCheckBox rlOn	  = new JCheckBox("Red Lights?",	false);
 		JCheckBox funDia  = new JCheckBox("Calc funDia?",	false);
 		JCheckBox errOn   = new JCheckBox("Est Errors?",	false);
+		JCheckBox brtOn   = new JCheckBox("BRT?",			false);
+		JCheckBox adrtOn  = new JCheckBox("ADRT?",			false);
 //		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
 //		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
 //		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);
@@ -140,9 +144,9 @@ public class UserPanel implements ActionListener{
 		JLabel   pLabel = new JLabel("Pedestrians/hr");
 		pRho = new JTextField(pedRhos, 6);
 			pRho.setActionCommand("pRho");
-		JLabel   tLabel = new JLabel("Reaction time (sec)");
-		JTextField delT = new JTextField(delTs,   6);
-			delT.setActionCommand("delT");
+//		JLabel   tLabel = new JLabel("Reaction time (sec)");
+//		JTextField delT = new JTextField(delTs,   6);
+//			delT.setActionCommand("delT");
 		JLabel	 cLabel = new JLabel("Conflict limit (sec)");
 		JTextField conf = new JTextField(confTs,  6);
 			conf.setActionCommand("conf");
@@ -165,6 +169,9 @@ public class UserPanel implements ActionListener{
 		funDia.addActionListener(this);
 		rlOn.addActionListener(this);
 		errOn.addActionListener(this);
+		brtOn.addActionListener(this);
+		adrtOn.addActionListener(this);
+		
 //		iidmOn.addActionListener(this);
 //		car2way.addActionListener(this);
 //		pedUp.addActionListener(this);
@@ -172,7 +179,7 @@ public class UserPanel implements ActionListener{
 		sLim.addActionListener(this);
 		pRho.addActionListener(this);
 		vRho.addActionListener(this);
-		delT.addActionListener(this);
+//		delT.addActionListener(this);
 		conf.addActionListener(this);
 //		tckT.addActionListener(this);
 		v2xF.addActionListener(this);
@@ -183,6 +190,8 @@ public class UserPanel implements ActionListener{
 		newPanel.add(funDia);
 		newPanel.add(rlOn);
 		newPanel.add(errOn);
+		newPanel.add(brtOn);
+		newPanel.add(adrtOn);
 //		newPanel.add(iidmOn);
 //		newPanel.add(car2way);
 //		newPanel.add(pedUp);
@@ -193,8 +202,8 @@ public class UserPanel implements ActionListener{
 		newPanel.add(vRho);
 		newPanel.add(pLabel);
 		newPanel.add(pRho);
-		newPanel.add(tLabel);
-		newPanel.add(delT);
+//		newPanel.add(tLabel);
+//		newPanel.add(delT);
 //		newPanel.add(tckLab);
 //		newPanel.add(tckT);
 		newPanel.add(cLabel);
@@ -241,6 +250,14 @@ public class UserPanel implements ActionListener{
 				if (checkSource.isSelected()) estErr = true;
 				else estErr = false;
 				break;
+			case "BRT?":
+				if (checkSource.isSelected()) BRT = true;
+				else BRT = false;
+				break;
+			case "ADRT?":
+				if (checkSource.isSelected()) ADRT = true;
+				else ADRT = false;
+				break;
 //			case "IIDM?":
 //				if (checkSource.isSelected()) IIDM = true;
 //				else IIDM = false;
@@ -277,10 +294,10 @@ public class UserPanel implements ActionListener{
 				pedRho = Integer.parseInt(newPVal);
 				calcPeds();
 				break;
-			case "delT":
-				String newTVal = textSource.getText();
-				delayTs = Double.parseDouble(newTVal);
-				break;
+//			case "delT":
+//				String newTVal = textSource.getText();
+//				delayTs = Double.parseDouble(newTVal);
+//				break;
 //			case "tckT":
 //				String newTick = textSource.getText();
 //				tStep = Double.parseDouble(newTick);
@@ -383,11 +400,11 @@ public class UserPanel implements ActionListener{
 		return pedRho;}
 	public void setPedRho(int pRho) {
 		pedRho = pRho;}
-	@Parameter(usageName="delayT", displayName="Delay time (s)")
-	public double get() {
-		return delayTs;}
-	public void set(double delayTime) {
-		delayTs = delayTime;}
+//	@Parameter(usageName="delayT", displayName="Delay time (s)")
+//	public double get() {
+//		return delayTs;}
+//	public void set(double delayTime) {
+//		delayTs = delayTime;}
 }
 
 //double[] poisStoreV = new double[poisTerms];

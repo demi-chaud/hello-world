@@ -24,15 +24,19 @@ public class Turtle extends Agent{
 	private ArrayList<ViewAngle> obstructers, obstructees;
 	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
 	private List<double[]> storage = new ArrayList<double[]>();
+	private List<double[]> shldBrakeStorage = new ArrayList<double[]>();
 	private Random  rnd  = new Random();	//initiates random number generator for vehicle properties
 	private Random  rndD = new Random();	//ditto for distraction
 	private Random	rndS = new Random();
+	private Random  rndBRT = new Random();
+	private Random	rndADRT = new Random();
 	private boolean	distracted = false;
 	private double	timeD, durD, timeSinceD, interD, interDlam;		//distraction
-	private double	delayTs, tN, tBeta;								//delay
+	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;		//delay
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head;	//car-following
 	private double	wS, etaS, wV, etaV, sigR;						//errors
-	private double	confLim, stopBar, ttstopBar, lnTop, lnBot, hardYield, yieldDec;	//yielding
+	private double	confLim, stopBar, ttstopBar, lnTop, lnBot;		//yielding
+	private double	bAccel, hardYield, yieldDec;					//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
@@ -41,6 +45,7 @@ public class Turtle extends Agent{
 	public  Turtle	leader, follower;
 	public	boolean connected, autonomous;
 	public  double	v, vNew, acc, xLoc, yLoc, length, tail, driverX, driverY, decelT;
+	public	double	stopDab;
 	public  int		lane;	//  0 = outer lane, 1 = inner lane
 	public	int		dir;	//  1 = going right, -1 = going left
 	public	int		ying, oldYing;	// -1 = none, 0 = soft, 1 = hard
@@ -75,16 +80,16 @@ public class Turtle extends Agent{
 				conflict();}}
 		else {
 			if (timeSinceD == 0) {
-				double interD0 = (rndD.nextDouble() + Double.MIN_VALUE)*interDlam; //padded to avoid -inf
+				double interD0 = (rndD.nextDouble() + 1E-15)*interDlam; //padded to avoid -inf
 				interD = -Math.log(interD0/interDlam)/interDlam;}
 			timeSinceD += 1;
 			newAcc = accel(myLoc, lane, dir);}
-		//delayed reaction: implements acc calculated and stored delayT ago
-		if (UserPanel.delayTs > 0 && autonomous == false) { //TODO: probably give non-zero value for automated
+		
+		//delayed CF reaction: implements acc calculated and stored delayT ago
+		if (UserPanel.ADRT && autonomous == false) { //TODO: probably give non-zero value for automated
 			double stamp, tStamp, delayedT, hiT;
 			stamp  = RoadBuilder.clock.getTickCount();
 			tStamp = stamp*UserPanel.tStep;
-			delayTs = UserPanel.delayTs;
 			tN		= Math.floor(1e-14 + delayTs/UserPanel.tStep);
 			tBeta	= (delayTs/UserPanel.tStep) - tN;
 			//TODO: limit size of storage to limit memory use
@@ -106,6 +111,37 @@ public class Turtle extends Agent{
 					storage.remove(0);}}
 			else acc = newAcc;}
 		else acc = newAcc;
+		
+		//delayed braking reaction
+		double newbAccel = brake(myLoc, lane, dir);
+		double oldbAccel;
+		if (UserPanel.BRT && autonomous == false) { //TODO: probably give non-zero value for automated
+			double stamp, tStamp, delayedT, hiT;
+			stamp  = RoadBuilder.clock.getTickCount();
+			tStamp = stamp*UserPanel.tStep;
+			brt_tN	= Math.floor(1e-14 + BRTs/UserPanel.tStep);
+			brtBeta	= (BRTs/UserPanel.tStep) - brt_tN;
+			//TODO: limit size of storage to limit memory use
+			shldBrakeStorage.add(new double[] {tStamp, newbAccel});
+			delayedT = tStamp - BRTs;
+			hiT = 0;
+			int foo = 0;
+			int storSize = shldBrakeStorage.size();
+			if (storSize > 3 && storSize > brt_tN+1) { 
+				while (hiT < delayedT) {
+					hiT = shldBrakeStorage.get(foo)[0];
+					foo++;}
+				double hiAcc = shldBrakeStorage.get(foo-1)[1];
+				if (Math.abs(hiT - delayedT) > 1e-14) {	//linear interpolation TODO: is there a better approx?
+					double loAcc = shldBrakeStorage.get(foo-2)[1];
+					oldbAccel = tBeta*loAcc + (1-tBeta)*hiAcc;}
+				else oldbAccel = hiAcc;
+				if (storSize > 3*tN) {		//TODO: make this less arbitrary
+					shldBrakeStorage.remove(0);}}
+			else oldbAccel = newbAccel;}
+		else oldbAccel = newbAccel;
+		if (oldbAccel < acc && newbAccel < acc) {
+			acc = newbAccel;}
 		age++;
 		
 		vNew = v + acc;
@@ -137,12 +173,9 @@ public class Turtle extends Agent{
 	}
 	
 	/**
-	 * Calculates acceleration based on car-following and yielding.
-	 * Compares the two and returns the lower value.
-	 * @param loc
-	 * @param myLane
-	 * @param myDir
-	 * @return accel
+	 * Calculates acceleration based on car-following
+	 * @param loc, myLane, myDir
+	 * @return a
 	 */
 	public double accel(NdPoint loc, int myLane, int myDir) {
 		double a, setSpeed, vDiff, safeHead, aFree;
@@ -191,8 +224,6 @@ public class Turtle extends Agent{
 				if((Math.abs(p.xLoc - xLoc) - length) < tail) {
 					tail = Math.abs(p.xLoc - xLoc) - length;
 					follower = p;}}}
-//		else {
-//			tail = Math.abs(follower.xLoc - xLoc) - length;}
 		
 		//calculate CF acceleration (with errors)
 		if (leader != null) {
@@ -211,7 +242,7 @@ public class Turtle extends Agent{
 			double z = 1000;
 			if (head != 0) {
 				z = safeHead / head;}
-//			if (UserPanel.IIDM == true) {
+				//implement IIDM
 				if (v < maxv) {
 					aFree = maxa*(1-Math.pow(v/maxv,deltaIDM));
 					if (z >= 1) {
@@ -223,28 +254,32 @@ public class Turtle extends Agent{
 					if (z >= 1) {
 						a = aFree + maxa*(1-z*z);}
 					else {
-						a = aFree;}}
-//				}
-//			else {
-//				a = maxa*(1 - Math.pow(v/maxv,deltaIDM) - Math.pow(safeHead/head,2));}
-		}
+						a = aFree;}}}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
-
-		//Calculate yielding and red light acceleration
+		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
+			a = -UserPanel.emergDec;}
+		return a;	
+	}
+	
+	/*
+	 * Calculates acceleration for yielding and red lights
+	 */
+	public double brake(NdPoint loc, int myLane, int myDir) {
+		//Calculate yielding acceleration
+		
+		double aBrake = 100;
 		double stopD	= stopBar - xLoc;
-		double stopDab	= dir*stopD;
+		stopDab	= dir*stopD;
 		double xwalkD	= RoadBuilder.xWalkx - xLoc;
 		double threat	= Math.signum(dir*xwalkD);
-		double aYield	= 0;
 		if (threat == 1) {
-			aYield = yield(stopDab,xwalkD);
-			if (aYield < a) {
-				a = aYield;}}
+			aBrake = yield(stopDab,xwalkD);}
+
+		double rlAcc = 100;
 		if (UserPanel.inclRL) {
 			ArrayList<Turtle> queue = new ArrayList<Turtle>();
 			ArrayList<Turtle> rlAhead = new ArrayList<Turtle>();
 			double rlD;
-			double rlAcc = 100;
 			RedLight rl1 = RoadBuilder.rl1;
 			RedLight rl2 = RoadBuilder.rl2;
 			if (dir == 1 && xLoc < rl1.xLoc) {
@@ -272,12 +307,12 @@ public class Turtle extends Agent{
 						else if (rl2.myState == state.AMBER) {
 							rlAcc = -v*v/(2*rlD);
 							if (rlAcc < -UserPanel.mina) {
-								rlAcc = 100;}}}}}
-			if (rlAcc < a) {
-				a = rlAcc;}}
-		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
-			a = -UserPanel.emergDec;}
-		return a;
+								rlAcc = 100;}}}}}}
+		if (rlAcc < aBrake) {
+			aBrake = rlAcc;}
+		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && aBrake < -UserPanel.emergDec) {
+			aBrake = -UserPanel.emergDec;}
+		return aBrake;
 	}
 
 	/**
@@ -710,7 +745,7 @@ public class Turtle extends Agent{
 	//TODO: add similar code to Ped.java to vary ped parameters
 //	public Turtle(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid) {
 	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir,
-			boolean conn, boolean auto) {
+				  boolean conn, boolean auto) {
 		space	= contextSpace;
 		lane	= whichLane;
 		dir		= whichDir;
@@ -722,9 +757,13 @@ public class Turtle extends Agent{
 		tGap	= rnd.nextGaussian()*(UserPanel.tGap*.08)+UserPanel.tGap;
 		jamHead	= rnd.nextGaussian()*(UserPanel.jamHead*.08)+UserPanel.jamHead;
 		length	= UserPanel.carLength;
-		delayTs	= UserPanel.delayTs;
+		double delayT0 = rndADRT.nextGaussian() * 1.193759285934727 - 1.60692043370482;
+		delayTs	= Math.exp(delayT0) + 0.25;
 		tN		= Math.floor(delayTs/UserPanel.tStep);
-		tBeta	= (delayTs/UserPanel.tStep) - tN;	
+		tBeta	= (delayTs/UserPanel.tStep) - tN;
+		BRTs	= CalcBRT();
+		brt_tN	= Math.floor(BRTs/UserPanel.tStep);
+		brtBeta	= (BRTs/UserPanel.tStep) - brt_tN;
 		v		= maxv * (1 - .3*rnd.nextDouble());
 		decelT	= v/UserPanel.emergDec;
 		wS		= etaS = rnd.nextGaussian();
@@ -764,7 +803,16 @@ public class Turtle extends Agent{
 			stopDistance0 = 11;}
 		stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
 		return stopDistance;
-		
+	}
+	
+	/* Fits driver's brake reaction time to shifted Weibull distribution */
+	public double CalcBRT() {
+		double scaler = 1-(1E-15);
+		double brt0 = scaler * rndBRT.nextDouble();
+		double brt00 = -Math.log(1-brt0);
+		double exp = 1/2.08;
+		double brt = 0.4 + 1.032*Math.pow(brt00,exp);
+		return brt; 
 	}
 	
 	/**
@@ -917,6 +965,9 @@ public class Turtle extends Agent{
 	@Parameter(usageName="xLoc", displayName="xLoc")
 	public double getX() {
 		return xLoc;}
+	@Parameter(usageName="stopD", displayName="stopD")
+	public double getStopD() {
+		return stopDab;}
 	@Parameter(usageName="dist", displayName="distr?")
 	public boolean getDistr() {
 		return distracted;}
