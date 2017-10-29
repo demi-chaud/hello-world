@@ -24,7 +24,7 @@ public class UserPanel implements ActionListener{
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
 	static public double percV2X	= 0;
 	static public double percAuto	= 0;
-	static public double percBoth	= 0;
+	static public double percBoth	= 100;
 	
 	// calculate population range constants
 	static public double V2Xlo	= 0;
@@ -35,15 +35,29 @@ public class UserPanel implements ActionListener{
 	static public double bothHi = bothLo + percBoth/100;
 	
 	// declare variables in real world units
-	static final  double pedVavgKH	= 5;			// km/hr			default:   5 (source Zebala 2012)
-	static final  double maxaMS		= 1.4;			// m/s2				default:   1.4
-	static final  double minaMS		= 3.5;			// m/s2				default:   3.5
+	static final  double pedVavgKH	= 5;			// km/hr			default:   5 	 (source Zebala 2012)
+	static final  double pedVsdKH	= 0.936;		// km/hr			default:   0.936 (source Still 2000)
+//	static final  double maxaMS		= 1.43;			// m/s2				default:   1.43 \
+//	static final  double maxaMS_sd	= 0.13;			// m/s2				default:   0.13  |
+//	static final  double minaMS		= 0.78;			// m/s2				default:   0.78  / source: hoogendoorn
+//	static final  double minaMS_sd	= 0.15;			// m/s2				default:   0.15  \		and hoogendoorn 2010
+//	static final  double tGapS		= 1.17;			// s				default:   1.17  |
+//	static final  double tGapS_sd	= 0.16;			// s				default:   0.16 /
+	static final  double maxaMS		= 1.406;		// m/s2				default:   1.43 \
+	static final  double maxaMS_sd	= 1.012;		// m/s2				default:   0.13  |
+	static final  double minaMS		= 2.225;		// m/s2				default:   0.78  / source: kim and
+	static final  double minaMS_sd	= 1.849;		// m/s2				default:   0.15  \		mahmassani 2011
+	static final  double tGapS		= 1.266;		// s				default:   1.17  |
+	static final  double tGapS_sd	= 0.507;		// s				default:   0.16 /
+	static final  double jamHeadM	= 2.5;			// m				default:   2.5 arbitrary
+	static final  double jamHeadM_sd= 0.5;			// m				default:   0.5  -ditto
+	
 	static final  double emergDecMS	= 7.4;			// m/s2				default:   7.4 (source Greibe 2007)
-	static final  double tGapS		= 1.9;			// s				default:   1.9
 	static final  double carLengthM	= 5.28;			// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
 	static final  double carWidthM	= 1.89;			// m					avg of lg sedan 1990 & 2007
-	static final  double jamHeadM	= 2.5;			// m				default:   2.5
 	static public double sLimitKH	= 45;			// km/hr			default:  45
+	static public double sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
+	static public double sLimitSDKH = 4.5;			// km/hr					ditto
 	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
 	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 //	static public double delayTs 	= 1.2;			// seconds			default:   1.2
@@ -62,14 +76,22 @@ public class UserPanel implements ActionListener{
 	
 	// convert variables to model units
 	static final  double pedVavg	= pedVavgKH/vBase;
+	static final  double pedVsd		= pedVsdKH/vBase;
 	static final  double maxa		= maxaMS*tStep*tStep/spaceScale;
+	static final  double maxa_sd	= maxaMS_sd*tStep*tStep/spaceScale;
 	static final  double mina		= minaMS*tStep*tStep/spaceScale;
-	static final  double emergDec	= emergDecMS*tStep*tStep/spaceScale;
+	static final  double mina_sd	= minaMS_sd*tStep*tStep/spaceScale;
 	static final  double tGap		= tGapS/tStep;
+	static final  double tGap_sd	= tGapS_sd/tStep;
+	static final  double jamHead	= jamHeadM/spaceScale;
+	static final  double jamHead_sd	= jamHeadM_sd/spaceScale;
+	
+	static public double sLimit 	= sLimitKH/vBase;
+	static public double sLimitMu	= sLimitMuKH/vBase;
+	static public double sLimit_sd	= sLimitSDKH/vBase;
+	static final  double emergDec	= emergDecMS*tStep*tStep/spaceScale;
 	static final  double carLength	= carLengthM/spaceScale;
 	static final  double carWidth	= carWidthM/spaceScale;
-	static final  double jamHead	= jamHeadM/spaceScale;
-	static public double sLimit 	= sLimitKH/vBase;
 	static public double lambdaCar	= vehRho * tStep / 3600;
 	static public double lambdaPed	= pedRho * tStep / 3600;
 	static public double poisExpV	= Math.exp(-lambdaCar);
@@ -311,6 +333,7 @@ public class UserPanel implements ActionListener{
 			case "V2X":
 				String newPv2x = textSource.getText();
 				percV2X = Double.parseDouble(newPv2x);
+				calcCars();
 				break;
 //			case "V2I":
 //				String newPv2i = textSource.getText();
@@ -319,10 +342,12 @@ public class UserPanel implements ActionListener{
 			case "Automated":
 				String newPauto = textSource.getText();
 				percAuto = Double.parseDouble(newPauto);
+				calcCars();
 				break;
 			case "CAV":
 				String newPboth = textSource.getText();
 				percBoth = Double.parseDouble(newPboth);
+				calcCars();
 				break;}
 			break;
 		default: break;}
@@ -336,7 +361,12 @@ public class UserPanel implements ActionListener{
 		poisExpV  = Math.exp(-lambdaCar);
 		Pof1Car = lambdaCar * poisExpV;
 		Pof2Car	= Math.pow(lambdaCar,2)*poisExpV/2;
-		
+		V2Xlo	= 0;
+		V2Xhi	= percV2X/100;
+		autLo	= V2Xhi;
+		autHi	= autLo + percAuto/100;
+		bothLo	= autHi;
+		bothHi  = bothLo + percBoth/100;
 //		poisStoreV = new ArrayList<Double>();
 //		double pNew = 1;
 //		int i = 1;
