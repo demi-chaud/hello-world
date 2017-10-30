@@ -30,13 +30,14 @@ public class Turtle extends Agent{
 	private Random	rndS = new Random();
 	private Random  rndBRT = new Random();
 	private Random	rndADRT = new Random();
+	private Random  rndIDM = new Random();
 	private boolean	distracted = false;
 	private double	timeD, durD, timeSinceD, interD, interDlam;		//distraction
 	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;		//delay
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head;	//car-following
 	private double	wS, etaS, wV, etaV, sigR;						//errors
 	private double	confLim, stopBar, ttstopBar, lnTop, lnBot;		//yielding
-	private double	bAccel, hardYield, yieldDec;					//also yielding
+	private double	hardYield, yieldDec;					//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
@@ -59,30 +60,33 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
-		if (interD != 0 && timeSinceD >= interD) {
-			if (ying == -1) { //don't get distracted if yielding
-				distracted = true;
-				timeSinceD = 0;
-				interD = 0;}}
-		if (durD != 0 && timeD >= durD) {
-			distracted = false;
-			timeD = 0;
-			durD = 0;}
-		if (autonomous == false && distracted == true && xLoc > RoadBuilder.roadL/10) {
-			if (timeD == 0) {
-				double durD0 = rndD.nextGaussian()*UserPanel.DsigHat + UserPanel.DmuHat;
-				durD = Math.exp(durD0);}
-			newAcc = acc;
-			timeD += 1;
-			double xwalkD	= RoadBuilder.xWalkx - xLoc;
-			double threat	= Math.signum(dir*xwalkD);
-			if (threat == 1 && v != 0) {
-				conflict();}}
+		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10) {
+			if (interD != 0 && timeSinceD >= interD) {
+				if (ying == -1) { //don't get distracted if yielding
+					distracted = true;
+					timeSinceD = 0;
+					interD = 0;}}
+			if (durD != 0 && timeD >= durD) {
+				distracted = false;
+				timeD = 0;
+				durD = 0;}
+			if (autonomous == false && distracted == true) {
+				if (timeD == 0) {
+					double durD0 = rndD.nextGaussian()*UserPanel.DsigHat + UserPanel.DmuHat;
+					durD = Math.exp(durD0);}
+				newAcc = acc;
+				timeD += 1;
+				double xwalkD	= RoadBuilder.xWalkx - xLoc;
+				double threat	= Math.signum(dir*xwalkD);
+				if (threat == 1 && v != 0) {
+					conflict();}}
+			else {
+				if (timeSinceD == 0) {
+					double interD0 = (rndD.nextDouble() + 1E-15)*interDlam; //padded to avoid -inf
+					interD = -Math.log(interD0/interDlam)/interDlam;}
+				timeSinceD += 1;
+				newAcc = accel(myLoc, lane, dir);}}
 		else {
-			if (timeSinceD == 0) {
-				double interD0 = (rndD.nextDouble() + 1E-15)*interDlam; //padded to avoid -inf
-				interD = -Math.log(interD0/interDlam)/interDlam;}
-			timeSinceD += 1;
 			newAcc = accel(myLoc, lane, dir);}
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
@@ -92,7 +96,6 @@ public class Turtle extends Agent{
 			tStamp = stamp*UserPanel.tStep;
 			tN		= Math.floor(1e-14 + delayTs/UserPanel.tStep);
 			tBeta	= (delayTs/UserPanel.tStep) - tN;
-			//TODO: limit size of storage to limit memory use
 			storage.add(new double[] {tStamp, newAcc, v});
 			delayedT = tStamp - delayTs;
 			hiT = 0;
@@ -115,7 +118,8 @@ public class Turtle extends Agent{
 		//delayed braking reaction
 		double newbAccel = brake(myLoc, lane, dir);
 		double oldbAccel;
-		if (UserPanel.BRT && autonomous == false) { //TODO: probably give non-zero value for automated
+		//if (UserPanel.BRT && autonomous == false) { //TODO: probably give non-zero value for automated
+		if (UserPanel.BRT) {
 			double stamp, tStamp, delayedT, hiT;
 			stamp  = RoadBuilder.clock.getTickCount();
 			tStamp = stamp*UserPanel.tStep;
@@ -134,9 +138,9 @@ public class Turtle extends Agent{
 				double hiAcc = shldBrakeStorage.get(foo-1)[1];
 				if (Math.abs(hiT - delayedT) > 1e-14) {	//linear interpolation TODO: is there a better approx?
 					double loAcc = shldBrakeStorage.get(foo-2)[1];
-					oldbAccel = tBeta*loAcc + (1-tBeta)*hiAcc;}
+					oldbAccel = brtBeta*loAcc + (1-brtBeta)*hiAcc;}
 				else oldbAccel = hiAcc;
-				if (storSize > 3*tN) {		//TODO: make this less arbitrary
+				if (storSize > 3*brt_tN) {		//TODO: make this less arbitrary
 					shldBrakeStorage.remove(0);}}
 			else oldbAccel = newbAccel;}
 		else oldbAccel = newbAccel;
@@ -157,7 +161,9 @@ public class Turtle extends Agent{
 				Scheduler.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
-				space.moveByDisplacement(this,vNew,0);
+				double displacement = v + .5*acc;		//TODO: replace this?
+				//space.moveByDisplacement(this,vNew,0);	// new version from Kesting, Treiber and Helbing 2009
+				space.moveByDisplacement(this,displacement,0);	//"Agents for Traffic Simulation"
 				myLoc = space.getLocation(this);
 				xLoc = myLoc.getX();}}
 		else {
@@ -165,7 +171,9 @@ public class Turtle extends Agent{
 				Scheduler.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
-				space.moveByDisplacement(this,-vNew,0);
+				double displacement = -v - .5*acc;		//TODO: ditto
+				//space.moveByDisplacement(this,-vNew,0);
+				space.moveByDisplacement(this,displacement,0);
 				myLoc = space.getLocation(this);
 				xLoc = myLoc.getX();}}
 		v = vNew;
@@ -293,7 +301,7 @@ public class Turtle extends Agent{
 							rlAcc = -v*v/(2*rlD);}
 						else if (rl1.myState == state.AMBER) {
 							rlAcc = -v*v/(2*rlD);
-							if (rlAcc < -UserPanel.mina) {
+							if (rlAcc < -mina) {
 								rlAcc = 100;}}}}}
 			else if (dir == -1 && xLoc > rl2.xLoc) {
 				rlD = xLoc - rl2.xLoc;
@@ -306,7 +314,7 @@ public class Turtle extends Agent{
 							rlAcc = -v*v/(2*rlD);}
 						else if (rl2.myState == state.AMBER) {
 							rlAcc = -v*v/(2*rlD);
-							if (rlAcc < -UserPanel.mina) {
+							if (rlAcc < -mina) {
 								rlAcc = 100;}}}}}}
 		if (rlAcc < aBrake) {
 			aBrake = rlAcc;}
@@ -742,26 +750,31 @@ public class Turtle extends Agent{
 	 * @param contextSpace
 	 * @param contextGrid
 	 */
-	//TODO: add similar code to Ped.java to vary ped parameters
-//	public Turtle(ContinuousSpace<Object> contextSpace, Grid<Object> contextGrid) {
+
 	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir,
 				  boolean conn, boolean auto) {
 		space	= contextSpace;
 		lane	= whichLane;
 		dir		= whichDir;
-		//store parameters with heterogeneity (currently s.dev abitrarily = 8% of mean)
-		//TODO: get theory for these numbers
-		maxa	= rnd.nextGaussian()*(UserPanel.maxa*.08)+UserPanel.maxa;			//TODO: change this stand Dev
-		mina	= rnd.nextGaussian()*(UserPanel.mina*.25)+UserPanel.mina;
-		maxv	= rnd.nextGaussian()*(UserPanel.sLimit*.08)+(UserPanel.sLimit);			//TODO: change this stand Dev
-		tGap	= rnd.nextGaussian()*(UserPanel.tGap*.08)+UserPanel.tGap;
-		jamHead	= rnd.nextGaussian()*(UserPanel.jamHead*.08)+UserPanel.jamHead;
+		double maxa0 = rndIDM.nextGaussian()*UserPanel.maxaShape + UserPanel.maxaScale;
+		maxa	= Math.exp(maxa0);
+		double mina0 = rndIDM.nextGaussian()*UserPanel.minaShape + UserPanel.minaScale;
+		mina	= Math.exp(mina0);
+		maxv	= rnd.nextGaussian()*(UserPanel.sLimit_sd)+(UserPanel.sLimitMu);
+		tGap	= rnd.nextGaussian()*(UserPanel.tGap_sd)+UserPanel.tGap;
+		double jamHead0 = rndIDM.nextGaussian()*UserPanel.jamHeadShape + UserPanel.jamHeadScale;
+		jamHead = Math.exp(jamHead0);
+		//jamHead	= rnd.nextGaussian()*(UserPanel.jamHeadShape)+UserPanel.jamHeadScale;
 		length	= UserPanel.carLength;
-		double delayT0 = rndADRT.nextGaussian() * 1.193759285934727 - 1.60692043370482;
-		delayTs	= Math.exp(delayT0) + 0.25;
+		if (autonomous == false) {
+			BRTs = calcBRT() + 0.35;  // + 0.15 mvmt time (Lister 1950) + 0.2 device response time (Grover 2008)
+			double delayT0 = rndADRT.nextGaussian() * 1.193759285934727 - 1.60692043370482;
+			delayTs	= Math.exp(delayT0) + 0.25;}  
+		else {
+			BRTs = 0.51;  //seconds (source Grover 2008)
+			delayTs = 0.4;}
 		tN		= Math.floor(delayTs/UserPanel.tStep);
 		tBeta	= (delayTs/UserPanel.tStep) - tN;
-		BRTs	= CalcBRT();
 		brt_tN	= Math.floor(BRTs/UserPanel.tStep);
 		brtBeta	= (BRTs/UserPanel.tStep) - brt_tN;
 		v		= maxv * (1 - .3*rnd.nextDouble());
@@ -770,7 +783,7 @@ public class Turtle extends Agent{
 		wV		= rnd.nextGaussian();
 		etaV	= rnd.nextGaussian();
 		sigR 	= 0.01*UserPanel.tStep; //standard deviation of relative approach rate
-		stopBar	= CalcStopBar(whichDir);
+		stopBar	= calcStopBar(whichDir);
 		if (dir == 1) {
 			if (lane == 0) {
 				lnBot = RoadBuilder.sidewalk;}
@@ -795,23 +808,23 @@ public class Turtle extends Agent{
 	}
 	
 	/* Fits driver's distance from stopBar to lognormal distribution */
-	public double CalcStopBar(int dir) {
-		double stopDistance;
+	public double calcStopBar(int dir) {
 		double dist0 = rndS.nextGaussian()*UserPanel.SsigHat + UserPanel.SmuHat;
 		double stopDistance0 = Math.exp(dist0);
 		if (stopDistance0 > 11) {
 			stopDistance0 = 11;}
-		stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
+		double stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
 		return stopDistance;
 	}
 	
-	/* Fits driver's brake reaction time to shifted Weibull distribution */
-	public double CalcBRT() {
+	
+	/* Fits human driver's brake reaction time to shifted Weibull distribution */
+	public double calcBRT() {
 		double scaler = 1-(1E-15);
 		double brt0 = scaler * rndBRT.nextDouble();
 		double brt00 = -Math.log(1-brt0);
-		double exp = 1/2.08;
-		double brt = 0.4 + 1.032*Math.pow(brt00,exp);
+		double exp = 1/2.435;
+		double brt = 0.25 + 1.2*Math.pow(brt00,exp);
 		return brt; 
 	}
 	

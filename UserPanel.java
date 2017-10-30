@@ -35,18 +35,25 @@ public class UserPanel implements ActionListener{
 	static public double bothHi = bothLo + percBoth/100;
 	
 	// declare variables in real world units
-	static final  double pedVavgKH	= 5;			// km/hr			default:   5 (source Zebala 2012)
-	static final  double maxaMS		= 1.4;			// m/s2				default:   1.4
-	static final  double minaMS		= 3.5;			// m/s2				default:   3.5
+	static public double sLimitKH		= 45;			// km/hr			default:  45
+	static final  double pedVavgKH		= 5;			// km/hr			default:   5 	 (source Zebala 2012)
+	static final  double pedVsdKH		= 0.936;		// km/hr			default:   0.936 (source Still 2000)
+	static final  double maxaScaleMS	= 1.406;		// m/s2				default:   1.43   \
+	static final  double maxaShape		= 1.012;		// model units		default:   0.13    |
+	static final  double minaScaleMS	= 2.225;		// m/s2				default:   0.78   /
+	static final  double minaShape		= 1.849;		// model units		default:   0.15   \  source: kim and
+	static final  double jamHeadScaleM	= 0.6517;		// m				default:   0.6517 /    mahmassani 2011
+	static final  double jamHeadShape	= 0.4979;		// model units		default:   0.4979 \
+	static final  double tGapS			= 1.266;		// s				default:   1.17    |
+	static final  double tGapS_sd		= 0.507;		// s				default:   0.16   /
+	
+	static public double sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
+	static public double sLimitSDKH = 4.5;			// km/hr					ditto
 	static final  double emergDecMS	= 7.4;			// m/s2				default:   7.4 (source Greibe 2007)
-	static final  double tGapS		= 1.9;			// s				default:   1.9
 	static final  double carLengthM	= 5.28;			// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
 	static final  double carWidthM	= 1.89;			// m					avg of lg sedan 1990 & 2007
-	static final  double jamHeadM	= 2.5;			// m				default:   2.5
-	static public double sLimitKH	= 45;			// km/hr			default:  45
 	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
 	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
-//	static public double delayTs 	= 1.2;			// seconds			default:   1.2
 	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
 	static public double DmuHatS	= -0.4552452;	// distraction dist scale param (in seconds)
 	static public double DsigHat	= 0.6108071;	// distraction dist shape param (already in model units)
@@ -57,19 +64,25 @@ public class UserPanel implements ActionListener{
 	static public int	 greenDurS	= 60;			// duration of green light in sec
 	static public int	 amberDurS	= RedLight.amberT(sLimitKH);
 	static public int	 redDurS	= cycleTimeS - greenDurS - amberDurS;
-	static public double calcTSpanS	= 15;
+	static public double calcTSpanS	= 15;			// timespan for fundamental diagram calculations (in seconds)
 	//TODO: add ped gap coefficients
 	
 	// convert variables to model units
-	static final  double pedVavg	= pedVavgKH/vBase;
-	static final  double maxa		= maxaMS*tStep*tStep/spaceScale;
-	static final  double mina		= minaMS*tStep*tStep/spaceScale;
+	static public double sLimit 		= sLimitKH/vBase;
+	static final  double sLimitMu		= sLimitMuKH/vBase;
+	static final  double sLimit_sd		= sLimitSDKH/vBase;
+	static final  double pedVavg		= pedVavgKH/vBase;
+	static final  double pedVsd			= pedVsdKH/vBase;
+	//static final  double maxa			= maxaScaleMS*tStep*tStep/spaceScale;
+	static final  double maxaScale		= maxaScaleMS + 2*Math.log(tStep) - Math.log(spaceScale);
+	static final  double minaScale		= minaScaleMS + 2*Math.log(tStep) - Math.log(spaceScale);
+	static final  double jamHeadScale	= jamHeadScaleM - Math.log(spaceScale);
+	static final  double tGap			= tGapS/tStep;
+	static final  double tGap_sd		= tGapS_sd/tStep;
+	
 	static final  double emergDec	= emergDecMS*tStep*tStep/spaceScale;
-	static final  double tGap		= tGapS/tStep;
 	static final  double carLength	= carLengthM/spaceScale;
 	static final  double carWidth	= carWidthM/spaceScale;
-	static final  double jamHead	= jamHeadM/spaceScale;
-	static public double sLimit 	= sLimitKH/vBase;
 	static public double lambdaCar	= vehRho * tStep / 3600;
 	static public double lambdaPed	= pedRho * tStep / 3600;
 	static public double poisExpV	= Math.exp(-lambdaCar);
@@ -100,7 +113,7 @@ public class UserPanel implements ActionListener{
 	static public double pedGapParamA = 6.2064;
 	
 	// declare parameters of error-making
-	static public boolean estErr 	= false;		// estimation errors
+	static public boolean estErr 	= true;		// estimation errors
 	static final  double  Vs		= 0.1;		// relative standard deviation of headEst from head
 	static final  double  errPers	= 20;		// persistence time of estimation errors in seconds
 	static final  double  wien1		= Math.exp(-tStep/errPers);		// constants in the calculation
@@ -125,15 +138,15 @@ public class UserPanel implements ActionListener{
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
 		
-		JCheckBox rlOn	  = new JCheckBox("Red Lights?",	false);
-		JCheckBox funDia  = new JCheckBox("Calc funDia?",	false);
-		JCheckBox errOn   = new JCheckBox("Est Errors?",	false);
-		JCheckBox brtOn   = new JCheckBox("BRT?",			false);
-		JCheckBox adrtOn  = new JCheckBox("ADRT?",			false);
-//		JCheckBox iidmOn  = new JCheckBox("IIDM?",			true);
-//		JCheckBox car2way = new JCheckBox("Cars both dir?", true);
-//		JCheckBox pedUp   = new JCheckBox("Peds up?",		true);
-//		JCheckBox pedDown = new JCheckBox("Peds down?",		true);
+		JCheckBox rlOn	  = new JCheckBox("Red Lights?",	inclRL);
+		JCheckBox funDia  = new JCheckBox("Calc funDia?",	calcFun);
+		JCheckBox errOn   = new JCheckBox("Est Errors?",	estErr);
+		JCheckBox brtOn   = new JCheckBox("BRT?",			BRT);
+		JCheckBox adrtOn  = new JCheckBox("ADRT?",			ADRT);
+//		JCheckBox iidmOn  = new JCheckBox("IIDM?",			IIDM);
+//		JCheckBox car2way = new JCheckBox("Cars both dir?", bothCar);
+//		JCheckBox pedUp   = new JCheckBox("Peds up?",		pedsUp);
+//		JCheckBox pedDown = new JCheckBox("Peds down?",		pedsDn);
 		
 		JLabel   sLabel = new JLabel("Speed limit (km/hr)");
 		JTextField sLim = new JTextField(sLimits, 6);
@@ -311,6 +324,7 @@ public class UserPanel implements ActionListener{
 			case "V2X":
 				String newPv2x = textSource.getText();
 				percV2X = Double.parseDouble(newPv2x);
+				calcCars();
 				break;
 //			case "V2I":
 //				String newPv2i = textSource.getText();
@@ -319,10 +333,12 @@ public class UserPanel implements ActionListener{
 			case "Automated":
 				String newPauto = textSource.getText();
 				percAuto = Double.parseDouble(newPauto);
+				calcCars();
 				break;
 			case "CAV":
 				String newPboth = textSource.getText();
 				percBoth = Double.parseDouble(newPboth);
+				calcCars();
 				break;}
 			break;
 		default: break;}
@@ -336,7 +352,12 @@ public class UserPanel implements ActionListener{
 		poisExpV  = Math.exp(-lambdaCar);
 		Pof1Car = lambdaCar * poisExpV;
 		Pof2Car	= Math.pow(lambdaCar,2)*poisExpV/2;
-		
+		V2Xlo	= 0;
+		V2Xhi	= percV2X/100;
+		autLo	= V2Xhi;
+		autHi	= autLo + percAuto/100;
+		bothLo	= autHi;
+		bothHi  = bothLo + percBoth/100;
 //		poisStoreV = new ArrayList<Double>();
 //		double pNew = 1;
 //		int i = 1;

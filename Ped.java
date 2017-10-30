@@ -548,7 +548,7 @@ public class Ped extends Agent{
 	public Ped(ContinuousSpace<Object> contextSpace, int direction) {
 		yielders = new ArrayList<Turtle>();
 		space	 = contextSpace;
-		maxV	 = UserPanel.pedVavg;
+		maxV	 = rnd.nextGaussian() * UserPanel.pedVsd + UserPanel.pedVavg;
 		dir		 = direction; // 1 moves up, -1 moves down
 		v		 = new double[] {0,(double)dir*.5*maxV};
 		crossing = 0;
@@ -567,7 +567,7 @@ public class Ped extends Agent{
 		
 		//3-circle variables - from Helbing, et al (2000) [r from Rouphail et al 1998]
 		//TODO: accT is strange - should it not vary with how far from maxV the ped is?
-		accT  = 0.5/UserPanel.tStep;							//acceleration time
+		accT  = 0.5/UserPanel.tStep;						//acceleration time
 		m     = 80;											//avg ped mass in kg
 		horiz = 5/RoadBuilder.spaceScale;					//distance at which peds affect each other
 		A     = 2000*UserPanel.tStep*UserPanel.tStep/RoadBuilder.spaceScale;	//ped interaction constant (kg*space units/time units^2)
