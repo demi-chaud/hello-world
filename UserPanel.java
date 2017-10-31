@@ -22,17 +22,22 @@ public class UserPanel implements ActionListener{
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
 	static final  double simHours	= 10;				//hours in sim (currently 5)
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
-	static public double percV2X	= 100;
+	static public double percV2X	= 0;
 	static public double percAuto	= 0;
 	static public double percBoth	= 0;
+	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
+	static public int    pedRho		= 0;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
 	
-	// calculate population range constants
-	static public double V2Xlo	= 0;
-	static public double V2Xhi	= percV2X/100;
-	static public double autLo	= V2Xhi;
-	static public double autHi	= autLo + percAuto/100;
-	static public double bothLo	= autHi;
-	static public double bothHi = bothLo + percBoth/100;
+	static public boolean estErr 	= false;		// estimation errors
+	static public boolean BRT		= false;
+	static public boolean ADRT		= false;
+	static public boolean inclRL	= false;  //include red lights?
+	static public boolean calcFun	= false;  //build fundamental diagram
+	static public boolean bothCar	= true;   //cars both directions?
+	static public boolean IIDM		= true;   //include Improved IDM?
+//	static public boolean pedsUp	= true;
+//	static public boolean pedsDn	= true;
 	
 	// declare variables in real world units
 	static public double sLimitKH		= 45;			// km/hr			default:  45
@@ -46,15 +51,13 @@ public class UserPanel implements ActionListener{
 	static final  double jamHeadShape	= 0.4979;		// model units		default:   0.4979 \
 	static final  double tGapS			= 1.266;		// s				default:   1.17    |
 	static final  double tGapS_sd		= 0.507;		// s				default:   0.16   /
+	static public double pedGapParamA   = 6.2064;
 	
 	static public double sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
 	static public double sLimitSDKH = 4.5;			// km/hr					ditto
 	static final  double emergDecMS	= 7.4;			// m/s2				default:   7.4 (source Greibe 2007)
 	static final  double carLengthM	= 5.28;			// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
 	static final  double carWidthM	= 1.89;			// m					avg of lg sedan 1990 & 2007
-	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
-	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
-	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
 	static public double DmuHatS	= -0.4552452;	// distraction dist scale param (in seconds)
 	static public double DsigHat	= 0.6108071;	// distraction dist shape param (already in model units)
 	static public double interDlamS	= 0.3524525;	// interdistraction rate (in seconds^-1)
@@ -67,6 +70,14 @@ public class UserPanel implements ActionListener{
 	static public double calcTSpanS	= 15;			// timespan for fundamental diagram calculations (in seconds)
 	//TODO: add ped gap coefficients
 	
+	// calculate population range constants
+	static public double V2Xlo	= 0;
+	static public double V2Xhi	= percV2X/100;
+	static public double autLo	= V2Xhi;
+	static public double autHi	= autLo + percAuto/100;
+	static public double bothLo	= autHi;
+	static public double bothHi = bothLo + percBoth/100;
+		
 	// convert variables to model units
 	static public double sLimit 		= sLimitKH/vBase;
 	static final  double sLimitMu		= sLimitMuKH/vBase;
@@ -102,18 +113,7 @@ public class UserPanel implements ActionListener{
 //	static public ArrayList<Double> poisStoreV, poisStoreP;
 	//TODO: place agents created in later terms of Poisson approximation
 	
-	static public boolean bothCar	= true;
-//	static public boolean pedsUp	= true;
-//	static public boolean pedsDn	= true;
-	static public boolean BRT		= true;
-	static public boolean ADRT		= true;
-	static public boolean IIDM		= true;  //include Improved IDM?
-	static public boolean inclRL	= false; //include red lights?
-	static public boolean calcFun	= false;  //build fundamental diagram
-	static public double pedGapParamA = 6.2064;
-	
 	// declare parameters of error-making
-	static public boolean estErr 	= true;		// estimation errors
 	static final  double  Vs		= 0.1;		// relative standard deviation of headEst from head
 	static final  double  errPers	= 20;		// persistence time of estimation errors in seconds
 	static final  double  wien1		= Math.exp(-tStep/errPers);		// constants in the calculation

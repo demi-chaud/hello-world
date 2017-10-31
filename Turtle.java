@@ -60,6 +60,8 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
+		if (v > 3 * maxv) {
+			int foo = 0;}
 		if (xLoc > RoadBuilder.roadL/15 && xLoc < 14*RoadBuilder.roadL/15) {
 			if (interD != 0 && timeSinceD >= interD) {
 				if (ying == -1) { //don't get distracted if yielding
@@ -74,7 +76,8 @@ public class Turtle extends Agent{
 				if (timeD == 0) {
 					double durD0 = rndD.nextGaussian()*UserPanel.DsigHat + UserPanel.DmuHat;
 					durD = Math.exp(durD0);}
-				newAcc = acc;
+				newAcc = accel(myLoc, lane, dir, true);
+				//newAcc = acc;
 				timeD += 1;
 				double xwalkD	= RoadBuilder.xWalkx - xLoc;
 				double threat	= Math.signum(dir*xwalkD);
@@ -85,9 +88,9 @@ public class Turtle extends Agent{
 					double interD0 = (rndD.nextDouble() + 1E-15)*interDlam; //padded to avoid -inf
 					interD = -Math.log(interD0/interDlam)/interDlam;}
 				timeSinceD += 1;
-				newAcc = accel(myLoc, lane, dir);}}
+				newAcc = accel(myLoc, lane, dir, false);}}
 		else {
-			newAcc = accel(myLoc, lane, dir);}
+			newAcc = accel(myLoc, lane, dir, false);}
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
 		if (UserPanel.ADRT && autonomous == false) { //TODO: probably give non-zero value for automated
@@ -187,54 +190,58 @@ public class Turtle extends Agent{
 	 * @param loc, myLane, myDir
 	 * @return a
 	 */
-	public double accel(NdPoint loc, int myLane, int myDir) {
+	public double accel(NdPoint loc, int myLane, int myDir, boolean isDistracted) {
 		double a, setSpeed, vDiff, safeHead, aFree;
 		confLim	= UserPanel.confLimS/UserPanel.tStep;
-		sameDir	= new ArrayList<Turtle>();
-		ahead	= new ArrayList<Turtle>();
-		leaders	= new ArrayList<Turtle>();
-		head	= RoadBuilder.roadL;
-		//TODO: limit accel to physically possible values
 		
-		//Determine leader and follower
-		behind	  = new ArrayList<Turtle>();
-		followers = new ArrayList<Turtle>();
-		leader	  = null;
-		tail	  = RoadBuilder.roadL;	
-		for (Turtle p : Scheduler.allCars) {
-			if (p.dir == myDir) {
-				sameDir.add(p);}}
-		if (!sameDir.isEmpty()) {
-			for (Turtle m : sameDir) {
-				if (myDir == 1) {					if (m.xLoc > xLoc) {						ahead.add(m);}
-					if (m.xLoc < xLoc) {
-						behind.add(m);}}
-				else {
-					if (m.xLoc < xLoc) {
-						ahead.add(m);}
-					if (m.xLoc > xLoc) {
-						behind.add(m);}}}}
-		if (!ahead.isEmpty()) {
-			for (Turtle n : ahead) {
-				if (n.lane == myLane) {
-					leaders.add(n);}}}
-		if (!behind.isEmpty()) {
-			for (Turtle n : behind) {
-				if (n.lane == myLane) {
-					followers.add(n);}}}
-		if (!leaders.isEmpty()) {
-			for (Turtle o : leaders) {
-				if((Math.abs(o.xLoc - xLoc) - o.length) < head) {
-					head = Math.abs(o.xLoc - xLoc) - o.length; //TODO: change visualization to move icons to center of car
-					if (head < 0) {
-						head = 1e-10;}
-					leader = o;}}}
-		if (!followers.isEmpty()) {
-			for (Turtle p : followers) {
-				if((Math.abs(p.xLoc - xLoc) - length) < tail) {
-					tail = Math.abs(p.xLoc - xLoc) - length;
-					follower = p;}}}
-		
+		if (!isDistracted) {
+			sameDir	= new ArrayList<Turtle>();
+			ahead	= new ArrayList<Turtle>();
+			leaders	= new ArrayList<Turtle>();
+			head	= RoadBuilder.roadL;
+			//TODO: limit accel to physically possible values
+			
+			//Determine leader and follower
+			behind	  = new ArrayList<Turtle>();
+			followers = new ArrayList<Turtle>();
+			leader	  = null;
+			tail	  = RoadBuilder.roadL;	
+			for (Turtle p : Scheduler.allCars) {
+				if (p.dir == myDir) {
+					sameDir.add(p);}}
+			if (!sameDir.isEmpty()) {
+				for (Turtle m : sameDir) {
+					if (myDir == 1) {
+						if (m.xLoc > xLoc) {
+							ahead.add(m);}
+						if (m.xLoc < xLoc) {
+							behind.add(m);}}
+					else {
+						if (m.xLoc < xLoc) {
+							ahead.add(m);}
+						if (m.xLoc > xLoc) {
+							behind.add(m);}}}}
+			if (!ahead.isEmpty()) {
+				for (Turtle n : ahead) {
+					if (n.lane == myLane) {
+						leaders.add(n);}}}
+			if (!behind.isEmpty()) {
+				for (Turtle n : behind) {
+					if (n.lane == myLane) {
+						followers.add(n);}}}
+			if (!leaders.isEmpty()) {
+				for (Turtle o : leaders) {
+					if((Math.abs(o.xLoc - xLoc) - o.length) < head) {
+						head = Math.abs(o.xLoc - xLoc) - o.length; //TODO: change visualization to move icons to center of car
+						if (head < 0) {
+							head = 1e-10;}
+						leader = o;}}}
+			if (!followers.isEmpty()) {
+				for (Turtle p : followers) {
+					if((Math.abs(p.xLoc - xLoc) - length) < tail) {
+						tail = Math.abs(p.xLoc - xLoc) - length;
+						follower = p;}}}
+		}
 		//calculate CF acceleration (with errors)
 		if (leader != null) {
 			if (UserPanel.estErr == true && autonomous == false) {		//includes estimation error in headway measurement

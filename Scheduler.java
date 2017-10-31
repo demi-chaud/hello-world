@@ -126,7 +126,7 @@ public class Scheduler extends Agent {
 			rndType1 = rndCAV.nextDouble();
 			if (rndType1 < UserPanel.V2Xhi) { //random selects from [0,1)
 				bV2X1 = true;}
-			if (rndType1 >= UserPanel.autHi && rndType1 < UserPanel.bothLo) {
+			if (rndType1 >= UserPanel.autLo && rndType1 < UserPanel.bothLo) {
 				bAut1 = true;}
 			if (rndType1 >= UserPanel.bothLo && rndType1 < UserPanel.bothHi) {
 				bBoth1 = true;}
@@ -134,7 +134,7 @@ public class Scheduler extends Agent {
 				rndType2 = rndCAV.nextDouble();
 				if (rndType2 < UserPanel.V2Xhi) { //random selects from [0,1)
 					bV2X2 = true;}
-				if (rndType2 >= UserPanel.autHi && rndType2 < UserPanel.bothLo) {
+				if (rndType2 >= UserPanel.autLo && rndType2 < UserPanel.bothLo) {
 					bAut2 = true;}
 				if (rndType2 >= UserPanel.bothLo && rndType2 < UserPanel.bothHi) {
 					bBoth2 = true;}
@@ -151,7 +151,7 @@ public class Scheduler extends Agent {
 				rndType3 = rndCAV.nextDouble();
 				if (rndType3 < UserPanel.V2Xhi) { //random selects from [0,1)
 					bV2X3 = true;}
-				if (rndType3 >= UserPanel.autHi && rndType3 < UserPanel.bothLo) {
+				if (rndType3 >= UserPanel.autLo && rndType3 < UserPanel.bothLo) {
 					bAut3 = true;}
 				if (rndType3 >= UserPanel.bothLo && rndType3 < UserPanel.bothHi) {
 					bBoth3 = true;}
@@ -159,7 +159,7 @@ public class Scheduler extends Agent {
 					rndType4 = rndCAV.nextDouble();
 					if (rndType4 < UserPanel.V2Xhi) { //random selects from [0,1)
 						bV2X4 = true;}
-					if (rndType4 >= UserPanel.autHi && rndType4 < UserPanel.bothLo) {
+					if (rndType4 >= UserPanel.autLo && rndType4 < UserPanel.bothLo) {
 						bAut4 = true;}
 					if (rndType4 >= UserPanel.bothLo && rndType4 < UserPanel.bothHi) {
 						bBoth4 = true;}
