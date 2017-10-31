@@ -41,7 +41,7 @@ public class Turtle extends Agent{
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
-	private int		age;
+	public  int		age, nMaxDecel;
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
 	public	boolean connected, autonomous;
@@ -60,7 +60,7 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
-		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10) {
+		if (xLoc > RoadBuilder.roadL/15 && xLoc < 14*RoadBuilder.roadL/15) {
 			if (interD != 0 && timeSinceD >= interD) {
 				if (ying == -1) { //don't get distracted if yielding
 					distracted = true;
@@ -149,6 +149,8 @@ public class Turtle extends Agent{
 		age++;
 		
 		vNew = v + acc;
+		if (vNew > 3 * maxv) {
+			int foo = 0;}
 		if (vNew < 0) {vNew = 0;}
 	}		
 	
@@ -161,9 +163,9 @@ public class Turtle extends Agent{
 				Scheduler.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
-				double displacement = v + .5*acc;		//TODO: replace this?
-				//space.moveByDisplacement(this,vNew,0);	// new version from Kesting, Treiber and Helbing 2009
-				space.moveByDisplacement(this,displacement,0);	//"Agents for Traffic Simulation"
+				//double displacement = v + .5*acc;		//TODO: replace this?
+				space.moveByDisplacement(this,vNew,0);	// new version from Kesting, Treiber and Helbing 2009
+				//space.moveByDisplacement(this,displacement,0);	//"Agents for Traffic Simulation"
 				myLoc = space.getLocation(this);
 				xLoc = myLoc.getX();}}
 		else {
@@ -171,9 +173,9 @@ public class Turtle extends Agent{
 				Scheduler.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
-				double displacement = -v - .5*acc;		//TODO: ditto
-				//space.moveByDisplacement(this,-vNew,0);
-				space.moveByDisplacement(this,displacement,0);
+				//double displacement = -v - .5*acc;		//TODO: ditto
+				space.moveByDisplacement(this,-vNew,0);
+				//space.moveByDisplacement(this,displacement,0);
 				myLoc = space.getLocation(this);
 				xLoc = myLoc.getX();}}
 		v = vNew;
@@ -265,7 +267,10 @@ public class Turtle extends Agent{
 						a = aFree;}}}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
 		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
-			a = -UserPanel.emergDec;}
+			a = -UserPanel.emergDec;
+			nMaxDecel++;}
+		else {
+			nMaxDecel = 0;}
 		return a;	
 	}
 	

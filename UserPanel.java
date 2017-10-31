@@ -20,9 +20,9 @@ public class UserPanel implements ActionListener{
 	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
-	static final  double simHours	= 2;				//hours in sim (currently 5)
+	static final  double simHours	= 10;				//hours in sim (currently 5)
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
-	static public double percV2X	= 0;
+	static public double percV2X	= 100;
 	static public double percAuto	= 0;
 	static public double percBoth	= 0;
 	
