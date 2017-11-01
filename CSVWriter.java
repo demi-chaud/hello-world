@@ -11,10 +11,10 @@ import java.util.Locale;
 public class CSVWriter {
 	
 	public static void writeConfCSV(String fileName, ArrayList<Turtle.Conflict> list) {
-		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, ttc, range, time, init, sinceD, timeD, conn, auto;
+		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, nDec, ttc, range, time, init, sinceD, timeD, conn, auto;
 		String comma  = ",";
 		String nLine  = "\n";
-		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,ttc,range,time,init,connected,automated" + nLine;
+		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,nMaxDec,ttc,range,time,init,connected,automated" + nLine;
 		FileWriter fileWriter = null;
 		try {
 			fileWriter = new FileWriter(fileName);
@@ -38,6 +38,7 @@ public class CSVWriter {
 				String v0		= form.format(vKH);
 				Double decMS	= c.yDec*UserPanel.spaceScale/(UserPanel.tStep*UserPanel.tStep);
 				String dec0		= form.format(decMS);
+				String nMaxDec  = String.valueOf(c.car.nMaxDecel);
 				Double ttcS		= c.TTC*UserPanel.tStep;
 				String ttc0		= form.format(ttcS);
 				Double rangeM	= c.range*UserPanel.spaceScale;
@@ -57,6 +58,7 @@ public class CSVWriter {
 				timeD	= timeD0 + comma;
 				vel		= v0 + comma;
 				dec		= dec0 + comma;
+				nDec	= nMaxDec + comma;
 				ttc		= ttc0 + comma;
 				range	= range0 + comma;
 				time	= time0 + comma;
@@ -64,7 +66,7 @@ public class CSVWriter {
 				conn	= conn0 + comma;
 				auto	= auto0 + comma;
 				cString = turtle + dirC + lane + ped + dirP + ying + sinceD + timeD + 
-						vel + dec + ttc + range + time + init + conn + auto + nLine;
+						vel + dec + nDec + ttc + range + time + init + conn + auto + nLine;
 				fileWriter.append(cString);}}
 		catch (IOException e) {
 			System.out.print("Error in CSVWriter");

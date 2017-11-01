@@ -32,16 +32,16 @@ public class Turtle extends Agent{
 	private Random	rndADRT = new Random();
 	private Random  rndIDM = new Random();
 	private boolean	distracted = false;
-	private double	timeD, durD, timeSinceD, interD, interDlam;		//distraction
-	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;		//delay
-	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head;	//car-following
-	private double	wS, etaS, wV, etaV, sigR;						//errors
-	private double	confLim, stopBar, ttstopBar, lnTop, lnBot;		//yielding
-	private double	hardYield, yieldDec;					//also yielding
+	private double	timeD, durD, timeSinceD, interD, interDlam;				//distraction
+	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;				//delay
+	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM;	//car-following
+	private double	wS, etaS, wV, etaV, sigR;								//errors
+	private double	confLim, stopBar, ttstopBar, lnTop, lnBot;				//yielding
+	private double	hardYield, yieldDec;									//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
-	private int		age;
+	public  int		age, nMaxDecel;
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
 	public	boolean connected, autonomous;
@@ -60,7 +60,9 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
-		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10) {
+		if (v > 3 * maxv) {
+			int foo = 0;}
+		if (xLoc > RoadBuilder.roadL/15 && xLoc < 14*RoadBuilder.roadL/15) {
 			if (interD != 0 && timeSinceD >= interD) {
 				if (ying == -1) { //don't get distracted if yielding
 					distracted = true;
@@ -74,7 +76,8 @@ public class Turtle extends Agent{
 				if (timeD == 0) {
 					double durD0 = rndD.nextGaussian()*UserPanel.DsigHat + UserPanel.DmuHat;
 					durD = Math.exp(durD0);}
-				newAcc = acc;
+				newAcc = accel(myLoc, lane, dir, true);
+				//newAcc = acc;
 				timeD += 1;
 				double xwalkD	= RoadBuilder.xWalkx - xLoc;
 				double threat	= Math.signum(dir*xwalkD);
@@ -85,9 +88,9 @@ public class Turtle extends Agent{
 					double interD0 = (rndD.nextDouble() + 1E-15)*interDlam; //padded to avoid -inf
 					interD = -Math.log(interD0/interDlam)/interDlam;}
 				timeSinceD += 1;
-				newAcc = accel(myLoc, lane, dir);}}
+				newAcc = accel(myLoc, lane, dir, false);}}
 		else {
-			newAcc = accel(myLoc, lane, dir);}
+			newAcc = accel(myLoc, lane, dir, false);}
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
 		if (UserPanel.ADRT && autonomous == false) { //TODO: probably give non-zero value for automated
@@ -144,11 +147,14 @@ public class Turtle extends Agent{
 					shldBrakeStorage.remove(0);}}
 			else oldbAccel = newbAccel;}
 		else oldbAccel = newbAccel;
-		if (oldbAccel < acc && newbAccel < acc) {
-			acc = newbAccel;}
+		if (autonomous == false && distracted == false) {
+			if (oldbAccel < acc && newbAccel < acc) {
+				acc = newbAccel;}}
 		age++;
 		
 		vNew = v + acc;
+		if (vNew > 3 * maxv) {
+			int foo = 0;}
 		if (vNew < 0) {vNew = 0;}
 	}		
 	
@@ -161,9 +167,9 @@ public class Turtle extends Agent{
 				Scheduler.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
-				double displacement = v + .5*acc;		//TODO: replace this?
-				//space.moveByDisplacement(this,vNew,0);	// new version from Kesting, Treiber and Helbing 2009
-				space.moveByDisplacement(this,displacement,0);	//"Agents for Traffic Simulation"
+				//double displacement = v + .5*acc;		//TODO: replace this?
+				space.moveByDisplacement(this,vNew,0);	// new version from Kesting, Treiber and Helbing 2009
+				//space.moveByDisplacement(this,displacement,0);	//"Agents for Traffic Simulation"
 				myLoc = space.getLocation(this);
 				xLoc = myLoc.getX();}}
 		else {
@@ -171,9 +177,9 @@ public class Turtle extends Agent{
 				Scheduler.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
-				double displacement = -v - .5*acc;		//TODO: ditto
-				//space.moveByDisplacement(this,-vNew,0);
-				space.moveByDisplacement(this,displacement,0);
+				//double displacement = -v - .5*acc;		//TODO: ditto
+				space.moveByDisplacement(this,-vNew,0);
+				//space.moveByDisplacement(this,displacement,0);
 				myLoc = space.getLocation(this);
 				xLoc = myLoc.getX();}}
 		v = vNew;
@@ -185,9 +191,10 @@ public class Turtle extends Agent{
 	 * @param loc, myLane, myDir
 	 * @return a
 	 */
-	public double accel(NdPoint loc, int myLane, int myDir) {
+	public double accel(NdPoint loc, int myLane, int myDir, boolean isDistracted) {
 		double a, setSpeed, vDiff, safeHead, aFree;
 		confLim	= UserPanel.confLimS/UserPanel.tStep;
+		
 		sameDir	= new ArrayList<Turtle>();
 		ahead	= new ArrayList<Turtle>();
 		leaders	= new ArrayList<Turtle>();
@@ -204,7 +211,9 @@ public class Turtle extends Agent{
 				sameDir.add(p);}}
 		if (!sameDir.isEmpty()) {
 			for (Turtle m : sameDir) {
-				if (myDir == 1) {					if (m.xLoc > xLoc) {						ahead.add(m);}
+				if (myDir == 1) {
+					if (m.xLoc > xLoc) {
+						ahead.add(m);}
 					if (m.xLoc < xLoc) {
 						behind.add(m);}}
 				else {
@@ -247,25 +256,29 @@ public class Turtle extends Agent{
 			double safeHead0;
 			safeHead0 = v*(tGap) + (v*vDiff)/(2*Math.sqrt(maxa*mina));
 			safeHead = jamHead + Math.max(0,safeHead0);			//avoid negative values
-			double z = 1000;
+			zIIDM = 1000;
 			if (head != 0) {
-				z = safeHead / head;}
+				if (!isDistracted) {
+					zIIDM = safeHead / head;}}
 				//implement IIDM
 				if (v < maxv) {
 					aFree = maxa*(1-Math.pow(v/maxv,deltaIDM));
-					if (z >= 1) {
-						a = maxa*(1-z*z);}
+					if (zIIDM >= 1) {
+						a = maxa*(1-zIIDM*zIIDM);}
 					else {
-						a = aFree*(1-Math.pow(z, 2*maxa/aFree));}}
+						a = aFree*(1-Math.pow(zIIDM, 2*maxa/aFree));}}
 				else {
 					aFree = -mina*(1-Math.pow(maxv/v, maxa*deltaIDM/mina));
-					if (z >= 1) {
-						a = aFree + maxa*(1-z*z);}
+					if (zIIDM >= 1) {
+						a = aFree + maxa*(1-zIIDM*zIIDM);}
 					else {
 						a = aFree;}}}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
 		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
-			a = -UserPanel.emergDec;}
+			a = -UserPanel.emergDec;
+			nMaxDecel++;}
+		else {
+			nMaxDecel = 0;}
 		return a;	
 	}
 	
