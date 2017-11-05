@@ -60,9 +60,9 @@ public class Turtle extends Agent{
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
-		if (v > 3 * maxv) {
-			int foo = 0;}
 		if (xLoc > RoadBuilder.roadL/15 && xLoc < 14*RoadBuilder.roadL/15) {
+			if (v > 2 * maxv) {
+				int foo = 0;}
 			if (interD != 0 && timeSinceD >= interD) {
 				if (ying == -1) { //don't get distracted if yielding
 					distracted = true;
@@ -93,12 +93,12 @@ public class Turtle extends Agent{
 			newAcc = accel(myLoc, lane, dir, false);}
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
-		if (UserPanel.ADRT && autonomous == false) { //TODO: probably give non-zero value for automated
+		if (UserPanel.ADRT) {
 			double stamp, tStamp, delayedT, hiT;
 			stamp  = RoadBuilder.clock.getTickCount();
 			tStamp = stamp*UserPanel.tStep;
-			tN		= Math.floor(1e-14 + delayTs/UserPanel.tStep);
-			tBeta	= (delayTs/UserPanel.tStep) - tN;
+			//tN		= Math.floor(1e-14 + delayTs/UserPanel.tStep);
+			//tBeta	= (delayTs/UserPanel.tStep) - tN;
 			storage.add(new double[] {tStamp, newAcc, v});
 			delayedT = tStamp - delayTs;
 			hiT = 0;
@@ -113,7 +113,7 @@ public class Turtle extends Agent{
 					double loAcc = storage.get(foo-2)[1];
 					acc = tBeta*loAcc + (1-tBeta)*hiAcc;}
 				else acc = hiAcc;
-				if (storSize > 3*tN) {		//TODO: make this less arbitrary
+				if (storSize > tN + 10) {		//TODO: make this less arbitrary
 					storage.remove(0);}}
 			else acc = newAcc;}
 		else acc = newAcc;
@@ -121,7 +121,6 @@ public class Turtle extends Agent{
 		//delayed braking reaction
 		double newbAccel = brake(myLoc, lane, dir);
 		double oldbAccel;
-		//if (UserPanel.BRT && autonomous == false) { //TODO: probably give non-zero value for automated
 		if (UserPanel.BRT) {
 			double stamp, tStamp, delayedT, hiT;
 			stamp  = RoadBuilder.clock.getTickCount();
@@ -147,13 +146,13 @@ public class Turtle extends Agent{
 					shldBrakeStorage.remove(0);}}
 			else oldbAccel = newbAccel;}
 		else oldbAccel = newbAccel;
-		if (autonomous == false && distracted == false) {
+		if (distracted == false || autonomous == true) {
 			if (oldbAccel < acc && newbAccel < acc) {
 				acc = newbAccel;}}
 		age++;
 		
 		vNew = v + acc;
-		if (vNew > 3 * maxv) {
+		if (vNew > 2 * maxv) {
 			int foo = 0;}
 		if (vNew < 0) {vNew = 0;}
 	}		
@@ -194,6 +193,9 @@ public class Turtle extends Agent{
 	public double accel(NdPoint loc, int myLane, int myDir, boolean isDistracted) {
 		double a, setSpeed, vDiff, safeHead, aFree;
 		confLim	= UserPanel.confLimS/UserPanel.tStep;
+		
+		if (v > 2*maxv) {
+			int foo = 0;		}
 		
 		sameDir	= new ArrayList<Turtle>();
 		ahead	= new ArrayList<Turtle>();
@@ -256,7 +258,6 @@ public class Turtle extends Agent{
 			double safeHead0;
 			safeHead0 = v*(tGap) + (v*vDiff)/(2*Math.sqrt(maxa*mina));
 			safeHead = jamHead + Math.max(0,safeHead0);			//avoid negative values
-			zIIDM = 1000;
 			if (head != 0) {
 				if (!isDistracted) {
 					zIIDM = safeHead / head;}}
@@ -385,6 +386,8 @@ public class Turtle extends Agent{
 			if (i.crossing == 2) {
 				crossingP.add(i);}}
 		crossingP1 = crossingP; 		//crossingP will be depleted by double threats
+		
+		
 		
 		//double threat
 		if (connected == false) {		//TODO: find accuracy of passive ped detection, add v2i functionality
@@ -782,7 +785,9 @@ public class Turtle extends Agent{
 		if (autonomous == false) {
 			BRTs = calcBRT() + 0.35;  // + 0.15 mvmt time (Lister 1950) + 0.2 device response time (Grover 2008)
 			double delayT0 = rndADRT.nextGaussian() * 1.193759285934727 - 1.60692043370482;
-			delayTs	= Math.exp(delayT0) + 0.25;}  
+			delayTs	= Math.exp(delayT0) + 0.25;
+			if (delayTs > 2.5) {
+				delayTs = 2.5;}}
 		else {
 			BRTs = 0.51;  //seconds (source Grover 2008)
 			delayTs = 0.4;}
@@ -815,6 +820,7 @@ public class Turtle extends Agent{
 		durD		= 0;
 		timeSinceD	= 0;
 		interD		= 0;
+		zIIDM 		= 1000;
 		interDlam	= UserPanel.interDlam;
 		connected	= conn;
 		autonomous	= auto;
@@ -966,7 +972,7 @@ public class Turtle extends Agent{
 	 */
 	@Parameter(usageName="newAcc", displayName="Calculated acc")
 	public double getAcc() {
-		return newAcc*UserPanel.spaceScale/(UserPanel.tStep*UserPanel.tStep);}
+		return acc*UserPanel.spaceScale/(UserPanel.tStep*UserPanel.tStep);}
 	@Parameter(usageName="v", displayName="Current vel")
 	public double getVel() {
 		return v*UserPanel.vBase;}

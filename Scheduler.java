@@ -68,7 +68,9 @@ public class Scheduler extends Agent {
 			lightTick(l);}
 		if (carsYes) {
 			for (Turtle a : allCars) {
-				a.calc();}}
+				a.calc();
+				if (a.hashCode() == 74325765) {
+					System.out.println(a.acc);}}}
 		if (pedsYes) {
 			for (Ped a : allPeds) {
 				a.calc();}}
@@ -101,6 +103,13 @@ public class Scheduler extends Agent {
 						v.car.myLoc.toDoubleArray(newLoc);
 						v.locs.add(newLoc);}}}}
 		RoadBuilder.ticker ++;
+	}
+	
+	/* Button method to create car for testing */
+	public void forceCar() {
+		lane = 0;
+		Turtle addedTurtle = addCar(lane,1,false,false,false);
+		allCars.add(addedTurtle);
 	}
 	
 	/**

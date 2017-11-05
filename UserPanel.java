@@ -24,14 +24,14 @@ public class UserPanel implements ActionListener{
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
 	static public double percV2X	= 0;
 	static public double percAuto	= 0;
-	static public double percBoth	= 0;
+	static public double percBoth	= 100;
 	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
-	static public int    pedRho		= 0;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
 	
-	static public boolean estErr 	= false;		// estimation errors
-	static public boolean BRT		= false;
-	static public boolean ADRT		= false;
+	static public boolean estErr 	= true;		// estimation errors
+	static public boolean BRT		= true;
+	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
 	static public boolean calcFun	= false;  //build fundamental diagram
 	static public boolean bothCar	= true;   //cars both directions?
@@ -43,14 +43,14 @@ public class UserPanel implements ActionListener{
 	static public double sLimitKH		= 45;			// km/hr			default:  45
 	static final  double pedVavgKH		= 5;			// km/hr			default:   5 	 (source Zebala 2012)
 	static final  double pedVsdKH		= 0.936;		// km/hr			default:   0.936 (source Still 2000)
-	static final  double maxaScaleMS	= 1.406;		// m/s2				default:   1.43   \
-	static final  double maxaShape		= 1.012;		// model units		default:   0.13    |
-	static final  double minaScaleMS	= 2.225;		// m/s2				default:   0.78   /
-	static final  double minaShape		= 1.849;		// model units		default:   0.15   \  source: kim and
+	static final  double maxaScaleMS	= 0.132;		// m/s2				default:   0.132  \
+	static final  double maxaShape		= 0.6461;		// model units		default:   0.6461  |
+	static final  double minaScaleMS	= 0.5372;		// m/s2				default:   0.5372 /
+	static final  double minaShape		= 0.7246;		// model units		default:   0.7246 \  source: kim and
 	static final  double jamHeadScaleM	= 0.6517;		// m				default:   0.6517 /    mahmassani 2011
 	static final  double jamHeadShape	= 0.4979;		// model units		default:   0.4979 \
-	static final  double tGapS			= 1.266;		// s				default:   1.17    |
-	static final  double tGapS_sd		= 0.507;		// s				default:   0.16   /
+	static final  double tGapS			= 1.266;		// s				default:   1.266   |
+	static final  double tGapS_sd		= 0.507;		// s				default:   0.507  /
 	static public double pedGapParamA   = 6.2064;
 	
 	static public double sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
@@ -137,6 +137,10 @@ public class UserPanel implements ActionListener{
 	 */
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
+		
+		JButton carBtn = new JButton("car");
+		carBtn.addActionListener(this);
+		newPanel.add(carBtn);
 		
 		JCheckBox rlOn	  = new JCheckBox("Red Lights?",	inclRL);
 		JCheckBox funDia  = new JCheckBox("Calc funDia?",	calcFun);
@@ -240,6 +244,10 @@ public class UserPanel implements ActionListener{
 		String type = which.getUIClassID();
 		String name = ae.getActionCommand();
 		switch (type) {
+		case "ButtonUI":
+			JButton btnSource = (JButton)which;
+			RoadBuilder.flowSource.forceCar();
+			break;
 		case "CheckBoxUI":
 			JCheckBox checkSource = (JCheckBox)which;
 			switch (name) {
