@@ -1,7 +1,10 @@
 package driving1;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.math3.util.FastMath;
@@ -25,13 +28,13 @@ public class Ped extends Agent{
 	private int age;
 	private	double endPtDist, endPtTheta, critGap;
 	private double side	= RoadBuilder.sidewalk;
-	private double wS, etaS, wV, etaV, sigR;	//errors
-	private double m, horiz, A, B, k, r;  		//interactive force constants (accT is also)
+	private double wS1, wSn1, wV1, wVn1, etaS, etaV, sigR;	//errors
+	private double m, horiz, A, B, k, r;  					//interactive force constants (accT is also)
 	private double boxL = RoadBuilder.xWalkx - 2/RoadBuilder.spaceScale;
 	private double boxR = RoadBuilder.xWalkx + 2/RoadBuilder.spaceScale;
 		//2 here is more or less arbitrary, but has to match Turtle.stopBar variable
 	public ArrayList<Turtle> yielders;
-	public Turtle nearest, nearest0, nearest1, nearest2, nearest3;
+	public Turtle nearest0, nearest1, nearest2, nearest3;
 	public NdPoint myLoc;
 	public double[] v, dv, newV;
 	public double xTime, accT, maxV, xLoc, yLoc, whichSide;
@@ -141,7 +144,6 @@ public class Ped extends Agent{
 		go0 = go1 = go2 = go3 = false;
 		int goes0, goes1, goes2, goes3;
 		goes0 = goes1 = goes2 = goes3 = 0;
-		nearest	= null;
 		gap0 = gap1 = gap2 = gap3 = RoadBuilder.roadL/2;
 		
 		//find nearest car in each lane
@@ -275,11 +277,18 @@ public class Ped extends Agent{
 		if (UserPanel.estErr == true) {
 			etaS = rnd.nextGaussian();
 			etaV = rnd.nextGaussian();
-			wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
-			wV = UserPanel.wien1*wV + UserPanel.wien2*etaV;
-			approachV = t.v - dist*sigR*wV;
-			dist  = dist*Math.exp(UserPanel.Vs*wS);
-			xDist = Math.sqrt(dist*dist - yDist*yDist);}
+			if (t.dir == 1) {
+				wS1 = UserPanel.wien1*wS1 + UserPanel.wien2*etaS;
+				wV1 = UserPanel.wien1*wV1 + UserPanel.wien2*etaV;
+				approachV = t.v - dist*sigR*wV1;
+				dist  = dist*Math.exp(UserPanel.Vs*wS1);
+				xDist = Math.sqrt(dist*dist - yDist*yDist);}
+			else {
+				wSn1 = UserPanel.wien1*wSn1 + UserPanel.wien2*etaS;
+				wVn1 = UserPanel.wien1*wVn1 + UserPanel.wien2*etaV;
+				approachV = t.v - dist*sigR*wVn1;
+				dist  = dist*Math.exp(UserPanel.Vs*wSn1);
+				xDist = Math.sqrt(dist*dist - yDist*yDist);}}
 		
 		//calculate relevant times
 		if (ln == 0) {
@@ -295,6 +304,7 @@ public class Ped extends Agent{
 		
 		//decide if lag is big enough to start crossing
 		if (yielders.contains(t)) {
+			//TODO: add check to make sure car will be able to stop
 			goes = 1;
 			front = 1;}
 		else {
@@ -346,13 +356,22 @@ public class Ped extends Agent{
 		if (UserPanel.estErr == true) {
 			etaS	= rnd.nextGaussian();
 			etaV	= rnd.nextGaussian();
-			wS		= UserPanel.wien1*wS + UserPanel.wien2*etaS;
-			wV		= UserPanel.wien1*wV + UserPanel.wien2*etaV;
-			t2v		= t2v - dist2*sigR*wV;
-			dist1	= dist1*Math.exp(UserPanel.Vs*wS);
-			dist2	= dist2*Math.exp(UserPanel.Vs*wS);
-			t1d		= Math.sqrt(dist1*dist1 - yDist*yDist);
-			t2d		= Math.sqrt(dist2*dist2 - yDist*yDist);}
+			if (t1.dir == 1) {
+				wS1		= UserPanel.wien1*wS1 + UserPanel.wien2*etaS;
+				wV1		= UserPanel.wien1*wV1 + UserPanel.wien2*etaV;
+				t2v		= t2v - dist2*sigR*wV1;
+				dist1	= dist1*Math.exp(UserPanel.Vs*wS1);
+				dist2	= dist2*Math.exp(UserPanel.Vs*wS1);
+				t1d		= Math.sqrt(dist1*dist1 - yDist*yDist);
+				t2d		= Math.sqrt(dist2*dist2 - yDist*yDist);}
+			else {
+				wSn1	= UserPanel.wien1*wSn1 + UserPanel.wien2*etaS;
+				wVn1	= UserPanel.wien1*wVn1 + UserPanel.wien2*etaV;
+				t2v		= t2v - dist2*sigR*wVn1;
+				dist1	= dist1*Math.exp(UserPanel.Vs*wSn1);
+				dist2	= dist2*Math.exp(UserPanel.Vs*wSn1);
+				t1d		= Math.sqrt(dist1*dist1 - yDist*yDist);
+				t2d		= Math.sqrt(dist2*dist2 - yDist*yDist);}}
 		
 		//calculate relevant times
 		double thisTail   = Math.abs(t2d - t1d) - t1.length;
@@ -555,8 +574,12 @@ public class Ped extends Agent{
 		curbed   = false;
 		age		 = 0;
 		front	 = 0;
-		wS = etaS = rnd.nextGaussian(); //TODO: separate these?
-		wV = etaV = rnd.nextGaussian();
+		wS1  = rnd.nextGaussian();
+		wSn1 = rnd.nextGaussian();
+		etaS = rnd.nextGaussian(); 
+		wV1  = rnd.nextGaussian();
+		wVn1 = rnd.nextGaussian();
+		etaV = rnd.nextGaussian();
 		double gapParamA	= UserPanel.pedGapParamA; //TODO: email Brewer re: value for just convergent sets
 		double gapParamB	= 0.942;  //TODO: ditto
 		double gapMin		= 1/(1+Math.exp(gapParamA));

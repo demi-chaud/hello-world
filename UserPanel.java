@@ -28,6 +28,8 @@ public class UserPanel implements ActionListener{
 	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
 	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
 	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
+	static public double hPercLimM	= 100;			// human pedestrian perception (meters)	//kinda arbitrary
+	static public double aPercLimM	= 60;			// automated ped perception (meters)
 	
 	static public boolean estErr 	= true;		// estimation errors
 	static public boolean BRT		= true;
@@ -89,7 +91,7 @@ public class UserPanel implements ActionListener{
 	static final  double minaScale		= minaScaleMS + 2*Math.log(tStep) - Math.log(spaceScale);
 	static final  double jamHeadScale	= jamHeadScaleM - Math.log(spaceScale);
 	static final  double tGap			= tGapS/tStep;
-	static final  double tGap_sd		= tGapS_sd/tStep;
+	static final  double tGap_sd		= tGapS_sd/tStep;	
 	
 	static final  double emergDec	= emergDecMS*tStep*tStep/spaceScale;
 	static final  double carLength	= carLengthM/spaceScale;
@@ -110,6 +112,8 @@ public class UserPanel implements ActionListener{
 	static public int	 amberDur	= (int)(amberDurS / tStep);
 	static public int	 redDur		= (int)(redDurS / tStep);
 	static public int	 calcTSpan	= (int)(calcTSpanS / tStep);
+	static public double hPercLim	= hPercLimM/spaceScale;
+	static public double aPercLim	= aPercLimM/spaceScale;
 //	static public ArrayList<Double> poisStoreV, poisStoreP;
 	//TODO: place agents created in later terms of Poisson approximation
 	
@@ -118,6 +122,18 @@ public class UserPanel implements ActionListener{
 	static final  double  errPers	= 20;		// persistence time of estimation errors in seconds
 	static final  double  wien1		= Math.exp(-tStep/errPers);		// constants in the calculation
 	static final  double  wien2		= Math.sqrt(2*tStep/errPers);	//	of perception errors
+	
+	// max/min vals for generated CF distributions (somewhat arbitrary)
+	static final double maxHeadT	= 3.294 / tStep;
+	static final double minHeadT	= 0.252 / tStep;
+	static final double maxJamHead	= 4.476 / spaceScale;
+	static final double minJamHead	= 0.444 / spaceScale;
+	static final double maxMaxA		= 5.454 * tStep * tStep / spaceScale;
+	static final double minMaxA		= 0.394 * tStep * tStep / spaceScale;
+	static final double maxMinA		= emergDec;
+	static final double minMinA		= 0.376 * tStep * tStep / spaceScale;
+	static final double maxMaxV		= sLimitMu + 4*sLimit_sd;
+	static final double minMaxV		= sLimitMu - 4*sLimit_sd;
 	
 	// convert initial values to strings for JPanel
 	private String sLimits	= String.valueOf(sLimitKH);

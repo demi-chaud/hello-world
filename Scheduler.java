@@ -68,9 +68,7 @@ public class Scheduler extends Agent {
 			lightTick(l);}
 		if (carsYes) {
 			for (Turtle a : allCars) {
-				a.calc();
-				if (a.hashCode() == 74325765) {
-					System.out.println(a.acc);}}}
+				a.calc();}}
 		if (pedsYes) {
 			for (Ped a : allPeds) {
 				a.calc();}}

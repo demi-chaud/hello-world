@@ -29,7 +29,7 @@ public class CSVWriter {
 				String lane0	= String.valueOf(c.lane);
 				String ped0		= Integer.toHexString(c.ped.hashCode());
 				String dirP0	= String.valueOf(c.dirP);
-				String ying0	= String.valueOf(c.ying);
+				String ying0	= String.valueOf(c.yingVal);
 				Double sinceDS	= c.sinceD*UserPanel.tStep;
 				String sinceD0	= form.format(sinceDS);
 				Double timeDS	= c.timeD*UserPanel.tStep;
