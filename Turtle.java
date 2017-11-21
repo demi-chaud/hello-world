@@ -38,6 +38,7 @@ public class Turtle extends Agent{
 	private double	timeD, durD, timeSinceD, interD, interDlam;						//distraction
 	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;						//delay
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
+	private double[] multiZ = new double[3];
 	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed;							//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
 	private double	hardYield, yieldDec, percLimit;									//also yielding
@@ -254,6 +255,57 @@ public class Turtle extends Agent{
 		else {
 			nMaxDecel = 0;}
 		return a;	
+	}
+	
+	double CFaccel(Turtle tt, int nAhead, boolean tDistracted) {
+		double tSpeed = 0;
+		double tDiff = 0;
+		double rv = 0;
+		double tHead = Math.abs(tt.xLoc - xLoc) - tt.length; //TODO: change visualization to move icons to center of car
+		if (tHead < 0) {
+			tHead = 1e-10;}
+		if (UserPanel.estErr && !autonomous) {		//includes estimation error in headway measurement
+			etaS = rnd.nextGaussian();
+			etaV = rnd.nextGaussian();
+			wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
+			wV = UserPanel.wien1*wV + UserPanel.wien2*etaV;
+			tHead = tHead*Math.exp(UserPanel.Vs*wS);
+			tSpeed = tt.v - tHead*sigR*wV;}
+		else tSpeed = tt.v;
+		tDiff = v - tSpeed;
+		double safeHead0 = v*(tGap) + (v*tDiff)/(2*Math.sqrt(maxa*mina));
+		double tSafeHead = jamHead + Math.max(0,safeHead0);			//avoid negative values
+		if (tHead != 0) {
+			if (!tDistracted) {
+				multiZ[nAhead - 1] = tSafeHead / tHead;}}
+		//implement IIDM
+		double multiAFree = 0;
+		if (v < maxv) {
+			multiAFree = maxa*(1-Math.pow(v/maxv,deltaIDM));
+			if (multiZ[nAhead - 1] >= 1) {
+				rv = maxa*(1-multiZ[nAhead - 1]*multiZ[nAhead - 1]);}
+			else {
+				rv = multiAFree*(1-Math.pow(multiZ[nAhead - 1], 2*maxa/multiAFree));}}
+		else {
+			multiAFree = -mina*(1-Math.pow(maxv/v, maxa*deltaIDM/mina));
+			if (multiZ[nAhead - 1] >= 1) {
+				rv = multiAFree + maxa*(1-multiZ[nAhead - 1]*multiZ[nAhead - 1]);}
+			else {
+				rv = multiAFree;}}
+		
+		double cool = 0.99;
+		double multiAccCAH = -1000;
+		if (tHead != 0) {
+			if (!tDistracted) {
+				double effAcc = Math.min(acc, tt.acc);
+				multiAccCAH = effAcc;
+				if (tDiff > 0) {
+					multiAccCAH = effAcc - Math.pow(tDiff, 3)/(2*tHead);}
+				if (tt.v*tDiff <= -2*tHead*effAcc) {
+					multiAccCAH = v*v*effAcc/(tt.v*tt.v - 2*tHead*effAcc);}}
+			if (rv < multiAccCAH) {
+				rv = (1-cool)*rv + cool*(multiAccCAH + mina*Math.tanh((rv-multiAccCAH)/mina));}}
+		return rv;
 	}
 	
 	/*
@@ -903,6 +955,7 @@ public class Turtle extends Agent{
 		timeSinceD	= 0;
 		interD		= 0;
 		zIIDM 		= 1000;
+		multiZ		= new double[3];
 		accCAH		= -1000;
 		interDlam	= UserPanel.interDlam;
 		connected	= conn;
