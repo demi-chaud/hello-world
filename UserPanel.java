@@ -17,13 +17,12 @@ import repast.simphony.ui.RSApplication;
 
 public class UserPanel implements ActionListener{
 	static Parameters param = RunEnvironment.getInstance().getParameters();
-	public boolean deathKnell = false;
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
 	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
-	static final  double simHours	= 10;				//hours in sim (currently 5)
+	static final  double simHours	= 50;				//hours in sim (currently 5)
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
 	//static public double percV2X	= 0;
 	//static public double percAuto	= 0;
@@ -33,7 +32,6 @@ public class UserPanel implements ActionListener{
 	static public double percV2X	= (double)param.getValue("percV2X");
 	static public double percAuto	= (double)param.getValue("percAuto");
 	static public double percBoth	= (double)param.getValue("percBoth");
-	
 	static public int    vehRho		= (int)param.getValue("vehRho");
 	static public int    pedRho		= (int)param.getValue("pedRho");
 	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
@@ -162,8 +160,7 @@ public class UserPanel implements ActionListener{
 	 */
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
-		if(percV2X + percAuto + percBoth > 110) {
-			deathKnell = true;}
+		
 		JButton carBtn = new JButton("car");
 		carBtn.addActionListener(this);
 		newPanel.add(carBtn);

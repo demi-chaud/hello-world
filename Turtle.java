@@ -3,7 +3,6 @@ package driving1;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -117,6 +116,7 @@ public class Turtle extends Agent{
 				if (oldbAccel < acc && newbAccel < acc) {
 					acc = newbAccel;}}}
 		age++;
+		
 		if (acc == -UserPanel.emergDec) {
 			nMaxDecel++;}
 		else {
@@ -1001,12 +1001,12 @@ public class Turtle extends Agent{
 			this.hasDup	= hasDup;
 			this.conn	= conn;
 			this.auto	= auto;
+			this.video	= new ArrayList<Video>();
+			this.pedVid = new ArrayList<double[]>();
+			double[] thisPedVid = new double[2];
+			ped.myLoc.toDoubleArray(thisPedVid);
+			this.pedVid.add(thisPedVid);
 		}
-//			this.video	= new ArrayList<Video>();
-//			this.pedVid = new ArrayList<double[]>();
-//			double[] thisPedVid = new double[2];
-//			ped.myLoc.toDoubleArray(thisPedVid);
-//			this.pedVid.add(thisPedVid);
 //			Iterable<Object> snapShot = space.getObjects();
 //			Iterator<Object> iterator = snapShot.iterator();
 //			for (Turtle t : Scheduler.allCars) { 
@@ -1021,7 +1021,7 @@ public class Turtle extends Agent{
 //					double thirty = 30/spaceScale; //30m should be enough to see all relevant cars
 //					if (location[0] >= xWalkx - thirty && location[0] <= xWalkx + thirty) {
 //						Video thisVideo = new Video(t,location);
-//						this.video.add(thisVideo);}}}
+//						this.video.add(thisVideo);}}}}
 	}
 	
 	public class Video {

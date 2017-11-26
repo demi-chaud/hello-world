@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<sweep runs="20">
+<parameter name="pedRho" type="constant" constant_type="int" value="60"></parameter>
+<parameter name="sLimitKH" type="constant" constant_type="double" value="45.0"></parameter>
+<parameter name="vehRho" type="constant" constant_type="int" value="600"></parameter>
+<!-- 
+<parameter name="percAuto" type="constant" constant_type="double" value="100.0"></parameter>
+<parameter name="percV2X" type="constant" constant_type="double" value="0.0"></parameter>
+<parameter name="percBoth" type="constant" constant_type="double" value="0.0"></parameter>
+-->
+<parameter name="percAuto" type="list" value_type="double" values="0.0 100.0"></parameter>
+<parameter name="percV2X" type="list" value_type="double" values="0.0 100.0"></parameter>
+<parameter name="percConn" type="list" value_type="double" values="0.0 100.0"></parameter>
+<parameter name="percBoth" type="list" value_type="double" values="0.0 100.0"></parameter>
+
+<!-- 
+<parameter name="" type="constant" constant_type="" value=""></parameter>
+<parameter name="" type="list" value_type="" values=""></parameter>
+<parameter name="percBoth" type="constant" constant_type="double" value="0.0"></parameter>
+<parameter name="percBoth" type="list" value_type="double" values="0.0 100.0"></parameter>
+-->
+</sweep>

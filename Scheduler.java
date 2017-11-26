@@ -46,8 +46,8 @@ public class Scheduler extends Agent {
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
-	String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	//String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
@@ -66,8 +66,6 @@ public class Scheduler extends Agent {
 	 */
 	@ScheduledMethod(start = 1, interval = 1, priority = 1)
 	public void doStuff() {
-		if (RoadBuilder.panel.deathKnell) {
-			RunEnvironment.getInstance().endRun();}
 		RoadBuilder.flowSource.calc();
 		carsYes = (allCars.size() > 0);
 		pedsYes = (allPeds.size() > 0);
@@ -97,17 +95,17 @@ public class Scheduler extends Agent {
 			for (Ped c : killListP) {
 				c.die();}
 			killListP = new ArrayList<Ped>();}
-//		if(!allConf.isEmpty()) {
-//			for (Conflict d : allConf) {
-//				int size = d.pedVid.size();
-//				if (size < 5) {
-//					double[] pedLoc = new double[2];
-//					d.ped.myLoc.toDoubleArray(pedLoc);
-//					d.pedVid.add(pedLoc);
-//					for (Video v : d.video) {
-//						double[] newLoc = new double[2];
-//						v.car.myLoc.toDoubleArray(newLoc);
-//						v.locs.add(newLoc);}}}}
+		if(!allConf.isEmpty()) {
+			for (Conflict d : allConf) {
+				int size = d.pedVid.size();
+				if (size < 5) {
+					double[] pedLoc = new double[2];
+					d.ped.myLoc.toDoubleArray(pedLoc);
+					d.pedVid.add(pedLoc);
+					for (Video v : d.video) {
+						double[] newLoc = new double[2];
+						v.car.myLoc.toDoubleArray(newLoc);
+						v.locs.add(newLoc);}}}}
 		RoadBuilder.ticker ++;
 	}
 	
@@ -217,8 +215,9 @@ public class Scheduler extends Agent {
 			String nC	= "v" + String.valueOf(UserPanel.vehRho) + "_";
 			String lim	= "s" + String.valueOf((int)UserPanel.sLimitKH) + "_";
 			String percs = String.valueOf((int)UserPanel.percV2X) + '.' + String.valueOf((int)UserPanel.percAuto) +
-					'.' + String.valueOf((int)UserPanel.percBoth);
-			String thisRunC = nP + nC + lim + percs;
+					'.' + String.valueOf((int)UserPanel.percBoth) + "_";
+			String len = "h" + String.valueOf((int)UserPanel.simHours);
+			String thisRunC = nP + nC + lim + percs + len;
 			String thisRunD = nC + lim;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";
