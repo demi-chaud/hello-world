@@ -5,7 +5,9 @@ import java.awt.event.ActionListener;
 
 import javax.swing.*;
 
+import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.parameter.Parameter;
+import repast.simphony.parameter.Parameters;
 import repast.simphony.ui.RSApplication;
 
 /*
@@ -14,7 +16,8 @@ import repast.simphony.ui.RSApplication;
  */
 
 public class UserPanel implements ActionListener{
-
+	static Parameters param = RunEnvironment.getInstance().getParameters();
+	public boolean deathKnell = false;
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
 	static public double tStep		= 0.05;		// duration of one tick in seconds	
@@ -22,11 +25,17 @@ public class UserPanel implements ActionListener{
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
 	static final  double simHours	= 10;				//hours in sim (currently 5)
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
-	static public double percV2X	= 0;
-	static public double percAuto	= 0;
-	static public double percBoth	= 100;
-	static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
-	static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	//static public double percV2X	= 0;
+	//static public double percAuto	= 0;
+	//static public double percBoth	= 100;
+	//static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
+	//static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
+	static public double percV2X	= (double)param.getValue("percV2X");
+	static public double percAuto	= (double)param.getValue("percAuto");
+	static public double percBoth	= (double)param.getValue("percBoth");
+	
+	static public int    vehRho		= (int)param.getValue("vehRho");
+	static public int    pedRho		= (int)param.getValue("pedRho");
 	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
 	static public double hPercLimM	= 100;			// human pedestrian perception (meters)	//kinda arbitrary
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
@@ -153,7 +162,8 @@ public class UserPanel implements ActionListener{
 	 */
 	public UserPanel() {
 		JPanel newPanel = new JPanel();
-		
+		if(percV2X + percAuto + percBoth > 110) {
+			deathKnell = true;}
 		JButton carBtn = new JButton("car");
 		carBtn.addActionListener(this);
 		newPanel.add(carBtn);
@@ -252,7 +262,8 @@ public class UserPanel implements ActionListener{
 
 		//TODO: figure out how to change appearance
 //		newPanel.setSize(50,100);
-		RSApplication.getRSApplicationInstance().addCustomUserPanel(newPanel);	
+		if (!RunEnvironment.getInstance().isBatch()) {
+			RSApplication.getRSApplicationInstance().addCustomUserPanel(newPanel);}
 	}
 
 	public void actionPerformed(ActionEvent ae) {
@@ -445,11 +456,28 @@ public class UserPanel implements ActionListener{
 		return pedRho;}
 	public void setPedRho(int pRho) {
 		pedRho = pRho;}
-//	@Parameter(usageName="delayT", displayName="Delay time (s)")
-//	public double get() {
-//		return delayTs;}
-//	public void set(double delayTime) {
-//		delayTs = delayTime;}
+	@Parameter(usageName="percV2X",displayName="Percent Connected")
+	public double getPercV2X() {
+		return percV2X;}
+	public void setPercV2X(double pv2x) {
+		percV2X = pv2x;}
+	@Parameter(usageName="percAuto",displayName="Percent Autonomous")
+	public double getPercAuto() {
+		return percAuto;}
+	public void setPercAuto(double pAuto) {
+		percAuto = pAuto;}
+	@Parameter(usageName="percBoth",displayName="Percent Both")
+	public double getPercBoth() {
+		return percBoth;}
+	public void setPercBoth(double pBoth) {
+		percBoth = pBoth;}
+	/*
+	@Parameter(usageName="",displayName="")
+	public double get() {
+		return ;}
+	public void set() {
+		 = ;}
+	*/
 }
 
 //double[] poisStoreV = new double[poisTerms];

@@ -126,7 +126,6 @@ public class Ped extends Agent{
 		default: break;}
 		age ++;
 	}
-
 	
 	/**
 	 * Determines value of curbed by calling lag() and/or gap() for each lane
@@ -491,8 +490,6 @@ public class Ped extends Agent{
 		return acc;
 	}
 
-	
-	
 	/**
 	 * Move peds and update context
 	 * @param loc
@@ -542,7 +539,6 @@ public class Ped extends Agent{
 		return input;
 	}
 	
-	
 	/**
 	 * Adder for 2-dimensional arrays
 	 * @param  a = double[2]
@@ -555,7 +551,6 @@ public class Ped extends Agent{
 			c[i] = a[i] + b[i];}
 		return c;
 	}
-	
 	
 	/**
 	 * Creates pedestrian agents and initializes values

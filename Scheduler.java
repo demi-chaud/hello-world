@@ -3,16 +3,21 @@ package driving1;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 import java.io.Console;
+import java.io.File;
 
 import driving1.Turtle.Conflict;
 import driving1.Turtle.Video;
 import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
+import repast.simphony.parameter.Parameters;
+import repast.simphony.parameter.SweeperProducer;
 import repast.simphony.space.continuous.ContinuousSpace;
+import repast.simphony.batch.*;
 import repast.simphony.util.ContextUtils;
 import driving1.RedLight.state;
 
@@ -41,7 +46,8 @@ public class Scheduler extends Agent {
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	String	directory = homeDir + "\\workspace\\driving1\\";
+	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+	String	directory = homeDir + "\\workspace\\driving1\\results\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
@@ -60,6 +66,8 @@ public class Scheduler extends Agent {
 	 */
 	@ScheduledMethod(start = 1, interval = 1, priority = 1)
 	public void doStuff() {
+		if (RoadBuilder.panel.deathKnell) {
+			RunEnvironment.getInstance().endRun();}
 		RoadBuilder.flowSource.calc();
 		carsYes = (allCars.size() > 0);
 		pedsYes = (allPeds.size() > 0);
@@ -89,17 +97,17 @@ public class Scheduler extends Agent {
 			for (Ped c : killListP) {
 				c.die();}
 			killListP = new ArrayList<Ped>();}
-		if(!allConf.isEmpty()) {
-			for (Conflict d : allConf) {
-				int size = d.pedVid.size();
-				if (size < 5) {
-					double[] pedLoc = new double[2];
-					d.ped.myLoc.toDoubleArray(pedLoc);
-					d.pedVid.add(pedLoc);
-					for (Video v : d.video) {
-						double[] newLoc = new double[2];
-						v.car.myLoc.toDoubleArray(newLoc);
-						v.locs.add(newLoc);}}}}
+//		if(!allConf.isEmpty()) {
+//			for (Conflict d : allConf) {
+//				int size = d.pedVid.size();
+//				if (size < 5) {
+//					double[] pedLoc = new double[2];
+//					d.ped.myLoc.toDoubleArray(pedLoc);
+//					d.pedVid.add(pedLoc);
+//					for (Video v : d.video) {
+//						double[] newLoc = new double[2];
+//						v.car.myLoc.toDoubleArray(newLoc);
+//						v.locs.add(newLoc);}}}}
 		RoadBuilder.ticker ++;
 	}
 	
@@ -205,21 +213,40 @@ public class Scheduler extends Agent {
 		//write log of conflicts at end
 		thisTick = RoadBuilder.clock.getTickCount();
 		if (thisTick == UserPanel.simLength) { //TODO: add flag to only use this during batch runs
-			String nP	= String.valueOf(UserPanel.pedRho) + "_";
-			String nC	= String.valueOf(UserPanel.vehRho) + "_";
-//			String del	= String.valueOf(UserPanel.delayTs) + "_";
-			String lim	= String.valueOf(UserPanel.sLimitKH);
-			String thisRunC = nP + nC + /*del +*/ lim;
+			String nP	= "p" + String.valueOf(UserPanel.pedRho) + "_";
+			String nC	= "v" + String.valueOf(UserPanel.vehRho) + "_";
+			String lim	= "s" + String.valueOf((int)UserPanel.sLimitKH) + "_";
+			String percs = String.valueOf((int)UserPanel.percV2X) + '.' + String.valueOf((int)UserPanel.percAuto) +
+					'.' + String.valueOf((int)UserPanel.percBoth);
+			String thisRunC = nP + nC + lim + percs;
 			String thisRunD = nC + lim;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";
-			String confFileName = directory + now + thisRunC + ".csv";
+			String fileString = now + thisRunC;
+			String confFileName = directory + fileString + ".csv";
 			String diagFileName = directory + now + thisRunD + "fundDiagram.csv";
-			
 			if (!UserPanel.calcFun) {
-				CSVWriter.writeConfCSV(confFileName,allConf);}
+				File dir = new File(directory);
+				ArrayList<String> fNames = new ArrayList<String>();
+				ArrayList<String> allNames = new ArrayList<String>(Arrays.asList(dir.list()));
+				for (String aName : allNames) {
+					if (aName.contains(fileString)) {
+						fNames.add(aName);}}
+				if (fNames.size() == 0) {
+					CSVWriter.writeConfCSV(confFileName,allConf);}
+				else {
+					boolean taken = true;
+					int dupes = 1;
+					while (taken) {
+						String newFileName = fileString + '_' + String.valueOf(dupes) + ".csv";
+						if (!fNames.contains(newFileName)) {
+							String newFullName = directory + newFileName;
+							CSVWriter.writeConfCSV(newFullName,allConf);
+							taken = false;}
+						dupes++;}}}
 			else {
-				CSVWriter.writeDiagCSV(diagFileName,diagram);}}
+				CSVWriter.writeDiagCSV(diagFileName,diagram);}
+			RunEnvironment.getInstance().endRun();}
 	}
 	
 	public void diagramIt() {
@@ -376,6 +403,5 @@ public class Scheduler extends Agent {
 		allPeds = new ArrayList<Ped>();
 		allConf = new ArrayList<Turtle.Conflict>();
 //		crashes = new ArrayList<Turtle.Crash>();
-		RunEnvironment.getInstance().endAt(UserPanel.simLength); //TODO: add flag to only use this during batch runs
 	}
 }

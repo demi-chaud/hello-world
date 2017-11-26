@@ -38,7 +38,6 @@ public class Turtle extends Agent{
 	private double	timeD, durD, timeSinceD, interD, interDlam;						//distraction
 	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;						//delay
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
-	private double[] multiZ = new double[3];
 	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed;							//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
 	private double	hardYield, yieldDec, percLimit;									//also yielding
@@ -118,7 +117,10 @@ public class Turtle extends Agent{
 				if (oldbAccel < acc && newbAccel < acc) {
 					acc = newbAccel;}}}
 		age++;
-		
+		if (acc == -UserPanel.emergDec) {
+			nMaxDecel++;}
+		else {
+			nMaxDecel = 0;}
 		vNew = v + acc;
 		if (vNew < 0) {vNew = 0;}
 	}		
@@ -250,62 +252,8 @@ public class Turtle extends Agent{
 					a = (1-cool)*a + cool*(accCAH + mina*Math.tanh((a-accCAH)/mina));}}}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
 		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
-			a = -UserPanel.emergDec;
-			nMaxDecel++;}
-		else {
-			nMaxDecel = 0;}
+			a = -UserPanel.emergDec;}
 		return a;	
-	}
-	
-	double CFaccel(Turtle tt, int nAhead, boolean tDistracted) {
-		double tSpeed = 0;
-		double tDiff = 0;
-		double rv = 0;
-		double tHead = Math.abs(tt.xLoc - xLoc) - tt.length; //TODO: change visualization to move icons to center of car
-		if (tHead < 0) {
-			tHead = 1e-10;}
-		if (UserPanel.estErr && !autonomous) {		//includes estimation error in headway measurement
-			etaS = rnd.nextGaussian();
-			etaV = rnd.nextGaussian();
-			wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
-			wV = UserPanel.wien1*wV + UserPanel.wien2*etaV;
-			tHead = tHead*Math.exp(UserPanel.Vs*wS);
-			tSpeed = tt.v - tHead*sigR*wV;}
-		else tSpeed = tt.v;
-		tDiff = v - tSpeed;
-		double safeHead0 = v*(tGap) + (v*tDiff)/(2*Math.sqrt(maxa*mina));
-		double tSafeHead = jamHead + Math.max(0,safeHead0);			//avoid negative values
-		if (tHead != 0) {
-			if (!tDistracted) {
-				multiZ[nAhead - 1] = tSafeHead / tHead;}}
-		//implement IIDM
-		double multiAFree = 0;
-		if (v < maxv) {
-			multiAFree = maxa*(1-Math.pow(v/maxv,deltaIDM));
-			if (multiZ[nAhead - 1] >= 1) {
-				rv = maxa*(1-multiZ[nAhead - 1]*multiZ[nAhead - 1]);}
-			else {
-				rv = multiAFree*(1-Math.pow(multiZ[nAhead - 1], 2*maxa/multiAFree));}}
-		else {
-			multiAFree = -mina*(1-Math.pow(maxv/v, maxa*deltaIDM/mina));
-			if (multiZ[nAhead - 1] >= 1) {
-				rv = multiAFree + maxa*(1-multiZ[nAhead - 1]*multiZ[nAhead - 1]);}
-			else {
-				rv = multiAFree;}}
-		
-		double cool = 0.99;
-		double multiAccCAH = -1000;
-		if (tHead != 0) {
-			if (!tDistracted) {
-				double effAcc = Math.min(acc, tt.acc);
-				multiAccCAH = effAcc;
-				if (tDiff > 0) {
-					multiAccCAH = effAcc - Math.pow(tDiff, 3)/(2*tHead);}
-				if (tt.v*tDiff <= -2*tHead*effAcc) {
-					multiAccCAH = v*v*effAcc/(tt.v*tt.v - 2*tHead*effAcc);}}
-			if (rv < multiAccCAH) {
-				rv = (1-cool)*rv + cool*(multiAccCAH + mina*Math.tanh((rv-multiAccCAH)/mina));}}
-		return rv;
 	}
 	
 	/*
@@ -784,7 +732,7 @@ public class Turtle extends Agent{
 						int dup = 0;
 						int hasDup = 0;
 						double range = (double)dir*(pedX - xLoc);
-						Conflict thisConf = new Conflict(this,p,ttc,range,ying,yieldDec,timeSinceD,timeD,init,hasDup,connected,autonomous);
+						Conflict thisConf = new Conflict(this,p,ttc,range,ying,yieldDec,nMaxDecel,timeSinceD,timeD,init,hasDup,connected,autonomous);
 						Conflict toAdd = null;
 						Conflict toRem = null;
 						for (Conflict c : Scheduler.allConf) {
@@ -886,6 +834,9 @@ public class Turtle extends Agent{
 	 * @param contextSpace
 	 * @param contextGrid
 	 */
+	public Turtle(Turtle src) {
+		
+	}
 	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir,
 				  boolean conn, boolean auto) {
 		space	= contextSpace;
@@ -955,7 +906,6 @@ public class Turtle extends Agent{
 		timeSinceD	= 0;
 		interD		= 0;
 		zIIDM 		= 1000;
-		multiZ		= new double[3];
 		accCAH		= -1000;
 		interDlam	= UserPanel.interDlam;
 		connected	= conn;
@@ -972,7 +922,6 @@ public class Turtle extends Agent{
 		double stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
 		return stopDistance;
 	}
-	
 	
 	/* Fits human driver's brake reaction time to shifted Weibull distribution */
 	public double calcBRT() {
@@ -1025,14 +974,14 @@ public class Turtle extends Agent{
 	public class Conflict {
 		Ped ped;
 		Turtle car;
-		int dirP, dirC, lane, yingVal, init, hasDup;
+		int dirP, dirC, lane, yingVal, nMaxD, init, hasDup;
 		double TTC, range, yDec, vel, timeD, sinceD, tick;
 		boolean conn, auto;
 		ArrayList<double[]> pedVid;
 		ArrayList<Video> video;
 		double xWalkx = RoadBuilder.xWalkx;
 		double spaceScale = UserPanel.spaceScale;
-		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldDec, 
+		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldDec, int nMaxD,
 				double timeSinceD, double timeD, int init, int hasDup, boolean conn, boolean auto) {
 			this.ped	= ped;
 			this.car	= car;
@@ -1044,6 +993,7 @@ public class Turtle extends Agent{
 			this.yingVal= yieldState;
 			this.vel	= car.v;
 			this.yDec	= yieldDec;
+			this.nMaxD	= nMaxD;
 			this.tick	= RoadBuilder.clock.getTickCount();
 			this.sinceD	= timeSinceD;
 			this.timeD	= timeD;
@@ -1051,26 +1001,27 @@ public class Turtle extends Agent{
 			this.hasDup	= hasDup;
 			this.conn	= conn;
 			this.auto	= auto;
-			this.video	= new ArrayList<Video>();
-			this.pedVid = new ArrayList<double[]>();
-			double[] thisPedVid = new double[2];
-			ped.myLoc.toDoubleArray(thisPedVid);
-			this.pedVid.add(thisPedVid);
+		}
+//			this.video	= new ArrayList<Video>();
+//			this.pedVid = new ArrayList<double[]>();
+//			double[] thisPedVid = new double[2];
+//			ped.myLoc.toDoubleArray(thisPedVid);
+//			this.pedVid.add(thisPedVid);
 //			Iterable<Object> snapShot = space.getObjects();
 //			Iterator<Object> iterator = snapShot.iterator();
-			for (Turtle t : Scheduler.allCars) { 
+//			for (Turtle t : Scheduler.allCars) { 
 //			while (iterator.hasNext()) {
 //				Object element0 = iterator.next();
 //				Agent element = (Agent)element0;
 //				if (element.isCar()) {
 //					Turtle thisCar = (Turtle)element;
-				if (t.myLoc != null && t.dir == car.dir) {
-					double[] location = new double[2];
-					t.myLoc.toDoubleArray(location);
-					double thirty = 30/spaceScale; //30m should be enough to see all relevant cars
-					if (location[0] >= xWalkx - thirty && location[0] <= xWalkx + thirty) {
-						Video thisVideo = new Video(t,location);
-						this.video.add(thisVideo);}}}}
+//				if (t.myLoc != null && t.dir == car.dir) {
+//					double[] location = new double[2];
+//					t.myLoc.toDoubleArray(location);
+//					double thirty = 30/spaceScale; //30m should be enough to see all relevant cars
+//					if (location[0] >= xWalkx - thirty && location[0] <= xWalkx + thirty) {
+//						Video thisVideo = new Video(t,location);
+//						this.video.add(thisVideo);}}}
 	}
 	
 	public class Video {
