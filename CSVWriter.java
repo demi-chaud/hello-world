@@ -38,7 +38,7 @@ public class CSVWriter {
 				String v0		= form.format(vKH);
 				Double decMS	= c.yDec*UserPanel.spaceScale/(UserPanel.tStep*UserPanel.tStep);
 				String dec0		= form.format(decMS);
-				String nMaxDec  = String.valueOf(c.car.nMaxDecel);
+				String nMaxDec  = String.valueOf(c.nMaxD);
 				Double ttcS		= c.TTC*UserPanel.tStep;
 				String ttc0		= form.format(ttcS);
 				Double rangeM	= c.range*UserPanel.spaceScale;

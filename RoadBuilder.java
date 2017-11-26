@@ -13,6 +13,7 @@ import repast.simphony.space.continuous.SimpleCartesianAdder;
 import repast.simphony.space.continuous.StrictBorders;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.*;
+import repast.simphony.parameter.Parameters;
 
 /**
  * Initializing script to build the space, context, and schedule.
@@ -38,6 +39,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	static public int ticker = 0;
 	static public RedLight rl1;
 	static public RedLight rl2;
+	static public UserPanel panel;
 	
 	@SuppressWarnings({"unused"})
 	@Override
@@ -51,7 +53,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		clock = RunEnvironment.getInstance().getCurrentSchedule();
 		flowSource = new Scheduler();
 		context.add(flowSource);
-		UserPanel panel = new UserPanel();
+		panel = new UserPanel();
 		int rnd1  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		int rnd2  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		if (UserPanel.inclRL) {
@@ -72,4 +74,11 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		
 		return context;
 	}
+	
+	public String[] getInitParam() {
+		String[] params = {"sLimitKH","vehRho","pedRho","percV2X","percAuto","percBoth"};
+		return params;
+	}
+	
+	
 }
