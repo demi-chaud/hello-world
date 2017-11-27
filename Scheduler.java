@@ -139,19 +139,19 @@ public class Scheduler extends Agent {
 		if (UserPanel.vehRho > 0) {
 			rndC = rndCar.nextDouble();
 			rndType1 = rndCAV.nextDouble();
-			if (rndType1 < UserPanel.V2Xhi) { //random selects from [0,1)
+			if (rndType1 < RoadBuilder.panel.V2Xhi) { //random selects from [0,1)
 				bV2X1 = true;}
-			if (rndType1 >= UserPanel.autLo && rndType1 < UserPanel.bothLo) {
+			if (rndType1 >= RoadBuilder.panel.autLo && rndType1 < RoadBuilder.panel.bothLo) {
 				bAut1 = true;}
-			if (rndType1 >= UserPanel.bothLo && rndType1 < UserPanel.bothHi) {
+			if (rndType1 >= RoadBuilder.panel.bothLo && rndType1 < RoadBuilder.panel.bothHi) {
 				bBoth1 = true;}
 			if (rndC <=  UserPanel.Pof2Car) {
 				rndType2 = rndCAV.nextDouble();
-				if (rndType2 < UserPanel.V2Xhi) { //random selects from [0,1)
+				if (rndType2 < RoadBuilder.panel.V2Xhi) { //random selects from [0,1)
 					bV2X2 = true;}
-				if (rndType2 >= UserPanel.autLo && rndType2 < UserPanel.bothLo) {
+				if (rndType2 >= RoadBuilder.panel.autLo && rndType2 < RoadBuilder.panel.bothLo) {
 					bAut2 = true;}
-				if (rndType2 >= UserPanel.bothLo && rndType2 < UserPanel.bothHi) {
+				if (rndType2 >= RoadBuilder.panel.bothLo && rndType2 < RoadBuilder.panel.bothHi) {
 					bBoth2 = true;}
 				Turtle addedTurtle1 = addCar(0,1,bV2X1,bAut1,bBoth1);
 				Turtle addedTurtle2 = addCar(1,1,bV2X2,bAut2,bBoth2);
@@ -164,19 +164,19 @@ public class Scheduler extends Agent {
 			if (UserPanel.bothCar == true) {
 				rndC2 = rndCar.nextDouble();
 				rndType3 = rndCAV.nextDouble();
-				if (rndType3 < UserPanel.V2Xhi) { //random selects from [0,1)
+				if (rndType3 < RoadBuilder.panel.V2Xhi) { //random selects from [0,1)
 					bV2X3 = true;}
-				if (rndType3 >= UserPanel.autLo && rndType3 < UserPanel.bothLo) {
+				if (rndType3 >= RoadBuilder.panel.autLo && rndType3 < RoadBuilder.panel.bothLo) {
 					bAut3 = true;}
-				if (rndType3 >= UserPanel.bothLo && rndType3 < UserPanel.bothHi) {
+				if (rndType3 >= RoadBuilder.panel.bothLo && rndType3 < RoadBuilder.panel.bothHi) {
 					bBoth3 = true;}
 				if (rndC2 <=  UserPanel.Pof2Car) {
 					rndType4 = rndCAV.nextDouble();
-					if (rndType4 < UserPanel.V2Xhi) { //random selects from [0,1)
+					if (rndType4 < RoadBuilder.panel.V2Xhi) { //random selects from [0,1)
 						bV2X4 = true;}
-					if (rndType4 >= UserPanel.autLo && rndType4 < UserPanel.bothLo) {
+					if (rndType4 >= RoadBuilder.panel.autLo && rndType4 < RoadBuilder.panel.bothLo) {
 						bAut4 = true;}
-					if (rndType4 >= UserPanel.bothLo && rndType4 < UserPanel.bothHi) {
+					if (rndType4 >= RoadBuilder.panel.bothLo && rndType4 < RoadBuilder.panel.bothHi) {
 						bBoth4 = true;}
 					Turtle addedTurtle3 = addCar(0,-1,bV2X3,bAut3,bBoth3);
 					Turtle addedTurtle4 = addCar(1,-1,bV2X4,bAut4,bBoth4);
@@ -216,8 +216,8 @@ public class Scheduler extends Agent {
 			String nP	= "p" + String.valueOf(UserPanel.pedRho) + "_";
 			String nC	= "v" + String.valueOf(UserPanel.vehRho) + "_";
 			String lim	= "s" + String.valueOf((int)UserPanel.sLimitKH) + "_";
-			String percs = String.valueOf((int)UserPanel.percV2X) + '.' + String.valueOf((int)UserPanel.percAuto) +
-					'.' + String.valueOf((int)UserPanel.percBoth);
+			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
+					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
 			String thisRunC = nP + nC + lim + percs;
 			String thisRunD = nC + lim;
 			Date date = new Date();

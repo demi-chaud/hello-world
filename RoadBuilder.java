@@ -40,6 +40,9 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	static public RedLight rl1;
 	static public RedLight rl2;
 	static public UserPanel panel;
+	public double percV2X;
+	public double percAuto;
+	public double percBoth;
 	
 	@SuppressWarnings({"unused"})
 	@Override
@@ -53,7 +56,11 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		clock = RunEnvironment.getInstance().getCurrentSchedule();
 		flowSource = new Scheduler();
 		context.add(flowSource);
-		panel = new UserPanel();
+		Parameters param = RunEnvironment.getInstance().getParameters();
+		percV2X  = (double)param.getValue("percV2X");
+		percAuto = (double)param.getValue("percAuto");
+		percBoth = (double)param.getValue("percBoth");
+		panel = new UserPanel(this);
 		int rnd1  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		int rnd2  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		if (UserPanel.inclRL) {

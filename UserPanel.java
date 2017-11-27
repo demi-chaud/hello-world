@@ -23,16 +23,19 @@ public class UserPanel implements ActionListener{
 	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
-	static final  double simHours	= 10;				//hours in sim (currently 5)
+	static final  double simHours	= .01;				//hours in sim (currently 5)
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
 	//static public double percV2X	= 0;
 	//static public double percAuto	= 0;
 	//static public double percBoth	= 100;
 	//static public int    vehRho		= 600;			// veh/hr each dir 	default: 600
 	//static public int    pedRho		= 60;			// ppl/hr each dir	default:  60		//should these by total or each (would add factor of two in calc)
-	static public double percV2X	= (double)param.getValue("percV2X");
-	static public double percAuto	= (double)param.getValue("percAuto");
-	static public double percBoth	= (double)param.getValue("percBoth");
+//	static public double percV2X	= (double)param.getValue("percV2X");
+//	static public double percAuto	= (double)param.getValue("percAuto");
+//	static public double percBoth	= (double)param.getValue("percBoth");
+	public double percV2X;
+	public double percAuto;
+	public double percBoth;
 	
 	static public int    vehRho		= (int)param.getValue("vehRho");
 	static public int    pedRho		= (int)param.getValue("pedRho");
@@ -82,12 +85,12 @@ public class UserPanel implements ActionListener{
 	//TODO: add ped gap coefficients
 	
 	// calculate population range constants
-	static public double V2Xlo	= 0;
-	static public double V2Xhi	= percV2X/100;
-	static public double autLo	= V2Xhi;
-	static public double autHi	= autLo + percAuto/100;
-	static public double bothLo	= autHi;
-	static public double bothHi = bothLo + percBoth/100;
+	public double V2Xlo;
+	public double V2Xhi;
+	public double autLo;
+	public double autHi;
+	public double bothLo;
+	public double bothHi;
 		
 	// convert variables to model units
 	static public double sLimit 		= sLimitKH/vBase;
@@ -152,17 +155,30 @@ public class UserPanel implements ActionListener{
 //	private String delTs	= String.valueOf(delayTs);
 //	private String tSteps	= String.valueOf(tStep);
 	private String confTs	= String.valueOf(confLimS);
-	private String pV2Xs	= String.valueOf(percV2X);
+	private String pV2Xs;
 //	private String pV2Is	= String.valueOf(percV2I);
-	private String pAutoS	= String.valueOf(percAuto);
-	private String pBothS	= String.valueOf(percBoth);
+	private String pAutoS;
+	private String pBothS;
 	
 	/*
 	 * Builds the GUI user panel
 	 */
-	public UserPanel() {
+	public UserPanel(RoadBuilder src) {
+		percV2X = src.percV2X;
+		percAuto = src.percAuto;
+		percBoth = src.percBoth;
+		V2Xlo	= 0;
+		V2Xhi	= percV2X/100;
+		autLo	= V2Xhi;
+		autHi	= autLo + percAuto/100;
+		bothLo	= autHi;
+		bothHi = bothLo + percBoth/100;
+		pV2Xs	= String.valueOf(percV2X);
+		pAutoS	= String.valueOf(percAuto);
+		pBothS	= String.valueOf(percBoth);
+		
 		JPanel newPanel = new JPanel();
-		if(percV2X + percAuto + percBoth > 110) {
+		if(percV2X + percAuto + percBoth > 100.001) {
 			deathKnell = true;}
 		JButton carBtn = new JButton("car");
 		carBtn.addActionListener(this);
