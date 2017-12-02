@@ -43,6 +43,10 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	public double percV2X;
 	public double percAuto;
 	public double percBoth;
+	public int	  vehRho;
+	public int	  pedRho;
+	public double hPercLimM;
+	public double sLimitKH;
 	
 	@SuppressWarnings({"unused"})
 	@Override
@@ -54,13 +58,17 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 				spaceFactory.createContinuousSpace("space",context, new SimpleCartesianAdder<Object>(),
 												   new StrictBorders(), roadL, worldW);
 		clock = RunEnvironment.getInstance().getCurrentSchedule();
-		flowSource = new Scheduler();
-		context.add(flowSource);
 		Parameters param = RunEnvironment.getInstance().getParameters();
 		percV2X  = (double)param.getValue("percV2X");
 		percAuto = (double)param.getValue("percAuto");
 		percBoth = (double)param.getValue("percBoth");
+		vehRho	 = (int)param.getValue("vehRho");
+		pedRho	 = (int)param.getValue("pedRho");
+		hPercLimM= (double)param.getValue("hPercLimM");
+		sLimitKH = (double)param.getValue("sLimitKH");
 		panel = new UserPanel(this);
+		flowSource = new Scheduler();
+		context.add(flowSource);
 		int rnd1  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		int rnd2  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		if (UserPanel.inclRL) {
@@ -83,7 +91,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	}
 	
 	public String[] getInitParam() {
-		String[] params = {"sLimitKH","vehRho","pedRho","percV2X","percAuto","percBoth"};
+		String[] params = {"sLimitKH","vehRho","pedRho","percV2X","percAuto","percBoth","hPercLimM"};
 		return params;
 	}
 	

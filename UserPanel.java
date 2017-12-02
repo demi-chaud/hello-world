@@ -23,7 +23,7 @@ public class UserPanel implements ActionListener{
 	static public double tStep		= 0.05;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
-	static final  double simHours	= .01;				//hours in sim (currently 5)
+	static final  double simHours	= 50;				//hours in sim (currently 5)
 	static final  double simLength  = simHours*60*60/tStep;	//in ticks
 	//static public double percV2X	= 0;
 	//static public double percAuto	= 0;
@@ -36,11 +36,12 @@ public class UserPanel implements ActionListener{
 	public double percV2X;
 	public double percAuto;
 	public double percBoth;
+	public int	  vehRho;
+	public int    pedRho;
+	public double sLimitKH;
+	public double hPercLimM;
 	
-	static public int    vehRho		= (int)param.getValue("vehRho");
-	static public int    pedRho		= (int)param.getValue("pedRho");
 	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
-	static public double hPercLimM	= 100;			// human pedestrian perception (meters)	//kinda arbitrary
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
 	
 	static public boolean estErr 	= true;		// estimation errors
@@ -54,7 +55,6 @@ public class UserPanel implements ActionListener{
 //	static public boolean pedsDn	= true;
 	
 	// declare variables in real world units
-	static public double sLimitKH		= 45;			// km/hr			default:  45
 	static final  double pedVavgKH		= 5;			// km/hr			default:   5 	 (source Zebala 2012)
 	static final  double pedVsdKH		= 0.936;		// km/hr			default:   0.936 (source Still 2000)
 	static final  double maxaScaleMS	= 0.132;		// m/s2				default:   0.132  \
@@ -67,8 +67,6 @@ public class UserPanel implements ActionListener{
 	static final  double tGapS_sd		= 0.507;		// s				default:   0.507  /
 	static public double pedGapParamA   = 6.2064;
 	
-	static public double sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
-	static public double sLimitSDKH = 4.5;			// km/hr					ditto
 	static final  double emergDecMS	= 7.4;			// m/s2				default:   7.4 (source Greibe 2007)
 	static final  double carLengthM	= 5.28;			// m			source: http://usatoday30.usatoday.com/money/autos/2007-07-15-little-big-cars_N.htm
 	static final  double carWidthM	= 1.89;			// m					avg of lg sedan 1990 & 2007
@@ -79,8 +77,6 @@ public class UserPanel implements ActionListener{
 	static public double SsigHat	= 0.486;		// stopBar dist shape param (already in model units)
 	static public int	 cycleTimeS	= 90;
 	static public int	 greenDurS	= 60;			// duration of green light in sec
-	static public int	 amberDurS	= RedLight.amberT(sLimitKH);
-	static public int	 redDurS	= cycleTimeS - greenDurS - amberDurS;
 	static public double calcTSpanS	= 15;			// timespan for fundamental diagram calculations (in seconds)
 	//TODO: add ped gap coefficients
 	
@@ -91,11 +87,45 @@ public class UserPanel implements ActionListener{
 	public double autHi;
 	public double bothLo;
 	public double bothHi;
-		
+	
+	public double sLimitMuKH;
+	public double sLimitSDKH;
+	public int	 amberDurS;
+	public int	 redDurS;	
 	// convert variables to model units
-	static public double sLimit 		= sLimitKH/vBase;
-	static final  double sLimitMu		= sLimitMuKH/vBase;
-	static final  double sLimit_sd		= sLimitSDKH/vBase;
+	public double sLimit;
+	public double sLimitMu;
+	public double sLimit_sd;
+	public double lambdaCar;
+	public double lambdaPed;
+	public double poisExpV;
+	public double poisExpP;
+	public double Pof1Car;
+	public double Pof1Ped;
+	public double Pof2Car;
+	public double Pof2Ped;
+	public int	 cycleTime;
+	public int	 greenDur;
+	public int	 amberDur;
+	public int	 redDur;
+	static public int	 calcTSpan	= (int)(calcTSpanS / tStep);
+	public double hPercLim;
+	public double aPercLim;
+	
+	// max/min vals for generated CF distributions
+	public double maxHeadT;
+	public double minHeadT;
+	public double maxJamHead;
+	public double minJamHead;
+	public double maxMaxA;
+	public double minMaxA;
+	public double maxMinA;
+	public double minMinA;
+	public double maxMaxV;
+	public double minMaxV;
+	
+	
+	// convert variables to model units
 	static final  double pedVavg		= pedVavgKH/vBase;
 	static final  double pedVsd			= pedVsdKH/vBase;
 	//static final  double maxa			= maxaScaleMS*tStep*tStep/spaceScale;
@@ -108,25 +138,10 @@ public class UserPanel implements ActionListener{
 	static final  double emergDec	= emergDecMS*tStep*tStep/spaceScale;
 	static final  double carLength	= carLengthM/spaceScale;
 	static final  double carWidth	= carWidthM/spaceScale;
-	static public double lambdaCar	= vehRho * tStep / 3600;
-	static public double lambdaPed	= pedRho * tStep / 3600;
-	static public double poisExpV	= Math.exp(-lambdaCar);
-	static public double poisExpP	= Math.exp(-lambdaPed);
-	static public double Pof1Car	= lambdaCar * poisExpV;		// Poisson probability of 1 arrival in a tick (higher counts are negligible)
-	static public double Pof1Ped	= lambdaPed * poisExpP;		//  ditto for peds
-	static public double Pof2Car	= Math.pow(lambdaCar,2)*poisExpV/2;
-	static public double Pof2Ped	= Math.pow(lambdaPed,2)*poisExpP/2;
 	static public double DmuHat		= DmuHatS - Math.log(tStep);
 	static public double interDlam	= interDlamS * tStep;
 	static public double SmuHat		= SmuHatM - Math.log(RoadBuilder.spaceScale);
-	static public int	 cycleTime  = (int)(cycleTimeS / tStep);
-	static public int	 greenDur	= (int)(greenDurS / tStep);
-	static public int	 amberDur	= (int)(amberDurS / tStep);
-	static public int	 redDur		= (int)(redDurS / tStep);
-	static public int	 calcTSpan	= (int)(calcTSpanS / tStep);
-	static public double hPercLim	= hPercLimM/spaceScale;
-	static public double aPercLim	= aPercLimM/spaceScale;
-//	static public ArrayList<Double> poisStoreV, poisStoreP;
+	//	static public ArrayList<Double> poisStoreV, poisStoreP;
 	//TODO: place agents created in later terms of Poisson approximation
 	
 	// declare parameters of error-making
@@ -135,22 +150,10 @@ public class UserPanel implements ActionListener{
 	static final  double  wien1		= Math.exp(-tStep/errPers);		// constants in the calculation
 	static final  double  wien2		= Math.sqrt(2*tStep/errPers);	//	of perception errors
 	
-	// max/min vals for generated CF distributions (somewhat arbitrary)
-	static final double maxHeadT	= 3.294 / tStep;
-	static final double minHeadT	= 0.252 / tStep;
-	static final double maxJamHead	= 4.476 / spaceScale;
-	static final double minJamHead	= 0.444 / spaceScale;
-	static final double maxMaxA		= 5.454 * tStep * tStep / spaceScale;
-	static final double minMaxA		= 0.394 * tStep * tStep / spaceScale;
-	static final double maxMinA		= emergDec;
-	static final double minMinA		= 0.376 * tStep * tStep / spaceScale;
-	static final double maxMaxV		= sLimitMu + 4*sLimit_sd;
-	static final double minMaxV		= sLimitMu - 4*sLimit_sd;
-	
 	// convert initial values to strings for JPanel
-	private String sLimits	= String.valueOf(sLimitKH);
-	private String vehRhos	= String.valueOf(vehRho);
-	private String pedRhos	= String.valueOf(pedRho);
+	private String sLimits;
+	private String vehRhos;
+	private String pedRhos;
 	private JTextField pRho;
 //	private String delTs	= String.valueOf(delayTs);
 //	private String tSteps	= String.valueOf(tStep);
@@ -176,6 +179,51 @@ public class UserPanel implements ActionListener{
 		pV2Xs	= String.valueOf(percV2X);
 		pAutoS	= String.valueOf(percAuto);
 		pBothS	= String.valueOf(percBoth);
+		
+		vehRho		= (int)param.getValue("vehRho");
+		pedRho		= (int)param.getValue("pedRho");
+		hPercLimM	= (double)param.getValue("hPercLimM");		// human pedestrian perception (meters) default: 100
+		sLimitKH	= (double)param.getValue("sLimitKH");		// km/hr								default:  45
+		
+		sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
+		sLimitSDKH = 4.5;			// km/hr					ditto
+		amberDurS	= RedLight.amberT(sLimitKH);
+		redDurS	= cycleTimeS - greenDurS - amberDurS;	
+		// convert variables to model units
+		sLimit 		= sLimitKH/vBase;
+		sLimitMu		= sLimitMuKH/vBase;
+		sLimit_sd		= sLimitSDKH/vBase;
+		lambdaCar	= vehRho * tStep / 3600;
+		lambdaPed	= pedRho * tStep / 3600;
+		poisExpV	= Math.exp(-lambdaCar);
+		poisExpP	= Math.exp(-lambdaPed);
+		Pof1Car	= lambdaCar * poisExpV;		// Poisson probability of 1 arrival in a tick (higher counts are negligible)
+		Pof1Ped	= lambdaPed * poisExpP;		//  ditto for peds
+		Pof2Car	= Math.pow(lambdaCar,2)*poisExpV/2;
+		Pof2Ped	= Math.pow(lambdaPed,2)*poisExpP/2;
+		cycleTime  = (int)(cycleTimeS / tStep);
+		greenDur	= (int)(greenDurS / tStep);
+		amberDur	= (int)(amberDurS / tStep);
+		redDur		= (int)(redDurS / tStep);
+		hPercLim	= hPercLimM/spaceScale;
+		aPercLim	= aPercLimM/spaceScale;
+		
+		// max/min vals for generated CF distributions
+		maxHeadT	= 3.294 / tStep;
+		minHeadT	= 0.252 / tStep;
+		maxJamHead	= 4.476 / spaceScale;
+		minJamHead	= 0.444 / spaceScale;
+		maxMaxA		= 5.454 * tStep * tStep / spaceScale;
+		minMaxA		= 0.394 * tStep * tStep / spaceScale;
+		maxMinA		= emergDec;
+		minMinA		= 0.376 * tStep * tStep / spaceScale;
+		maxMaxV		= sLimitMu + 4*sLimit_sd;
+		minMaxV		= sLimitMu - 4*sLimit_sd;
+		
+		// convert initial values to strings for JPanel
+		sLimits	= String.valueOf(sLimitKH);
+		vehRhos	= String.valueOf(vehRho);
+		pedRhos	= String.valueOf(pedRho);
 		
 		JPanel newPanel = new JPanel();
 		if(percV2X + percAuto + percBoth > 100.001) {
@@ -487,6 +535,11 @@ public class UserPanel implements ActionListener{
 		return percBoth;}
 	public void setPercBoth(double pBoth) {
 		percBoth = pBoth;}
+	@Parameter(usageName="hPercLimM",displayName="Human Perception Limit")
+	public double getHPercLimM() {
+		return hPercLimM;}
+	public void setHPercLimM(double src) {
+		hPercLimM = src;}
 	/*
 	@Parameter(usageName="",displayName="")
 	public double get() {

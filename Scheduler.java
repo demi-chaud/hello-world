@@ -46,8 +46,8 @@ public class Scheduler extends Agent {
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
-	String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+	//String	directory = homeDir + "\\workspace\\driving1\\results\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
@@ -57,7 +57,7 @@ public class Scheduler extends Agent {
 	boolean carsYes, pedsYes;
 	int		tSpan = UserPanel.calcTSpan;
 	int		tSpanS = (int)UserPanel.calcTSpanS;
-	int		prepT = (int)Math.ceil(2*RoadBuilder.roadL/UserPanel.sLimit);
+	int		prepT = (int)Math.ceil(2*RoadBuilder.roadL/RoadBuilder.panel.sLimit);
 	double	dxM = 5.;
 	double	dx = dxM/RoadBuilder.spaceScale;
 	
@@ -136,7 +136,7 @@ public class Scheduler extends Agent {
 		boolean bBoth3 = false;
 		boolean bBoth4 = false;
 		
-		if (UserPanel.vehRho > 0) {
+		if (RoadBuilder.panel.vehRho > 0) {
 			rndC = rndCar.nextDouble();
 			rndType1 = rndCAV.nextDouble();
 			if (rndType1 < RoadBuilder.panel.V2Xhi) { //random selects from [0,1)
@@ -145,7 +145,7 @@ public class Scheduler extends Agent {
 				bAut1 = true;}
 			if (rndType1 >= RoadBuilder.panel.bothLo && rndType1 < RoadBuilder.panel.bothHi) {
 				bBoth1 = true;}
-			if (rndC <=  UserPanel.Pof2Car) {
+			if (rndC <=  RoadBuilder.panel.Pof2Car) {
 				rndType2 = rndCAV.nextDouble();
 				if (rndType2 < RoadBuilder.panel.V2Xhi) { //random selects from [0,1)
 					bV2X2 = true;}
@@ -157,7 +157,7 @@ public class Scheduler extends Agent {
 				Turtle addedTurtle2 = addCar(1,1,bV2X2,bAut2,bBoth2);
 				allCars.add(addedTurtle1);
 				allCars.add(addedTurtle2);}
-			else if (rndC <= UserPanel.Pof1Car) {
+			else if (rndC <= RoadBuilder.panel.Pof1Car) {
 				lane = rndCar.nextInt(2);		// picks between 0 and 1 randomly
 				Turtle addedTurtle = addCar(lane,1,bV2X1,bAut1,bBoth1);
 				allCars.add(addedTurtle);}
@@ -170,7 +170,7 @@ public class Scheduler extends Agent {
 					bAut3 = true;}
 				if (rndType3 >= RoadBuilder.panel.bothLo && rndType3 < RoadBuilder.panel.bothHi) {
 					bBoth3 = true;}
-				if (rndC2 <=  UserPanel.Pof2Car) {
+				if (rndC2 <=  RoadBuilder.panel.Pof2Car) {
 					rndType4 = rndCAV.nextDouble();
 					if (rndType4 < RoadBuilder.panel.V2Xhi) { //random selects from [0,1)
 						bV2X4 = true;}
@@ -182,30 +182,30 @@ public class Scheduler extends Agent {
 					Turtle addedTurtle4 = addCar(1,-1,bV2X4,bAut4,bBoth4);
 					allCars.add(addedTurtle3);
 					allCars.add(addedTurtle4);}
-				else if (rndC2 <= UserPanel.Pof1Car) {
+				else if (rndC2 <= RoadBuilder.panel.Pof1Car) {
 					lane = rndCar.nextInt(2);		// picks between 0 and 1 randomly
 					Turtle addedTurtle3 = addCar(lane,-1,bV2X3,bAut3,bBoth3);
 					allCars.add(addedTurtle3);}}}
-		if (UserPanel.pedRho > 0) {
+		if (RoadBuilder.panel.pedRho > 0) {
 //			if (UserPanel.pedsUp == true) {
 			rndP = rndPed.nextDouble();
-			if (rndP <=  UserPanel.Pof2Ped) {
+			if (rndP <=  RoadBuilder.panel.Pof2Ped) {
 				Ped addedPed1 = addPed(1);
 				Ped addedPed2 = addPed(1);
 				allPeds.add(addedPed1);
 				allPeds.add(addedPed2);}
-			else if (rndP <= UserPanel.Pof1Ped) {
+			else if (rndP <= RoadBuilder.panel.Pof1Ped) {
 				Ped addedPed = addPed(1);
 				allPeds.add(addedPed);}
 //				}
 //			if (UserPanel.pedsDn == true) {
 			rndP2 = rndPed.nextDouble();
-			if (rndP2 <=  UserPanel.Pof2Ped) {
+			if (rndP2 <=  RoadBuilder.panel.Pof2Ped) {
 				Ped addedPed1 = addPed(-1);
 				Ped addedPed2 = addPed(-1);
 				allPeds.add(addedPed1);
 				allPeds.add(addedPed2);}
-			else if (rndP2 <= UserPanel.Pof1Ped) {
+			else if (rndP2 <= RoadBuilder.panel.Pof1Ped) {
 				Ped addedPed = addPed(-1);
 				allPeds.add(addedPed);}}
 //			}
@@ -213,12 +213,14 @@ public class Scheduler extends Agent {
 		//write log of conflicts at end
 		thisTick = RoadBuilder.clock.getTickCount();
 		if (thisTick == UserPanel.simLength) { //TODO: add flag to only use this during batch runs
-			String nP	= "p" + String.valueOf(UserPanel.pedRho) + "_";
-			String nC	= "v" + String.valueOf(UserPanel.vehRho) + "_";
-			String lim	= "s" + String.valueOf((int)UserPanel.sLimitKH) + "_";
+			String nP	= "p" + String.valueOf(RoadBuilder.panel.pedRho) + "_";
+			String nC	= "v" + String.valueOf(RoadBuilder.panel.vehRho) + "_";
+			String lim	= "s" + String.valueOf((int)RoadBuilder.panel.sLimitKH) + "_";
+			String perc = "d" + String.valueOf((double)RoadBuilder.panel.hPercLimM) + "_";
+			String dur  = "h" + String.valueOf((int)UserPanel.simHours) + "_";
 			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
 					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
-			String thisRunC = nP + nC + lim + percs;
+			String thisRunC = nP + nC + lim + perc + dur + percs;
 			String thisRunD = nC + lim;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";
@@ -363,22 +365,22 @@ public class Scheduler extends Agent {
 	 * Runs red lights
 	 */
 	public void lightTick(RedLight l) {
-		int cycleTick = (int)(thisTick % UserPanel.cycleTime);
+		int cycleTick = (int)(thisTick % RoadBuilder.panel.cycleTime);
 		switch (l.myState) {
 		case GREEN:
-			if (cycleTick == UserPanel.greenDur) {
+			if (cycleTick == RoadBuilder.panel.greenDur) {
 				l.myState = state.AMBER;
 				l.timeInState = 0;}
 			else l.timeInState += 1;
 			break;
 		case AMBER:
-			if (cycleTick == UserPanel.amberDur) {
+			if (cycleTick == RoadBuilder.panel.amberDur) {
 				l.myState = state.RED;
 				l.timeInState = 0;}
 			else l.timeInState += 1;
 			break;
 		case RED:
-			if (cycleTick == UserPanel.redDur) {
+			if (cycleTick == RoadBuilder.panel.redDur) {
 				l.myState = state.GREEN;
 				l.timeInState = 0;}
 			else l.timeInState += 1;

@@ -844,33 +844,33 @@ public class Turtle extends Agent{
 		dir		= whichDir;
 		double maxa0 = rndIDM.nextGaussian()*UserPanel.maxaShape + UserPanel.maxaScale;
 		maxa	= Math.exp(maxa0);
-		if (maxa > UserPanel.maxMaxA) maxa = UserPanel.maxMaxA;
-		if (maxa < UserPanel.minMaxA) maxa = UserPanel.minMaxA;
+		if (maxa > RoadBuilder.panel.maxMaxA) maxa = RoadBuilder.panel.maxMaxA;
+		if (maxa < RoadBuilder.panel.minMaxA) maxa = RoadBuilder.panel.minMaxA;
 		double mina0 = rndIDM.nextGaussian()*UserPanel.minaShape + UserPanel.minaScale;
 		mina	= Math.exp(mina0);
-		if (mina > UserPanel.maxMinA) mina = UserPanel.maxMinA;
-		if (mina < UserPanel.minMinA) mina = UserPanel.minMinA;
-		maxv	= rndIDM.nextGaussian()*(UserPanel.sLimit_sd)+(UserPanel.sLimitMu);
-		if (maxv > UserPanel.maxMaxV) maxv = UserPanel.maxMaxV;
-		if (maxv < UserPanel.minMaxV) maxv = UserPanel.minMaxV;
+		if (mina > RoadBuilder.panel.maxMinA) mina = RoadBuilder.panel.maxMinA;
+		if (mina < RoadBuilder.panel.minMinA) mina = RoadBuilder.panel.minMinA;
+		maxv	= rndIDM.nextGaussian()*(RoadBuilder.panel.sLimit_sd)+(RoadBuilder.panel.sLimitMu);
+		if (maxv > RoadBuilder.panel.maxMaxV) maxv = RoadBuilder.panel.maxMaxV;
+		if (maxv < RoadBuilder.panel.minMaxV) maxv = RoadBuilder.panel.minMaxV;
 		tGap	= rndIDM.nextGaussian()*(UserPanel.tGap_sd)+UserPanel.tGap;
-		if (tGap > UserPanel.maxHeadT) tGap = UserPanel.maxHeadT;
-		if (tGap < UserPanel.minHeadT) tGap = UserPanel.minHeadT;
+		if (tGap > RoadBuilder.panel.maxHeadT) tGap = RoadBuilder.panel.maxHeadT;
+		if (tGap < RoadBuilder.panel.minHeadT) tGap = RoadBuilder.panel.minHeadT;
 		double jamHead0 = rndIDM.nextGaussian()*UserPanel.jamHeadShape + UserPanel.jamHeadScale;
 		jamHead = Math.exp(jamHead0);
-		if (jamHead > UserPanel.maxJamHead) jamHead = UserPanel.maxJamHead;
-		if (jamHead < UserPanel.minJamHead) jamHead = UserPanel.minJamHead;
+		if (jamHead > RoadBuilder.panel.maxJamHead) jamHead = RoadBuilder.panel.maxJamHead;
+		if (jamHead < RoadBuilder.panel.minJamHead) jamHead = RoadBuilder.panel.minJamHead;
 		//jamHead	= rnd.nextGaussian()*(UserPanel.jamHeadShape)+UserPanel.jamHeadScale;
 		length	= UserPanel.carLength;
 		if (!autonomous) {
-			percLimit = UserPanel.hPercLim;
+			percLimit = RoadBuilder.panel.hPercLim;
 			BRTs = calcBRT() + 0.35;  // + 0.15 mvmt time (Lister 1950) + 0.2 device response time (Grover 2008)
 			double delayT0 = rndADRT.nextGaussian() * 1.193759285934727 - 1.60692043370482;
 			delayTs	= Math.exp(delayT0) + 0.25;
 			if (delayTs > 2.5) {
 				delayTs = 2.5;}}
 		else {
-			percLimit = UserPanel.aPercLim;
+			percLimit = RoadBuilder.panel.aPercLim;
 			BRTs = 0.51;  //seconds (source Grover 2008)
 			delayTs = 0.4;}
 		tN		= Math.floor(delayTs/UserPanel.tStep);
