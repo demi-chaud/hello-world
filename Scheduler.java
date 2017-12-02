@@ -212,11 +212,11 @@ public class Scheduler extends Agent {
 		
 		//write log of conflicts at end
 		thisTick = RoadBuilder.clock.getTickCount();
-		if (thisTick == UserPanel.simLength) { //TODO: add flag to only use this during batch runs
-			String nP	= "p" + String.valueOf(RoadBuilder.panel.pedRho) + "_";
-			String nC	= "v" + String.valueOf(RoadBuilder.panel.vehRho) + "_";
+		if (thisTick == UserPanel.simLength) {
+			String nP	= "p" + String.valueOf((int)RoadBuilder.panel.pedRho) + "_";
+			String nC	= "v" + String.valueOf((int)RoadBuilder.panel.vehRho) + "_";
 			String lim	= "s" + String.valueOf((int)RoadBuilder.panel.sLimitKH) + "_";
-			String perc = "d" + String.valueOf((double)RoadBuilder.panel.hPercLimM) + "_";
+			String perc = "d" + String.valueOf((int)RoadBuilder.panel.hPercLimM) + "_";
 			String dur  = "h" + String.valueOf((int)UserPanel.simHours) + "_";
 			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
 					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);

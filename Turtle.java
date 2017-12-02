@@ -834,9 +834,7 @@ public class Turtle extends Agent{
 	 * @param contextSpace
 	 * @param contextGrid
 	 */
-	public Turtle(Turtle src) {
-		
-	}
+	
 	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir,
 				  boolean conn, boolean auto) {
 		space	= contextSpace;

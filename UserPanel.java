@@ -180,10 +180,10 @@ public class UserPanel implements ActionListener{
 		pAutoS	= String.valueOf(percAuto);
 		pBothS	= String.valueOf(percBoth);
 		
-		vehRho		= (int)param.getValue("vehRho");
-		pedRho		= (int)param.getValue("pedRho");
-		hPercLimM	= (double)param.getValue("hPercLimM");		// human pedestrian perception (meters) default: 100
-		sLimitKH	= (double)param.getValue("sLimitKH");		// km/hr								default:  45
+		vehRho		= src.vehRho;
+		pedRho		= src.pedRho;
+		hPercLimM	= src.hPercLimM;	// human pedestrian perception (meters) default: 100
+		sLimitKH	= src.sLimitKH;		// km/hr								default:  45
 		
 		sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
 		sLimitSDKH = 4.5;			// km/hr					ditto

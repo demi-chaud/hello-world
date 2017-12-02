@@ -7,7 +7,7 @@
 	<parameter name="percV2X" displayName="Percent Connected" type="double" defaultValue="0" />
 	<parameter name="percAuto" displayName="Percent Autonomous" type="double" defaultValue="0" />
 	<parameter name="percBoth" displayName="Percent Both" type="double" defaultValue="0" />
-	<parameter name="hPercLimM" displayName="Human Perception Limit" type="double" defaultValue="100" />
+	<parameter name="hPercLimM" displayName="Human Perception Limit" type="double" defaultValue="60" />
 	<!--
 	<parameter name="" displayName="" type="" defaultValue="" />
 	-->
