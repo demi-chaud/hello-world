@@ -38,9 +38,9 @@ public class Turtle extends Agent{
 	private double	timeD, durD, timeSinceD, interD, interDlam;						//distraction
 	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;						//delay
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
-	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed;							//errors
+	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed, wPedV, etaPedV;			//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
-	private double	hardYield, yieldDec, percLimit;									//also yielding
+	private double	hardYield, yieldDec, percLimit, percV;							//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
@@ -111,7 +111,7 @@ public class Turtle extends Agent{
 			ying = (int)Math.round(delayedValues[2]);}
 		else {
 			oldbAccel = newbAccel;
-			ying = (int)Math.round(brakeOutput[2]);}
+			ying = (int)Math.round(brakeOutput[1]);}
 		if (!distracted || autonomous) {
 			if (oldbAccel < 0 && newbAccel < 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
@@ -336,39 +336,44 @@ public class Turtle extends Agent{
 		double realConDist	= conDist;
 		if (UserPanel.estErr && !autonomous) {		//includes estimation error
 			etaPed = rnd.nextGaussian();
+			etaPedV = rnd.nextGaussian();
 			wPed = UserPanel.wien1*wPed + UserPanel.wien2*etaPed;
+			wPedV = UserPanel.wien1*wPedV + UserPanel.wien2*etaPedV;
 			stopDist = stopDist*Math.exp(UserPanel.Vs*wPed);
-			conDist  = conDist*Math.exp(UserPanel.Vs*wPed);}
+			conDist  = conDist*Math.exp(UserPanel.Vs*wPed);
+			percV = v - conDist*sigR*wPedV;}
+		else percV = v;
 		yieldDec = 1;		//dummy value
 		if (realStopDist >= 0) {
 			if (stopDist < 0) {
 				int foo = 0;}
-			if (v != 0) {
-				tHardYield = 2*stopDist/v;
-				ttstopBar  = stopDist/v;
-				realTtStopBar = realStopDist/v;}
+			if (percV != 0) {
+				tHardYield = 2*stopDist/percV;
+				ttstopBar  = stopDist/percV;
+				realTtStopBar = realStopDist/percV;}
 			else {
 				ttstopBar  = 1e12;		//arbitrarily large
 				realTtStopBar = 1e12;
 				tHardYield = 1e12;}
 			hardYield	= -1000;
 			if (stopDist != 0) {
-				hardYield	= -v*v/(2*stopDist);}}
+				hardYield	= -percV*percV/(2*stopDist);}}
 		else {							//driver has already passed stopbar (probably distracted)
 			ttstopBar = -1;
 			realTtStopBar = -1;
 			tHardYield = decelT;
 			hardYield = -UserPanel.emergDec;
-			if (v != 0) {
-				tCrash = Math.abs(conDist/v);}}
+			if (percV != 0) {
+				tCrash = Math.abs(conDist/percV);}}
 		double tClear = -1;
-		if (v != 0) {
-			tClear = (Math.abs(conDist) + length)/v;}
+		if (percV != 0) {
+			tClear = (Math.abs(conDist) + length)/percV;}
 		driverX		= xLoc-(double)dir*length/2;
 		threatBeg 	= 0;
 		threatEnd 	= -1;
 		outYing = -1;
-		
+		stopDist = realStopDist;
+		conDist = realConDist;
 		//make list of waiting/crossing peds
 		for (Ped i : Scheduler.allPeds) {
 			if (i.crossing == 2) {
@@ -448,25 +453,25 @@ public class Turtle extends Agent{
 			for (Ped k : crossingP) {
 				Yieldage   oldVals = null;
 				double		  pedY = k.yLoc;
-				double	 thisDecel = 1;
+				double	 thisDecel = 0;
 				double endGauntlet = 0;
-				double	  oldDecel = 0;
-				double		clearY = 0;
 				int		  thisYing = -1;
+				//double	  oldDecel = 0;
+				//double		clearY = 0;
 				
 				//calculate relevant times for this ped (note: in OR, cars have to wait until ped is >1 lane away)
 				for (Yieldage m : pYields) {
 					if (m.yieldee == k) {			//check if already yielding to ped
-						oldDecel = m.calcAcc;
-						clearY   = m.endThreat;
+						//oldDecel = m.calcAcc;
+						endGauntlet   = m.endThreat;
 						oldVals  = m;
 						break;}}
 				//bring in old accel value if above is true
 				if (oldVals != null) {
-					double newDecel = 0;
-					if (k.dir == 1 && clearY > pedY) {
-						if (v != 0) {
-							threatEnd = k.accT*(1-k.v[1]/k.maxV) + (clearY - pedY)/k.maxV;
+					double newDecel = 1;
+					if (k.dir == 1 && endGauntlet > pedY) {
+						if (percV > 0) {
+							threatEnd = k.accT*(1-k.v[1]/k.maxV) + (endGauntlet - pedY)/k.maxV;
 							if (realStopDist >= 0) {
 								if (stopDist < 0) {
 									int foo = 0;}
@@ -476,24 +481,25 @@ public class Turtle extends Agent{
 								else {			//soft yield
 									newDecel = 0;
 									if (threatEnd != 0) {
-										newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);}
+										newDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);}
 									thisYing = 0;}}
 							else {
 								newDecel = hardYield;
 								thisYing = 1;}}
 						else {
-							thisDecel = 0;
+							newDecel = 0;
 							thisYing  = 1;}
-						if (newDecel < oldDecel) {
-							thisDecel = newDecel;
-							oldVals.calcAcc = newDecel;}
-						else {
-							thisDecel = oldDecel;}
-						if (thisYing > oldVals.yState) {
+//						if (newDecel < oldDecel) {
+						thisDecel = newDecel;
+						oldVals.calcAcc = newDecel;
+//							}
+//						else {
+//							thisDecel = oldDecel;}
+						if (thisYing > oldVals.yState) { //TODO: this seems suspect as well
 							oldVals.yState = thisYing;}}
-					else if (k.dir == -1 && clearY < pedY) {
-						if (v != 0) {
-							threatEnd = k.accT*(1-Math.abs(k.v[1]/k.maxV)) + (pedY - clearY)/k.maxV;
+					else if (k.dir == -1 && endGauntlet < pedY) {
+						if (percV > 0) {
+							threatEnd = k.accT*(1-Math.abs(k.v[1]/k.maxV)) + (pedY - endGauntlet)/k.maxV;
 							if (realStopDist >= 0) {
 								if (stopDist < 0) {
 									int foo = 0;}
@@ -503,19 +509,20 @@ public class Turtle extends Agent{
 								else {			//soft yield
 									newDecel = 0;
 									if (threatEnd != 0) {
-										newDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);}
+										newDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);}
 									thisYing = 0;}}
 							else {
 								newDecel = hardYield;
 								thisYing = 1;}}
 						else {
-							thisDecel = 0;
+							newDecel = 0;
 							thisYing  = 1;}
-						if (newDecel < oldDecel) {
+//						if (newDecel < oldDecel) {
 							thisDecel = newDecel;
-							oldVals.calcAcc = newDecel;}
-						else {
-							thisDecel = oldDecel;}
+							oldVals.calcAcc = newDecel;
+//							}
+//						else {
+//							thisDecel = oldDecel;}
 						if (thisYing > oldVals.yState) {
 							oldVals.yState = thisYing;}}
 					else {
@@ -576,7 +583,7 @@ public class Turtle extends Agent{
 						threatBeg = 0;}			//correction for ped within current lane
 					
 					//decide whether or not to yield for this ped
-					if (v != 0) {				//ttstop is undefined if car is already stopped
+					if (percV != 0) {				//ttstop is undefined if car is already stopped
 						if (realStopDist >= 0) {
 							if (stopDist < 0) {
 								int foo = 0;}
@@ -595,7 +602,7 @@ public class Turtle extends Agent{
 								else {			//soft yield
 									thisDecel = 0;
 									if (threatEnd != 0) {
-										thisDecel = -2*(v*threatEnd - stopDist) / (threatEnd*threatEnd);}
+										thisDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);}
 									thisYing  = 0;}
 								Yieldage thisYield = new Yieldage(k,thisDecel,endGauntlet,thisYing);
 								//k.yielders.add(this);
@@ -840,6 +847,8 @@ public class Turtle extends Agent{
 		space	= contextSpace;
 		lane	= whichLane;
 		dir		= whichDir;
+		connected	= conn;
+		autonomous	= auto;
 		double maxa0 = rndIDM.nextGaussian()*UserPanel.maxaShape + UserPanel.maxaScale;
 		maxa	= Math.exp(maxa0);
 		if (maxa > RoadBuilder.panel.maxMaxA) maxa = RoadBuilder.panel.maxMaxA;
@@ -906,8 +915,6 @@ public class Turtle extends Agent{
 		zIIDM 		= 1000;
 		accCAH		= -1000;
 		interDlam	= UserPanel.interDlam;
-		connected	= conn;
-		autonomous	= auto;
 		nMaxDecel	= 0;
 	}
 	
