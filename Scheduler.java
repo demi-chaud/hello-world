@@ -30,24 +30,24 @@ import driving1.RedLight.state;
 
 public class Scheduler extends Agent {
 	
-	public  ArrayList<Turtle> allCars = new ArrayList<Turtle>();
-	public  ArrayList<Ped>	 allPeds = new ArrayList<Ped>();
-	public	ArrayList<Turtle.Conflict> allConf = new ArrayList<Turtle.Conflict>();
-	public  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
-	public  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
-	public  ArrayList<RedLight> lights = RoadBuilder.lights;
-	//public	ArrayList<Turtle> passed = new ArrayList<Turtle>();
-	public	ArrayList<Turtle> justPassed = new ArrayList<Turtle>();
-	public	ArrayList<DensityPt> passed = new ArrayList<DensityPt>();
-	public	ArrayList<DensityPt> passed2 = new ArrayList<DensityPt>();
-	public	ArrayList<Double> dxTimes = new ArrayList<Double>();
-	public	ArrayList<Double[]> diagram = new ArrayList<Double[]>();
+	static  ArrayList<Turtle> allCars;
+	static  ArrayList<Ped>	 allPeds;
+	static	ArrayList<Turtle.Conflict> allConf;
+	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
+	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
+	static  ArrayList<RedLight> lights = RoadBuilder.lights;
+	//static	ArrayList<Turtle> passed = new ArrayList<Turtle>();
+	static	ArrayList<Turtle> justPassed = new ArrayList<Turtle>();
+	static	ArrayList<DensityPt> passed = new ArrayList<DensityPt>();
+	static	ArrayList<DensityPt> passed2 = new ArrayList<DensityPt>();
+	static	ArrayList<Double> dxTimes = new ArrayList<Double>();
+	static	ArrayList<Double[]> diagram = new ArrayList<Double[]>();
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
-	//String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+	String	directory = homeDir + "\\workspace\\driving1\\results\\new\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
@@ -60,6 +60,8 @@ public class Scheduler extends Agent {
 	int		prepT = (int)Math.ceil(2*RoadBuilder.roadL/RoadBuilder.panel.sLimit);
 	double	dxM = 5.;
 	double	dx = dxM/RoadBuilder.spaceScale;
+	public static int nCarsCreated = 0;
+	public static int nCarsKilled = 0;
 	
 	/**
 	 * The scheduled method that contains all major steps
@@ -91,6 +93,7 @@ public class Scheduler extends Agent {
 				diagramIt();}}
 		if (!killListC.isEmpty()) {
 			for (Turtle c : killListC) {
+				nCarsKilled++;
 				c.die();}
 			killListC = new ArrayList<Turtle>();}
 		if (!killListP.isEmpty()) {
@@ -213,6 +216,8 @@ public class Scheduler extends Agent {
 		//write log of conflicts at end
 		thisTick = RoadBuilder.clock.getTickCount();
 		if (thisTick == UserPanel.simLength) {
+			int in = nCarsCreated;
+			int out = nCarsKilled;
 			String nP	= "p" + String.valueOf((int)RoadBuilder.panel.pedRho) + "_";
 			String nC	= "v" + String.valueOf((int)RoadBuilder.panel.vehRho) + "_";
 			String lim	= "s" + String.valueOf((int)RoadBuilder.panel.sLimitKH) + "_";
@@ -221,7 +226,7 @@ public class Scheduler extends Agent {
 			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
 					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
 			String thisRunC = nP + nC + lim + perc + dur + percs;
-			String thisRunD = nP + nC + lim + perc + percs;
+			String thisRunD = nC + lim + percs;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";
 			String fileString = now + thisRunC;
@@ -339,6 +344,7 @@ public class Scheduler extends Agent {
 			space.moveTo(newTurtle,RoadBuilder.roadL - 1,yPlacement);
 			newTurtle.yLoc = yPlacement;			//if lane-change is added, move this within calc
 			newTurtle.driverY = yPlacement - (double)dir*carW/6;}
+		nCarsCreated++;
 		return(newTurtle);
 	}
 	

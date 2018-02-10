@@ -48,6 +48,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	public double hPercLimM;
 	public double sLimitKH;
 	
+	@SuppressWarnings({"unused"})
 	@Override
 	public Context<Object> build(Context<Object> context) {
 		context.setId("driving1");
@@ -67,7 +68,6 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		sLimitKH = (double)param.getValue("sLimitKH");
 		panel = new UserPanel(this);
 		flowSource = new Scheduler();
-		flowSource.allConf = new ArrayList<Turtle.Conflict>();
 		context.add(flowSource);
 		int rnd1  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		int rnd2  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);

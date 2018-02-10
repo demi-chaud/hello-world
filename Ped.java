@@ -146,7 +146,7 @@ public class Ped extends Agent{
 		gap0 = gap1 = gap2 = gap3 = RoadBuilder.roadL/2;
 		
 		//find nearest car in each lane
-		for (Turtle m : RoadBuilder.flowSource.allCars) {
+		for (Turtle m : Scheduler.allCars) {
 			double thisGap = xLoc - m.xLoc;
 			int threat = m.dir * (int)Math.signum(thisGap);
 			if (threat == 1) {
@@ -444,7 +444,7 @@ public class Ped extends Agent{
 		
 		//calculate interactive forces
 		//TODO: write code to make a threshold for interaction instead of the arbitrary horizon
-		for (Ped a : RoadBuilder.flowSource.allPeds) {
+		for (Ped a : Scheduler.allPeds) {
 			if (a != this && (a.dir == dir || a.crossing == 2)) {
 				NdPoint	otherLoc = space.getLocation(a);
 				double	otherY	 = otherLoc.getY();
@@ -501,7 +501,7 @@ public class Ped extends Agent{
 		double[] zero = new double[] {0,0};
 		double yl = loc.getY();
 		if (yl + displacement[1] > RoadBuilder.worldW || yl + displacement[1] < 0) {
-			RoadBuilder.flowSource.killListP.add(this);}
+			Scheduler.killListP.add(this);}
 		else if (displacement != zero) {	
 			space.moveByDisplacement(this,displacement);
 //			grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
@@ -511,7 +511,7 @@ public class Ped extends Agent{
 		double xd = destination.getX();
 		double yd = destination.getY();
 		if (yd > RoadBuilder.worldW || yd < 0) {
-			RoadBuilder.flowSource.killListP.add(this);}
+			Scheduler.killListP.add(this);}
 		else if (loc != destination) {
 				space.moveTo(this,xd,yd);
 //				grid.moveTo(this,(int)myLoc.getX(),(int)myLoc.getY());
