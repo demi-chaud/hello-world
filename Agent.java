@@ -21,9 +21,9 @@ public class Agent {
 	@SuppressWarnings("rawtypes")
 	public void die(){
 		if (this.isCar()) {
-			Scheduler.allCars.remove(this);}
+			RoadBuilder.flowSource.allCars.remove(this);}
 		else if (this.isPed()) {
-			Scheduler.allPeds.remove(this);}
+			RoadBuilder.flowSource.allPeds.remove(this);}
 		Context context = ContextUtils.getContext(this);
 		context.remove(this);
 	}

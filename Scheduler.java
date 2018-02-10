@@ -30,18 +30,18 @@ import driving1.RedLight.state;
 
 public class Scheduler extends Agent {
 	
-	static  ArrayList<Turtle> allCars;
-	static  ArrayList<Ped>	 allPeds;
-	static	ArrayList<Turtle.Conflict> allConf;
-	static  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
-	static  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
-	static  ArrayList<RedLight> lights = RoadBuilder.lights;
-	//static	ArrayList<Turtle> passed = new ArrayList<Turtle>();
-	static	ArrayList<Turtle> justPassed = new ArrayList<Turtle>();
-	static	ArrayList<DensityPt> passed = new ArrayList<DensityPt>();
-	static	ArrayList<DensityPt> passed2 = new ArrayList<DensityPt>();
-	static	ArrayList<Double> dxTimes = new ArrayList<Double>();
-	static	ArrayList<Double[]> diagram = new ArrayList<Double[]>();
+	public  ArrayList<Turtle> allCars = new ArrayList<Turtle>();
+	public  ArrayList<Ped>	 allPeds = new ArrayList<Ped>();
+	public	ArrayList<Turtle.Conflict> allConf = new ArrayList<Turtle.Conflict>();
+	public  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
+	public  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
+	public  ArrayList<RedLight> lights = RoadBuilder.lights;
+	//public	ArrayList<Turtle> passed = new ArrayList<Turtle>();
+	public	ArrayList<Turtle> justPassed = new ArrayList<Turtle>();
+	public	ArrayList<DensityPt> passed = new ArrayList<DensityPt>();
+	public	ArrayList<DensityPt> passed2 = new ArrayList<DensityPt>();
+	public	ArrayList<Double> dxTimes = new ArrayList<Double>();
+	public	ArrayList<Double[]> diagram = new ArrayList<Double[]>();
 	Random  rndCar = new Random(); //initiates random number generator for Poisson vehicle arrival
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
@@ -221,12 +221,12 @@ public class Scheduler extends Agent {
 			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
 					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
 			String thisRunC = nP + nC + lim + perc + dur + percs;
-			String thisRunD = nC + lim;
+			String thisRunD = nP + nC + lim + perc + percs;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";
 			String fileString = now + thisRunC;
 			String confFileName = directory + fileString + ".csv";
-			String diagFileName = directory + now + thisRunD + "fundDiagram.csv";
+			String diagFileName = directory + now + thisRunD + "_fundDiagram.csv";
 			if (!UserPanel.calcFun) {
 				File dir = new File(directory);
 				ArrayList<String> fNames = new ArrayList<String>();

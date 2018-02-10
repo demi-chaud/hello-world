@@ -131,7 +131,7 @@ public class Turtle extends Agent{
 	public void drive() {
 		if (dir == 1) {
 			if (xLoc + vNew >= RoadBuilder.roadL - 1) {
-				Scheduler.killListC.add(this);
+				RoadBuilder.flowSource.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
 				//double displacement = v + .5*acc;		//TODO: replace this?
@@ -141,7 +141,7 @@ public class Turtle extends Agent{
 				xLoc = myLoc.getX();}}
 		else {
 			if (xLoc - vNew <= 0) {
-				Scheduler.killListC.add(this);
+				RoadBuilder.flowSource.killListC.add(this);
 				this.storage.clear();}
 			else if (vNew != 0) {
 				//double displacement = -v - .5*acc;		//TODO: ditto
@@ -172,7 +172,7 @@ public class Turtle extends Agent{
 		followers = new ArrayList<Turtle>();
 		leader	  = null;
 		tail	  = RoadBuilder.roadL;	
-		for (Turtle p : Scheduler.allCars) {
+		for (Turtle p : RoadBuilder.flowSource.allCars) {
 			if (p.dir == myDir) {
 				sameDir.add(p);}}
 		if (!sameDir.isEmpty()) {
@@ -284,7 +284,7 @@ public class Turtle extends Agent{
 			if (dir == 1 && xLoc < rl1.xLoc) {
 				rlD = rl1.xLoc - xLoc;
 				if (v != 0) {
-					for (Turtle t : Scheduler.allCars) {
+					for (Turtle t : RoadBuilder.flowSource.allCars) {
 						if (t != this && t.dir == dir && t.lane == lane && t.xLoc <= rl1.xLoc && t.xLoc > xLoc) {
 							rlAhead.add(t);}}
 					if (rlAhead.size() < 2) {
@@ -297,7 +297,7 @@ public class Turtle extends Agent{
 			else if (dir == -1 && xLoc > rl2.xLoc) {
 				rlD = xLoc - rl2.xLoc;
 				if (v != 0) {
-					for (Turtle t : Scheduler.allCars) {
+					for (Turtle t : RoadBuilder.flowSource.allCars) {
 						if (t != this && t.dir == dir && t.lane == lane && t.xLoc >= rl2.xLoc && t.xLoc < xLoc) {
 							rlAhead.add(t);}}
 					if (rlAhead.size() < 2) {
@@ -375,7 +375,7 @@ public class Turtle extends Agent{
 		stopDist = realStopDist;
 		conDist = realConDist;
 		//make list of waiting/crossing peds
-		for (Ped i : Scheduler.allPeds) {
+		for (Ped i : RoadBuilder.flowSource.allPeds) {
 			if (i.crossing == 2) {
 				crossingP.add(i);}}
 		crossingP1 = new ArrayList<Ped>(crossingP); 		//crossingP will be depleted by double threats
@@ -742,7 +742,7 @@ public class Turtle extends Agent{
 						Conflict thisConf = new Conflict(this,p,ttc,range,ying,yieldDec,nMaxDecel,timeSinceD,timeD,init,hasDup,connected,autonomous);
 						Conflict toAdd = null;
 						Conflict toRem = null;
-						for (Conflict c : Scheduler.allConf) {
+						for (Conflict c : RoadBuilder.flowSource.allConf) {
 							if (c.car == this && c.ped == p) {
 								dup = 1;			//make sure no duplicates added unless lower TTC than first
 								if (c.init == 1) {
@@ -752,7 +752,7 @@ public class Turtle extends Agent{
 											thisConf.init = 0;
 											toAdd = thisConf;}}
 									else {
-										for (Conflict c1 : Scheduler.allConf) {
+										for (Conflict c1 : RoadBuilder.flowSource.allConf) {
 											if (c1.car == this && c1.ped == p) {
 												if (c1 != c) {
 													if (ttc < c1.TTC) {
@@ -760,16 +760,16 @@ public class Turtle extends Agent{
 														toAdd = thisConf;
 														toRem = c1;}}}}}}}}
 						if (toAdd != null) {
-							Scheduler.allConf.add(thisConf);}
+							RoadBuilder.flowSource.allConf.add(thisConf);}
 						if (toRem != null) {
-							Scheduler.allConf.remove(toRem);}
+							RoadBuilder.flowSource.allConf.remove(toRem);}
 						if (dup == 0) {
-							Scheduler.allConf.add(thisConf);}}}}}
+							RoadBuilder.flowSource.allConf.add(thisConf);}}}}}
 	}
 	public void conflict() {
 		double ttc	= 0;
 		crossingP2	= new ArrayList<Ped>();
-		for (Ped i : Scheduler.allPeds) {
+		for (Ped i : RoadBuilder.flowSource.allPeds) {
 			if (i.crossing == 2) {
 				crossingP2.add(i);}}
 		if (!crossingP2.isEmpty()) {

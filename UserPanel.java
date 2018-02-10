@@ -20,7 +20,7 @@ public class UserPanel implements ActionListener{
 	public boolean deathKnell = false;
 	// declare model parameters
 	static final  double spaceScale	= RoadBuilder.spaceScale;
-	static public double tStep		= 0.05;		// duration of one tick in seconds	
+	static public double tStep		= 0.1;		// duration of one tick in seconds	
 	static final  double vBase 		= (spaceScale/tStep)*3600/1000;
 						// vBase is the natural speed of the model (one cell per tick), converted to km/hr
 	static final  double simHours	= 50;				//hours in sim (currently 5)
