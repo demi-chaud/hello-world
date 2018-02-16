@@ -81,10 +81,11 @@ public class Turtle extends Agent{
 					durD = Math.exp(durD0);}
 				newAcc = accel(myLoc, lane, dir, true);
 				timeD += 1;
-				double xwalkD	= RoadBuilder.xWalkx - xLoc;
-				double threat	= Math.signum(dir*xwalkD);
-				if (threat == 1 && v != 0) {
-					conflict();}}
+//				double xwalkD	= RoadBuilder.xWalkx - xLoc;
+//				double threat	= Math.signum(dir*xwalkD);
+//				if (threat == 1 && v != 0) {
+//					conflict();}
+				}
 			else {
 				if (timeSinceD == 0) {
 					double interD0 = (rndD.nextDouble() + 1E-15)*interDlam; //padded to avoid -inf
@@ -93,6 +94,13 @@ public class Turtle extends Agent{
 				newAcc = accel(myLoc, lane, dir, false);}}
 		else {
 			newAcc = accel(myLoc, lane, dir, false);}
+		
+		//moved here. TODO: check results
+		double xwalkD	= RoadBuilder.xWalkx - xLoc;
+		double threat	= Math.signum(dir*xwalkD);
+		if (threat == 1 && v != 0) {
+			conflict();}
+		
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
 		if (UserPanel.ADRT) {
@@ -329,9 +337,9 @@ public class Turtle extends Agent{
 		List<Yieldage> pYields = new ArrayList<Yieldage>();
 		List<Yieldage> cYields = new ArrayList<Yieldage>();
 		List<Yieldage> reactTo = new ArrayList<Yieldage>();
-		double	threatBeg, threatEnd, tHardYield, outYing;
-		double	tCrash   = 0;
-		double	lnW		 = RoadBuilder.laneW;
+		double threatBeg, threatEnd, tHardYield, outYing;
+		double tCrash   = 0;
+		double lnW		 = RoadBuilder.laneW;
 		double realStopDist = stopDist;
 		double realConDist	= conDist;
 		if (UserPanel.estErr && !autonomous) {		//includes estimation error
@@ -343,14 +351,13 @@ public class Turtle extends Agent{
 			conDist  = conDist*Math.exp(UserPanel.Vs*wPed);
 			percV = v - conDist*sigR*wPedV;}
 		else percV = v;
-		yieldDec = 1;		//dummy value
 		if (realStopDist >= 0) {
 			if (stopDist < 0) {
 				int foo = 0;}
 			if (percV != 0) {
 				tHardYield = 2*stopDist/percV;
 				ttstopBar  = stopDist/percV;
-				realTtStopBar = realStopDist/percV;}
+				realTtStopBar = realStopDist/v;}
 			else {
 				ttstopBar  = 1e12;		//arbitrarily large
 				realTtStopBar = 1e12;
@@ -372,8 +379,10 @@ public class Turtle extends Agent{
 		threatBeg 	= 0;
 		threatEnd 	= -1;
 		outYing = -1;
-		stopDist = realStopDist;
-		conDist = realConDist;
+		yieldDec = 1;		//dummy value
+		//stopDist = realStopDist;
+		//conDist = realConDist;
+		
 		//make list of waiting/crossing peds
 		for (Ped i : RoadBuilder.flowSource.allPeds) {
 			if (i.crossing == 2) {
@@ -426,20 +435,8 @@ public class Turtle extends Agent{
 					double pedTheta = j.theta;
 					if (pedTheta >= theta1 && pedTheta <= theta2) {
 						crossingP.remove(thisPed);}}}}
-		
-		int stamp   = (int)RoadBuilder.clock.getTickCount();
-		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
-		int thenKey = stamp - wayBack;
-		int lastKey;
-		if (!delayedYields.isEmpty()) {
-			lastKey = Collections.max(delayedYields.keySet());
-			pYields = delayedYields.get(lastKey);}
-		if (delayedYields.size() > wayBack) {
-			if (delayedYields.containsKey(thenKey)) {
-				reactTo = delayedYields.get(thenKey);}
-			else {
-				int foo = 0;}}
-		
+
+		//perception distance
 		ArrayList<Ped> tooFar = new ArrayList<Ped>();
 		for (Ped d : crossingP) {
 			double pDist = Math.abs(xLoc - d.xLoc);
@@ -447,6 +444,12 @@ public class Turtle extends Agent{
 				tooFar.add(d);}}
 		if (!tooFar.isEmpty()) {
 			crossingP.removeAll(tooFar);}
+		
+		int stamp   = (int)RoadBuilder.clock.getTickCount();
+		int lastKey;
+		if (!delayedYields.isEmpty()) {
+			lastKey = Collections.max(delayedYields.keySet());
+			pYields = delayedYields.get(lastKey);}
 		
 		//yield to crossing peds
 		if (!crossingP.isEmpty()) {
@@ -456,13 +459,10 @@ public class Turtle extends Agent{
 				double	 thisDecel = 0;
 				double endGauntlet = 0;
 				int		  thisYing = -1;
-				//double	  oldDecel = 0;
-				//double		clearY = 0;
 				
 				//calculate relevant times for this ped (note: in OR, cars have to wait until ped is >1 lane away)
 				for (Yieldage m : pYields) {
 					if (m.yieldee == k) {			//check if already yielding to ped
-						//oldDecel = m.calcAcc;
 						endGauntlet   = m.endThreat;
 						oldVals  = m;
 						break;}}
@@ -489,12 +489,8 @@ public class Turtle extends Agent{
 						else {
 							newDecel = 0;
 							thisYing  = 1;}
-//						if (newDecel < oldDecel) {
 						thisDecel = newDecel;
 						oldVals.calcAcc = newDecel;
-//							}
-//						else {
-//							thisDecel = oldDecel;}
 						if (thisYing > oldVals.yState) { //TODO: this seems suspect as well
 							oldVals.yState = thisYing;}}
 					else if (k.dir == -1 && endGauntlet < pedY) {
@@ -517,12 +513,8 @@ public class Turtle extends Agent{
 						else {
 							newDecel = 0;
 							thisYing  = 1;}
-//						if (newDecel < oldDecel) {
-							thisDecel = newDecel;
-							oldVals.calcAcc = newDecel;
-//							}
-//						else {
-//							thisDecel = oldDecel;}
+						thisDecel = newDecel;
+						oldVals.calcAcc = newDecel;
 						if (thisYing > oldVals.yState) {
 							oldVals.yState = thisYing;}}
 					else {
@@ -632,21 +624,33 @@ public class Turtle extends Agent{
 					yieldDec = thisDecel;}
 				if (thisYing > outYing) {
 					outYing = thisYing;}}}
+		
 		delayedYields.put(stamp,cYields);
-		for (Yieldage yg : reactTo) {
-			if (yg.yState > -1) {
-				yg.yieldee.yielders.add(this);
-				if (yg.yState > ying) {
-					ying = yg.yState;}}
-			else {
-				int foo = 0;}}
+		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
+//		if (UserPanel.BRT) {
+//			int thenKey = stamp - wayBack;
+//			if (delayedYields.size() > wayBack) {
+//				if (delayedYields.containsKey(thenKey)) {
+//					reactTo = delayedYields.get(thenKey);}
+//				else {
+//					int foo = 0;}}}
+//		else {
+//			reactTo = cYields;}
+//		
+//		for (Yieldage yg : reactTo) {
+//			if (yg.yState > -1) {
+//				yg.yieldee.yielders.add(this);
+//				if (yg.calcAcc < yieldDec) {
+//					yieldDec = yg.calcAcc;}
+//				if (yg.yState > outYing) {
+//					outYing = yg.yState;}}}
 		if (yieldDec < -UserPanel.emergDec) {
 			yieldDec = -UserPanel.emergDec;}
-		//take note of any conflicts
-		if (!crossingP1.isEmpty()) {
-			if (realTtStopBar < confLim) {
-				for (Ped n : crossingP1) {
-					conflict(n);}}}
+//		//take note of any conflicts		//TODO: this was moved to test
+//		if (!crossingP1.isEmpty()) {
+//			if (realTtStopBar < confLim) {
+//				for (Ped n : crossingP1) {
+//					conflict(n);}}}
 		
 		if (delayedYields.size() > wayBack + 10) {
 			int lowKey = Collections.min(delayedYields.keySet());
@@ -760,7 +764,7 @@ public class Turtle extends Agent{
 														toAdd = thisConf;
 														toRem = c1;}}}}}}}}
 						if (toAdd != null) {
-							RoadBuilder.flowSource.allConf.add(thisConf);}
+							RoadBuilder.flowSource.allConf.add(toAdd);}
 						if (toRem != null) {
 							RoadBuilder.flowSource.allConf.remove(toRem);}
 						if (dup == 0) {
@@ -773,7 +777,7 @@ public class Turtle extends Agent{
 			if (i.crossing == 2) {
 				crossingP2.add(i);}}
 		if (!crossingP2.isEmpty()) {
-			if (ttstopBar < confLim) {
+			if (realTtStopBar < confLim) {
 				for (Ped n : crossingP2) {
 					conflict(n);
 //					double pedX = n.xLoc;
