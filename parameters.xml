@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <parameters>
 	<parameter name="randomSeed" displayName="Default Random Seed" type="int" defaultValue="__NULL__" />
-	<parameter name="sLimitKH" displayName="Speed Limit" type="double" defaultValue="45" />
+	<parameter name="sLimitKH" displayName="Speed Limit" type="double" defaultValue="90" />
 	<parameter name="vehRho" displayName="Vehicles per hour" type="int" defaultValue="600" />
 	<parameter name="pedRho" displayName="Peds per hour" type="int" defaultValue="60" />
 	<parameter name="percV2X" displayName="Percent Connected" type="double" defaultValue="0" />
 	<parameter name="percAuto" displayName="Percent Autonomous" type="double" defaultValue="0" />
 	<parameter name="percBoth" displayName="Percent Both" type="double" defaultValue="0" />
-	<parameter name="hPercLimM" displayName="Human Perception Limit" type="double" defaultValue="100" />
+	<parameter name="hPercLimM" displayName="Human Perception Limit" type="double" defaultValue="60" />
 	<!--
 	<parameter name="" displayName="" type="" defaultValue="" />
 	-->

@@ -46,8 +46,8 @@ public class Scheduler extends Agent {
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
-	//String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+	String	directory = homeDir + "\\workspace\\driving1\\results\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
