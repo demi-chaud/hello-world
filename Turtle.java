@@ -40,7 +40,7 @@ public class Turtle extends Agent{
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
 	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed, wPedV, etaPedV;			//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
-	private double	hardYield, yieldDec, percLimit, percV;							//also yielding
+	private double	hardYield, cYieldD, yieldDec, percLimit, percV;							//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
@@ -123,6 +123,7 @@ public class Turtle extends Agent{
 		if (!distracted || autonomous) {
 			if (oldbAccel < 0 && newbAccel < 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
+					yieldDec = newbAccel;
 					acc = newbAccel;}}}
 		age++;
 		if (acc == -UserPanel.emergDec) {
@@ -379,7 +380,7 @@ public class Turtle extends Agent{
 		threatBeg 	= 0;
 		threatEnd 	= -1;
 		outYing = -1;
-		yieldDec = 1;		//dummy value
+		cYieldD = 1;		//dummy value
 		//stopDist = realStopDist;
 		//conDist = realConDist;
 		
@@ -463,8 +464,8 @@ public class Turtle extends Agent{
 				//calculate relevant times for this ped (note: in OR, cars have to wait until ped is >1 lane away)
 				for (Yieldage m : pYields) {
 					if (m.yieldee == k) {			//check if already yielding to ped
-						endGauntlet   = m.endThreat;
-						oldVals  = m;
+						endGauntlet = m.endThreat;
+						oldVals = m;
 						break;}}
 				//bring in old accel value if above is true
 				if (oldVals != null) {
@@ -620,8 +621,8 @@ public class Turtle extends Agent{
 							//k.yielders.add(this);
 							cYields.add(thisYield);}}}
 				//update final acceleration value and yielding state
-				if (thisDecel < yieldDec) {
-					yieldDec = thisDecel;}
+				if (thisDecel < cYieldD) {
+					cYieldD = thisDecel;}
 				if (thisYing > outYing) {
 					outYing = thisYing;}}}
 		
@@ -644,8 +645,8 @@ public class Turtle extends Agent{
 //					yieldDec = yg.calcAcc;}
 //				if (yg.yState > outYing) {
 //					outYing = yg.yState;}}}
-		if (yieldDec < -UserPanel.emergDec) {
-			yieldDec = -UserPanel.emergDec;}
+		if (cYieldD < -UserPanel.emergDec) {
+			cYieldD = -UserPanel.emergDec;}
 //		//take note of any conflicts		//TODO: this was moved to test
 //		if (!crossingP1.isEmpty()) {
 //			if (realTtStopBar < confLim) {
@@ -656,7 +657,7 @@ public class Turtle extends Agent{
 			int lowKey = Collections.min(delayedYields.keySet());
 			delayedYields.remove(lowKey);}
 		
-		double[] rv = new double[] {yieldDec,outYing};
+		double[] rv = new double[] {cYieldD,outYing};
 		return rv;
 	}
 	
@@ -671,7 +672,7 @@ public class Turtle extends Agent{
 		double delayedT = 0;
 		double backN = 0;
 		double rv1 = 0;
-		double rv2 = 0;
+		double rv2 = -1;
 		int foo = 0;
 		if (inList == shldBrakeStorage) {
 			delayedT = tStamp - BRTs;
@@ -693,7 +694,8 @@ public class Turtle extends Agent{
 				double loVal1 = inList.get(foo-2)[1];
 				double loVal2 = inList.get(foo-2)[2];
 				rv1 = backMod*loVal1 + (1-backMod)*hiVal1;
-				rv2 = backMod*loVal2 + (1-backMod)*hiVal2;}
+				//rv2 = backMod*loVal2 + (1-backMod)*hiVal2;
+				rv2 = Math.max(loVal2, hiVal2);}
 			else {
 				rv1 = hiVal1;
 				rv2 = hiVal2;}
@@ -763,12 +765,13 @@ public class Turtle extends Agent{
 														thisConf.init = 0;
 														toAdd = thisConf;
 														toRem = c1;}}}}}}}}
-						if (toAdd != null) {
-							RoadBuilder.flowSource.allConf.add(toAdd);}
-						if (toRem != null) {
-							RoadBuilder.flowSource.allConf.remove(toRem);}
 						if (dup == 0) {
-							RoadBuilder.flowSource.allConf.add(thisConf);}}}}}
+							RoadBuilder.flowSource.allConf.add(thisConf);}
+						else {
+							if (toAdd != null) {
+								RoadBuilder.flowSource.allConf.add(toAdd);}
+							if (toRem != null) {
+								RoadBuilder.flowSource.allConf.remove(toRem);}}}}}}
 	}
 	public void conflict() {
 		double ttc	= 0;
@@ -990,7 +993,7 @@ public class Turtle extends Agent{
 		ArrayList<Video> video;
 		double xWalkx = RoadBuilder.xWalkx;
 		double spaceScale = UserPanel.spaceScale;
-		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldDec, int nMaxD,
+		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldD, int nMaxD,
 				double timeSinceD, double timeD, int init, int hasDup, boolean conn, boolean auto) {
 			this.ped	= ped;
 			this.car	= car;
@@ -1001,7 +1004,7 @@ public class Turtle extends Agent{
 			this.range	= range;
 			this.yingVal= yieldState;
 			this.vel	= car.v;
-			this.yDec	= yieldDec;
+			this.yDec	= yieldD;
 			this.nMaxD	= nMaxD;
 			this.tick	= RoadBuilder.clock.getTickCount();
 			this.sinceD	= timeSinceD;
