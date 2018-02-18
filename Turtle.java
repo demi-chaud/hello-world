@@ -40,7 +40,7 @@ public class Turtle extends Agent{
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
 	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed, wPedV, etaPedV;			//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
-	private double	hardYield, cYieldD, yieldDec, percLimit, percV;							//also yielding
+	private double	hardYield, cYieldD, yieldDec, percLimit, percV;					//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
@@ -104,8 +104,8 @@ public class Turtle extends Agent{
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
 		if (UserPanel.ADRT) {
-			double[] delayedValues = delayValue(storage,newAcc,v);
-			acc = delayedValues[1];}
+			double[] delayedValuesAcc = delayValue(storage,newAcc,v);
+			acc = delayedValuesAcc[1];}
 		else {
 			acc = newAcc;}
 		
@@ -119,12 +119,15 @@ public class Turtle extends Agent{
 			ying = (int)Math.round(delayedValues[2]);}
 		else {
 			oldbAccel = newbAccel;
+			yieldDec = newbAccel;
 			ying = (int)Math.round(brakeOutput[1]);}
 		if (!distracted || autonomous) {
 			if (oldbAccel < 0 && newbAccel < 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
-					yieldDec = newbAccel;
-					acc = newbAccel;}}}
+//					acc = newbAccel;
+//					yieldDec = newbAccel;
+					acc = Math.min(newbAccel,oldbAccel);
+					yieldDec = Math.min(newbAccel,oldbAccel);}}}
 		age++;
 		if (acc == -UserPanel.emergDec) {
 			nMaxDecel++;}
@@ -464,8 +467,8 @@ public class Turtle extends Agent{
 				//calculate relevant times for this ped (note: in OR, cars have to wait until ped is >1 lane away)
 				for (Yieldage m : pYields) {
 					if (m.yieldee == k) {			//check if already yielding to ped
-						endGauntlet = m.endThreat;
-						oldVals = m;
+						endGauntlet   = m.endThreat;
+						oldVals  = m;
 						break;}}
 				//bring in old accel value if above is true
 				if (oldVals != null) {
@@ -701,6 +704,9 @@ public class Turtle extends Agent{
 				rv2 = hiVal2;}
 			if (storSize > backN + 10) {
 				inList.remove(0);}}
+		else {
+			rv1 = inVal1;
+			rv2 = inVal2;}
 		return new double[] {tStamp,rv1,rv2};
 	}
 	
