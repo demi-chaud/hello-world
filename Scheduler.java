@@ -60,6 +60,7 @@ public class Scheduler extends Agent {
 	int		prepT = (int)Math.ceil(2*RoadBuilder.roadL/RoadBuilder.panel.sLimit);
 	double	dxM = 5.;
 	double	dx = dxM/RoadBuilder.spaceScale;
+	public int nCarsCreated, nCarsKilled;
 	
 	/**
 	 * The scheduled method that contains all major steps
@@ -91,6 +92,7 @@ public class Scheduler extends Agent {
 				diagramIt();}}
 		if (!killListC.isEmpty()) {
 			for (Turtle c : killListC) {
+				RoadBuilder.flowSource.nCarsKilled ++;
 				c.die();}
 			killListC = new ArrayList<Turtle>();}
 		if (!killListP.isEmpty()) {

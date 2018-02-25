@@ -95,11 +95,7 @@ public class Turtle extends Agent{
 		else {
 			newAcc = accel(myLoc, lane, dir, false);}
 		
-		//moved here. TODO: check results
-		double xwalkD	= RoadBuilder.xWalkx - xLoc;
-		double threat	= Math.signum(dir*xwalkD);
-		if (threat == 1 && v != 0) {
-			conflict();}
+		
 		
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
@@ -125,6 +121,11 @@ public class Turtle extends Agent{
 				if (oldbAccel < acc && newbAccel < acc) {
 					yieldDec = newbAccel;
 					acc = newbAccel;}}}
+		//moved here. TODO: check results
+		double xwalkD	= RoadBuilder.xWalkx - xLoc;
+		double threat	= Math.signum(dir*xwalkD);
+		if (threat > 0 && v != 0) {
+			conflict();}
 		age++;
 		if (acc == -UserPanel.emergDec) {
 			nMaxDecel++;}
@@ -716,7 +717,7 @@ public class Turtle extends Agent{
 		double pedThi = -1;		//time until ped leaves CP
 		double ttc = -1;
 		if (v != 0) {
-			ttc = (double)dir*(pedX - xLoc)/v;}
+			ttc = ((double)dir)*(pedX - xLoc)/v;}
 		if (ttc >= 0) {
 			if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
 				if (pedY >= (yLoc - carW/2)) {
@@ -724,6 +725,7 @@ public class Turtle extends Agent{
 				else {
 					pedTlo = 1000;
 					if (p.v[1] != 0) {
+						///TODO: add accel time!!!!! this is it
 						pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
 				pedThi = 1000;
 				if (p.v[1] != 0) {
@@ -780,7 +782,8 @@ public class Turtle extends Agent{
 			if (i.crossing == 2) {
 				crossingP2.add(i);}}
 		if (!crossingP2.isEmpty()) {
-			if (realTtStopBar < confLim) {
+			//if (realTtStopBar < confLim) {
+			if (true) {
 				for (Ped n : crossingP2) {
 					conflict(n);
 //					double pedX = n.xLoc;
@@ -923,6 +926,7 @@ public class Turtle extends Agent{
 		accCAH		= -1000;
 		interDlam	= UserPanel.interDlam;
 		nMaxDecel	= 0;
+		RoadBuilder.flowSource.nCarsCreated ++;
 	}
 	
 	/* Fits driver's distance from stopBar to lognormal distribution */
