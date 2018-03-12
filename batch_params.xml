@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
-<sweep runs="20">
+<sweep runs="1">
 	<parameter name="vehRho" type="constant" constant_type="int" value="600"></parameter>
 	<parameter name="pedRho" type="constant" constant_type="int" value="60"></parameter>
-	<parameter name="sLimitKH" type="number" start="20.0" end="100" step="5"></parameter>
+	<parameter name="sLimitKH" type="constant" constant_type="double" value="90"></parameter>
 	<parameter name="percBoth" type="constant" constant_type="double" value="0"></parameter>
 	<parameter name="percV2X" type="constant" constant_type="double" value="0"></parameter>
 	<parameter name="percAuto" type="constant" constant_type="double" value="0"></parameter>

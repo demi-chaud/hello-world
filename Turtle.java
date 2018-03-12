@@ -25,7 +25,9 @@ public class Turtle extends Agent{
 	private ArrayList<Ped> crossingP, crossingP1, crossingP2;
 	private ArrayList<ViewAngle> obstructers, obstructees;
 	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
-	private Map<Integer,List<Yieldage>> delayedYields = new HashMap<Integer,List<Yieldage>>();
+	private ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
+	private ArrayList<Yieldage> pYields = new ArrayList<Yieldage>();
+	private Map<Integer,ArrayList<Yieldage>> delayedYields = new HashMap<Integer,ArrayList<Yieldage>>();
 	private List<double[]> storage = new ArrayList<double[]>();
 	private List<double[]> shldBrakeStorage = new ArrayList<double[]>();
 	private Random  rnd  = new Random();	//initiates random number generator for vehicle properties
@@ -43,7 +45,7 @@ public class Turtle extends Agent{
 	private double	hardYield, cYieldD, yieldDec, percLimit, percV;					//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
-	private double	tick;
+	//private double	tick;
 	public  int		age, nMaxDecel;
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
@@ -59,7 +61,7 @@ public class Turtle extends Agent{
 	* Sets value of acc & vNew
 	*/
 	public void calc() {
-		tick	= Scheduler.thisTick;
+		//tick	= Scheduler.thisTick;
 		myLoc	= space.getLocation(this);
 		xLoc	= myLoc.getX();
 		newAcc  = 0;
@@ -96,11 +98,10 @@ public class Turtle extends Agent{
 			newAcc = accel(myLoc, lane, dir, false);}
 		
 		//moved here. TODO: check results
-		double xwalkD	= RoadBuilder.xWalkx - xLoc;
+		double xwalkD	= RoadBuilder.xWalkx + ((double)dir * Ped.xWalkHalfWidth) - xLoc;
 		double threat	= Math.signum(dir*xwalkD);
 		if (threat == 1 && v != 0) {
 			conflict();}
-		
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
 		if (UserPanel.ADRT) {
@@ -113,15 +114,14 @@ public class Turtle extends Agent{
 		double[] brakeOutput = brake(myLoc, lane, dir); 
 		double newbAccel = brakeOutput[0];
 		double oldbAccel;
-//		if (UserPanel.BRT) {
-//			double[] delayedValues = delayValue(shldBrakeStorage,newbAccel,brakeOutput[1]);
-//			oldbAccel = delayedValues[1];
-//			ying = (int)Math.round(delayedValues[2]);}
-//		else {
+		if (UserPanel.BRT) {
+			double[] delayedValues = delayValue(shldBrakeStorage,newbAccel,brakeOutput[1]);
+			oldbAccel = delayedValues[1];
+			ying = (int)Math.round(delayedValues[2]);}
+		else {
 			oldbAccel = newbAccel;
 			//yieldDec = newbAccel;
-			ying = (int)Math.round(brakeOutput[1]);
-//			}
+			ying = (int)Math.round(brakeOutput[1]);}
 		if (!distracted || autonomous) {
 			if (oldbAccel < 0 && newbAccel < 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
@@ -337,11 +337,10 @@ public class Turtle extends Agent{
 		crossingP1	= new ArrayList<Ped>();
 		obstructers = new ArrayList<ViewAngle>();
 		obstructees = new ArrayList<ViewAngle>();
-		List<Yieldage> pYields = new ArrayList<Yieldage>();
-		List<Yieldage> cYields = new ArrayList<Yieldage>();
-		List<Yieldage> reactTo = new ArrayList<Yieldage>();
+		pYields = new ArrayList<Yieldage>(cYields);
+		cYields = new ArrayList<Yieldage>();
+		ArrayList<Yieldage> reactTo = new ArrayList<Yieldage>();
 		double threatBeg, threatEnd, tHardYield, outYing;
-		double tCrash   = 0;
 		double lnW		 = RoadBuilder.laneW;
 		double realStopDist = stopDist;
 		double realConDist	= conDist;
@@ -372,9 +371,7 @@ public class Turtle extends Agent{
 			ttstopBar = -1;
 			realTtStopBar = -1;
 			tHardYield = decelT;
-			hardYield = -UserPanel.emergDec;
-			if (percV != 0) {
-				tCrash = Math.abs(conDist/percV);}}
+			hardYield = -UserPanel.emergDec;}
 		double tClear = -1;
 		if (percV != 0) {
 			tClear = (Math.abs(conDist) + length)/percV;}
@@ -448,12 +445,6 @@ public class Turtle extends Agent{
 		if (!tooFar.isEmpty()) {
 			crossingP.removeAll(tooFar);}
 		
-		int stamp   = (int)RoadBuilder.clock.getTickCount();
-		int lastKey;
-		if (!delayedYields.isEmpty()) {
-			lastKey = Collections.max(delayedYields.keySet());
-			pYields = delayedYields.get(lastKey);}
-		
 		//yield to crossing peds
 		if (!crossingP.isEmpty()) {
 			for (Ped k : crossingP) {
@@ -466,8 +457,8 @@ public class Turtle extends Agent{
 				//calculate relevant times for this ped (note: in OR, cars have to wait until ped is >1 lane away)
 				for (Yieldage m : pYields) {
 					if (m.yieldee == k) {			//check if already yielding to ped
-						endGauntlet   = m.endThreat;
-						oldVals  = new Yieldage(m);
+						endGauntlet = m.endThreat;
+						oldVals = new Yieldage(m);
 						break;}}
 				//bring in old accel value if above is true
 				if (oldVals != null) {
@@ -623,33 +614,32 @@ public class Turtle extends Agent{
 							//k.yielders.add(this);
 							cYields.add(thisYield);}}}
 				//update final acceleration value and yielding state
-//				if (thisDecel < cYieldD) {
-//					cYieldD = thisDecel;}
-//				if (thisYing > outYing) {
-//					outYing = thisYing;}
-				}}
+				if (thisDecel < cYieldD) {
+					cYieldD = thisDecel;}
+				if (thisYing > outYing) {
+					outYing = thisYing;}}}
 		
-		delayedYields.put(stamp,cYields);
-		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
-		if (UserPanel.BRT && stamp > wayBack + 3) {
-			int thenKey = stamp - wayBack;
-			if (delayedYields.size() > wayBack) {
-				if (delayedYields.containsKey(thenKey)) {
-					reactTo = delayedYields.get(thenKey);}
-				else {
-					int foo = 0;}}
-			else {
-				reactTo = cYields;}}
-		else {
-			reactTo = cYields;}
-		
-		for (Yieldage yg : reactTo) {
-			if (yg.yState > -1) {
-				//yg.yieldee.yielders.add(this);
-				if (yg.calcAcc < cYieldD) {
-					cYieldD = yg.calcAcc;}
-				if (yg.yState > outYing) {
-					outYing = yg.yState;}}}
+//		delayedYields.put(stamp,cYields);
+//		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
+//		if (UserPanel.BRT && stamp > wayBack + 3) {
+//			int thenKey = stamp - wayBack;
+//			if (delayedYields.size() > wayBack) {
+//				if (delayedYields.containsKey(thenKey)) {
+//					reactTo = delayedYields.get(thenKey);}
+//				else {
+//					int foo = 0;}}
+//			else {
+//				reactTo = cYields;}}
+//		else {
+//			reactTo = cYields;}
+//		
+//		for (Yieldage yg : reactTo) {
+//			if (yg.yState > -1) {
+//				//yg.yieldee.yielders.add(this);
+//				if (yg.calcAcc < cYieldD) {
+//					cYieldD = yg.calcAcc;}
+//				if (yg.yState > outYing) {
+//					outYing = yg.yState;}}}
 		if (cYieldD < -UserPanel.emergDec) {
 			cYieldD = -UserPanel.emergDec;}
 //		//take note of any conflicts		//TODO: this was moved to test
@@ -658,9 +648,9 @@ public class Turtle extends Agent{
 //				for (Ped n : crossingP1) {
 //					conflict(n);}}}
 		
-		if (delayedYields.size() > wayBack + 10) {
-			int lowKey = Collections.min(delayedYields.keySet());
-			delayedYields.remove(lowKey);}
+//		if (delayedYields.size() > wayBack + 10) {
+//			int lowKey = Collections.min(delayedYields.keySet());
+//			delayedYields.remove(lowKey);}
 		
 		double[] rv = new double[] {cYieldD,outYing};
 		return rv;
@@ -717,6 +707,16 @@ public class Turtle extends Agent{
 	 * @param p
 	 * overloaded
 	 */
+	public void conflict() {
+		double ttc	= 0;
+		crossingP2	= new ArrayList<Ped>();
+		for (Ped i : RoadBuilder.flowSource.allPeds) {
+			if (i.crossing == 2) {
+				crossingP2.add(i);}}
+		if (!crossingP2.isEmpty()) {
+			if (realTtStopBar < confLim) {
+				for (Ped n : crossingP2) {
+					conflict(n);}}}}
 	public void conflict(Ped p) {
 		double pedX = p.xLoc;
 		double pedY = p.yLoc;
@@ -726,7 +726,7 @@ public class Turtle extends Agent{
 		double lw = RoadBuilder.laneW;
 		if (v != 0) {
 			ttc = (double)dir*(pedX - xLoc)/v;}
-		if (ttc >= 0) {
+		if (ttc >= 0 && ttc <= confLim) {
 			if (p.dir == 1 && pedY <= (lnTop + lw)) {
 			//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
 				if (pedY >= (lnBot - lw)) {
@@ -741,8 +741,6 @@ public class Turtle extends Agent{
 				if (p.v[1] != 0) {
 					pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
 					//pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
-			//(lnTop + lw)
-			//(lnBot - lw)
 			else if (p.dir == -1 && pedY >= (lnBot - lw)) {
 			//else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
 				//if (pedY <= (yLoc + carW/2)) {
@@ -759,102 +757,105 @@ public class Turtle extends Agent{
 					//pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
 			if (pedTlo != -1) {
 				if (ttc >= pedTlo && ttc <= pedThi) {
-					if (ttc <= confLim) {
-						int init = 1;
-						int dup = 0;
-						int hasDup = 0;
-						double range = (double)dir*(pedX - xLoc);
-						Conflict thisConf = new Conflict(this,p,ttc,range,ying,yieldDec,nMaxDecel,timeSinceD,timeD,init,hasDup,connected,autonomous);
-						Conflict toAdd = null;
-						Conflict toRem = null;
-						for (Conflict c : RoadBuilder.flowSource.allConf) {
-							if (c.car == this && c.ped == p) {
-								dup = 1;			//make sure no duplicates added unless lower TTC than first
-								if (c.init == 1) {
-									if (c.hasDup == 0) {
-										if (ttc < c.TTC) {
-											c.hasDup = 1;
-											thisConf.init = 0;
-											toAdd = thisConf;}}
-									else {
-										for (Conflict c1 : RoadBuilder.flowSource.allConf) {
-											if (c1.car == this && c1.ped == p) {
-												if (c1 != c) {
-													if (ttc < c1.TTC) {
-														thisConf.init = 0;
-														toAdd = thisConf;
-														toRem = c1;}}}}}}}}
-						if (dup == 0) {
-							RoadBuilder.flowSource.allConf.add(thisConf);}
-						else {
-							if (toAdd != null) {
-								RoadBuilder.flowSource.allConf.add(toAdd);}
-							if (toRem != null) {
-								RoadBuilder.flowSource.allConf.remove(toRem);}}}}}}
+					int init = 1;
+					int dup = 0;
+					int hasDup = 0;
+					double range = (double)dir*(pedX - xLoc);
+					Conflict thisConf = new Conflict(this,p,ttc,range,init,hasDup);
+					Conflict toAdd = null;
+					Conflict toRem = null;
+					for (Conflict c : RoadBuilder.flowSource.allConf) {
+						if (c.ped == p && c.car != this) {
+							Turtle otherCar = c.car;	//make sure not counting cars behind as extra conflicts
+							if (otherCar.dir == this.dir && otherCar.lane == this.lane) {
+								if (c.TTC < ttc) {
+									int foo = 0;}}}
+						if (c.car == this && c.ped == p) {
+							dup = 1;			//make sure no duplicates added unless lower TTC than first
+							if (c.init == 1) {
+								if (c.hasDup == 0) {
+									if (ttc < c.TTC) {
+										c.hasDup = 1;
+										thisConf.init = 0;
+										toAdd = thisConf;}}
+								else {
+									for (Conflict c1 : RoadBuilder.flowSource.allConf) {
+										if (c1.car == this && c1.ped == p) {
+											if (c1 != c) {
+												if (ttc < c1.TTC) {
+													thisConf.init = 0;
+													toAdd = thisConf;
+													toRem = c1;}}}}}}}}
+					if (dup == 0) {
+						RoadBuilder.flowSource.allConf.add(thisConf);}
+					else {
+						if (toAdd != null) {
+							RoadBuilder.flowSource.allConf.add(toAdd);}
+						if (toRem != null) {
+							RoadBuilder.flowSource.allConf.remove(toRem);}}}}}
+		
+		//check for impending crashes
+		double crashPedTlo = -1;
+		double crashPedThi = -1;
+		if (v != 0) {
+			ttc = ((double)dir*(pedX - xLoc) - p.r)/v;}
+		if (ttc >= 0 && ttc <= UserPanel.tStep) {
+			if (p.dir == 1 && pedY <= (yLoc + carW/2 + p.r)) {
+				if (pedY >= (yLoc - carW/2 - p.r)) {
+					crashPedTlo = 0;}
+				else {
+					crashPedTlo = 1000;
+					if (p.v[1] != 0) {
+						crashPedTlo = ((yLoc - carW/2 - p.r) - pedY)/p.v[1];}}		//TODO: make ped calc 2D
+				crashPedThi = 1000;
+				if (p.v[1] != 0) {
+					crashPedThi = ((yLoc + carW/2 + p.r) - pedY)/p.v[1];}}
+			else if (p.dir == -1 && pedY >= (yLoc - carW/2 - p.r)) {
+				if (pedY <= (yLoc + carW/2 + p.r)) {
+					crashPedTlo = 0;}
+				else {
+					crashPedTlo = 1000;
+					if (p.v[1] != 0) {
+						crashPedTlo = -(pedY - (yLoc + carW/2 + p.r))/p.v[1];}}		//TODO: make ped calc 2D
+				crashPedThi = 1000;
+				if (p.v[1] != 0) {
+					crashPedThi = -(pedY - (yLoc - carW/2 - p.r))/p.v[1];}}
+			if (crashPedTlo != -1) {
+				if (ttc >= crashPedTlo && ttc <= crashPedThi) {
+					//Crash thisCrash = new Crash(this,p);
+					int init = 1;
+					int dup = 0;
+					int hasDup = 0;
+					Conflict thisCrash = new Conflict(this,p,0,0,init,hasDup);
+					Conflict toAdd = null;
+					Conflict toRem = null;
+					
+					for (Conflict c : RoadBuilder.flowSource.allConf) {
+						if (c.car == this && c.ped == p) {
+							dup = 1;			//make sure no duplicates added unless lower TTC than first
+							if (c.init == 1) {
+								if (c.hasDup == 0) {
+									if (ttc < c.TTC) {
+										c.hasDup = 1;
+										thisCrash.init = 0;
+										toAdd = thisCrash;}}
+								else {
+									for (Conflict c1 : RoadBuilder.flowSource.allConf) {
+										if (c1.car == this && c1.ped == p) {
+											if (c1 != c) {
+												if (ttc < c1.TTC) {
+													thisCrash.init = 0;
+													toAdd = thisCrash;
+													toRem = c1;}}}}}}}}
+					if (dup == 0) {
+						RoadBuilder.flowSource.allConf.add(thisCrash);}
+					else {
+						if (toAdd != null) {
+							RoadBuilder.flowSource.allConf.add(toAdd);}
+						if (toRem != null) {
+							RoadBuilder.flowSource.allConf.remove(toRem);}}}}}
 	}
-	public void conflict() {
-		double ttc	= 0;
-		crossingP2	= new ArrayList<Ped>();
-		for (Ped i : RoadBuilder.flowSource.allPeds) {
-			if (i.crossing == 2) {
-				crossingP2.add(i);}}
-		if (!crossingP2.isEmpty()) {
-			if (realTtStopBar < confLim) {
-				for (Ped n : crossingP2) {
-					conflict(n);
-//					double pedX = n.xLoc;
-//					double pedY	= n.yLoc;
-//					double pedTlo = -1;		//time until ped at conflict point
-//					double pedThi = -1;		//time until ped leaves CP
-//					ttc	= (double)dir*(pedX - xLoc)/v;
-//					if (ttc >= 0) {
-//						if (n.dir == 1 && pedY <= (yLoc + carW/2)) {
-//							if (pedY >= (yLoc - carW/2)) {
-//								pedTlo = 0;}
-//							else {
-//								pedTlo = ((yLoc - carW/2) - n.yLoc)/n.v[1];}		//TODO: include ped r and make ped calc 2D
-//							pedThi = ((yLoc + carW/2) - pedY)/n.v[1];}
-//						else if (n.dir == -1 && pedY >= (yLoc - carW/2)) {
-//							if (pedY <= (yLoc + carW/2)) {
-//								pedTlo = 0;}
-//							else {
-//								pedTlo = -(n.yLoc - (yLoc + carW/2))/n.v[1];}		//TODO: include ped r and make ped calc 2D
-//							pedThi = -(pedY - (yLoc - carW/2))/n.v[1];}
-//						if (pedTlo != -1) {
-//							if (ttc >= pedTlo && ttc <= pedThi) {
-//								if (ttc < confLim) {
-//									int init = 1;
-//									int dup = 0;
-//									int hasDup = 0;
-//									double range = (double)dir*(pedX - xLoc);
-//									Conflict thisConf = new Conflict(this,n,ttc,range,ying,acc,timeSinceD,timeD,init,hasDup);
-//									Conflict toAdd = null;
-//									Conflict toRem = null;
-//									for (Conflict c : Scheduler.allConf) {
-//										if (c.car == this && c.ped == n) {
-//											dup = 1;			//make sure no duplicates added unless lower TTC than first
-//											if (c.init == 1) {
-//												if (c.hasDup == 0) {
-//													if (ttc < c.TTC) {
-//														c.hasDup = 1;
-//														thisConf.init = 0;
-//														toAdd = thisConf;}}
-//												else {
-//													for (Conflict c1 : Scheduler.allConf) {
-//														if (c1.car == this && c1.ped == n) {
-//															if (c1 != c) {
-//																if (ttc < c1.TTC) {
-//																	thisConf.init = 0;
-//																	toAdd = thisConf;
-//																	toRem = c1;}}}}}}}}
-//									if (toAdd != null) {
-//										Scheduler.allConf.add(thisConf);}
-//									if (toRem != null) {
-//										Scheduler.allConf.remove(toRem);}
-//									if (dup == 0) {
-//										Scheduler.allConf.add(thisConf);}}}}}
-					}}}
-	}
+	
 //	
 //	public void crash(Ped p) {
 //		Crash newCrash = new Crash(this,p,1,0);
@@ -1013,14 +1014,15 @@ public class Turtle extends Agent{
 		Ped ped;
 		Turtle car;
 		int dirP, dirC, lane, yingVal, nMaxD, init, hasDup;
-		double TTC, range, yDec, vel, timeD, sinceD, tick;
+		double TTC, range, yDec, vel, timeD, sinceD, tick, yDist;
 		boolean conn, auto;
 		ArrayList<double[]> pedVid;
 		ArrayList<Video> video;
 		double xWalkx = RoadBuilder.xWalkx;
 		double spaceScale = UserPanel.spaceScale;
-		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldD, int nMaxD,
-				double timeSinceD, double timeD, int init, int hasDup, boolean conn, boolean auto) {
+//		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldD, int nMaxD,
+//				double timeSinceD, double timeD, int init, int hasDup, boolean conn, boolean auto) {
+		Conflict(Turtle car, Ped ped, double ttc, double range, int init, int hasDup) {
 			this.ped	= ped;
 			this.car	= car;
 			this.dirP	= ped.dir;
@@ -1028,17 +1030,35 @@ public class Turtle extends Agent{
 			this.lane	= car.lane;
 			this.TTC	= ttc;
 			this.range	= range;
-			this.yingVal= yieldState;
-			this.vel	= car.v;
-			this.yDec	= yieldD;
-			this.nMaxD	= nMaxD;
 			this.tick	= RoadBuilder.clock.getTickCount();
-			this.sinceD	= timeSinceD;
-			this.timeD	= timeD;
+			this.vel	= car.v;
+			this.yingVal= car.ying;
+			this.yDec	= car.yieldDec;
+			this.nMaxD	= car.nMaxDecel;
+			this.sinceD	= car.timeSinceD;
+			this.timeD	= car.timeD;
+			this.conn	= car.connected;
+			this.auto	= car.autonomous;
 			this.init	= init;
 			this.hasDup	= hasDup;
-			this.conn	= conn;
-			this.auto	= auto;
+			double yDistCenters = ped.yLoc - car.yLoc;
+			double above = Math.signum(yDistCenters);
+			if (above == 0) this.yDist = 0;
+			else {
+				double combinedWidth = ped.r + car.carW/2;
+				if (Math.abs(yDistCenters) <= combinedWidth) {
+					this.yDist = 0;}
+				else {
+					this.yDist = yDistCenters - above*(combinedWidth);}}
+//			this.yingVal= yieldState;
+//			this.yDec	= yieldD;
+//			this.nMaxD	= nMaxD;
+//			this.sinceD	= timeSinceD;
+//			this.timeD	= timeD;
+//			this.conn	= conn;
+//			this.auto	= auto;
+//			this.init	= init;
+//			this.hasDup	= hasDup;
 		}
 //			this.video	= new ArrayList<Video>();
 //			this.pedVid = new ArrayList<double[]>();
@@ -1071,22 +1091,28 @@ public class Turtle extends Agent{
 			this.locs.add(loc);}
 	}
 	
-//	public class Crash {
-//		Ped ped;
-//		Turtle car;
-//		int dirP, dirC, lane, init, hasDup;
-//		double v, curDec, sinceDist;
-//		boolean distracted;
-//		Crash(Turtle car, Ped ped, int init, int hasDup) {
-//			this.ped	= ped;
-//			this.car	= car;
-//			this.dirP	= ped.dir;
-//			this.dirC	= car.dir;
-//			this.lane	= car.lane;
-//			this.v		= car.v;
-//			this.init	= init;
-//			this.hasDup = hasDup;}
-//	}
+	public class Crash {
+		Ped ped;
+		Turtle car;
+		int dirP, dirC, lane, yielding, nMaxDec;
+		double v, dec, sinceDist, timeDist, tick;
+		boolean conn, auto;
+		Crash(Turtle car, Ped ped) {
+			this.ped = ped;
+			this.car = car;
+			this.dirP = ped.dir;
+			this.dirC = car.dir;
+			this.lane = car.lane;
+			this.v = car.v;
+			this.yielding = car.ying;
+			this.dec = car.yieldDec;
+			this.nMaxDec = car.nMaxDecel;
+			this.tick = RoadBuilder.clock.getTickCount();
+			this.sinceDist = car.timeSinceD;
+			this.timeDist = car.timeD;
+			this.conn = car.connected;
+			this.auto = car.autonomous;}
+	}
 	
 	/**
 	 * Getter for identification

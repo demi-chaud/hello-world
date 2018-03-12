@@ -29,15 +29,16 @@ public class Ped extends Agent{
 	private	double endPtDist, endPtTheta, critGap;
 	private double side	= RoadBuilder.sidewalk;
 	private double wS1, wSn1, wV1, wVn1, etaS, etaV, sigR;	//errors
-	private double m, horiz, A, B, k, r;  					//interactive force constants (accT is also)
-	private double boxL = RoadBuilder.xWalkx - 2/RoadBuilder.spaceScale;
-	private double boxR = RoadBuilder.xWalkx + 2/RoadBuilder.spaceScale;
+	private double m, horiz, A, B, k;  					//interactive force constants (accT is also)
+	static double xWalkHalfWidth = 2/RoadBuilder.spaceScale;
+	private double boxL = RoadBuilder.xWalkx - xWalkHalfWidth;
+	private double boxR = RoadBuilder.xWalkx + xWalkHalfWidth;
 		//2 here is more or less arbitrary, but has to match Turtle.stopBar variable
 	public ArrayList<Turtle> yielders;
 	public Turtle nearest0, nearest1, nearest2, nearest3;
 	public NdPoint myLoc;
 	public double[] v, dv, newV;
-	public double xTime, accT, maxV, xLoc, yLoc, whichSide;
+	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r;
 	public int dir;			// dir = 1 walks up, -1 walks down
 	public int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
 	public int front;		// 1=xing in front of car, -1=behind; for testing
@@ -69,8 +70,7 @@ public class Ped extends Agent{
 						newV = sumV(v,dv);}}
 				else {
 					if (curbed == true) {
-						crossing = 1;
-					}
+						crossing = 1;}
 					if (yLoc + newV[1] <= side + RoadBuilder.roadW + r) {
 						curbed = true;
 						dv = yield();

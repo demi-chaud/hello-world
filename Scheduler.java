@@ -33,6 +33,7 @@ public class Scheduler extends Agent {
 	public  ArrayList<Turtle> allCars = new ArrayList<Turtle>();
 	public  ArrayList<Ped>	 allPeds = new ArrayList<Ped>();
 	public	ArrayList<Turtle.Conflict> allConf = new ArrayList<Turtle.Conflict>();
+	public  ArrayList<Turtle.Crash> allCrash = new ArrayList<Turtle.Crash>();
 	public  ArrayList<Turtle> killListC = new ArrayList<Turtle>();
 	public  ArrayList<Ped>	 killListP = new ArrayList<Ped>();
 	public  ArrayList<RedLight> lights = RoadBuilder.lights;
@@ -46,8 +47,8 @@ public class Scheduler extends Agent {
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
-	//String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+	String	directory = homeDir + "\\workspace\\driving1\\results\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
@@ -187,7 +188,6 @@ public class Scheduler extends Agent {
 					Turtle addedTurtle3 = addCar(lane,-1,bV2X3,bAut3,bBoth3);
 					allCars.add(addedTurtle3);}}}
 		if (RoadBuilder.panel.pedRho > 0) {
-//			if (UserPanel.pedsUp == true) {
 			rndP = rndPed.nextDouble();
 			if (rndP <=  RoadBuilder.panel.Pof2Ped) {
 				Ped addedPed1 = addPed(1);
@@ -197,8 +197,6 @@ public class Scheduler extends Agent {
 			else if (rndP <= RoadBuilder.panel.Pof1Ped) {
 				Ped addedPed = addPed(1);
 				allPeds.add(addedPed);}
-//				}
-//			if (UserPanel.pedsDn == true) {
 			rndP2 = rndPed.nextDouble();
 			if (rndP2 <=  RoadBuilder.panel.Pof2Ped) {
 				Ped addedPed1 = addPed(-1);
@@ -208,7 +206,6 @@ public class Scheduler extends Agent {
 			else if (rndP2 <= RoadBuilder.panel.Pof1Ped) {
 				Ped addedPed = addPed(-1);
 				allPeds.add(addedPed);}}
-//			}
 		
 		//write log of conflicts at end
 		thisTick = RoadBuilder.clock.getTickCount();
@@ -403,7 +400,7 @@ public class Scheduler extends Agent {
 	public Scheduler() {
 		allCars = new ArrayList<Turtle>();
 		allPeds = new ArrayList<Ped>();
-		allConf = new ArrayList<Turtle.Conflict>();
-//		crashes = new ArrayList<Turtle.Crash>();
+		allConf = new ArrayList<Turtle.Conflict>();		
+		allCrash = new ArrayList<Turtle.Crash>();
 	}
 }
