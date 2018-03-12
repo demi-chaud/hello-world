@@ -40,7 +40,7 @@ public class Turtle extends Agent{
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
 	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed, wPedV, etaPedV;			//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
-	private double	hardYield, cYieldD, yieldDec, percLimit, percV;							//also yielding
+	private double	hardYield, cYieldD, yieldDec, percLimit, percV;					//also yielding
 	private double	carW = UserPanel.carWidth;
 	private double  deltaIDM = 4;
 	private double	tick;
@@ -104,8 +104,8 @@ public class Turtle extends Agent{
 		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
 		if (UserPanel.ADRT) {
-			double[] delayedValues = delayValue(storage,newAcc,v);
-			acc = delayedValues[1];}
+			double[] delayedValuesAcc = delayValue(storage,newAcc,v);
+			acc = delayedValuesAcc[1];}
 		else {
 			acc = newAcc;}
 		
@@ -113,13 +113,15 @@ public class Turtle extends Agent{
 		double[] brakeOutput = brake(myLoc, lane, dir); 
 		double newbAccel = brakeOutput[0];
 		double oldbAccel;
-		if (UserPanel.BRT) {
-			double[] delayedValues = delayValue(shldBrakeStorage,newbAccel,brakeOutput[1]);
-			oldbAccel = delayedValues[1];
-			ying = (int)Math.round(delayedValues[2]);}
-		else {
+//		if (UserPanel.BRT) {
+//			double[] delayedValues = delayValue(shldBrakeStorage,newbAccel,brakeOutput[1]);
+//			oldbAccel = delayedValues[1];
+//			ying = (int)Math.round(delayedValues[2]);}
+//		else {
 			oldbAccel = newbAccel;
-			ying = (int)Math.round(brakeOutput[1]);}
+			//yieldDec = newbAccel;
+			ying = (int)Math.round(brakeOutput[1]);
+//			}
 		if (!distracted || autonomous) {
 			if (oldbAccel < 0 && newbAccel < 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
@@ -464,8 +466,8 @@ public class Turtle extends Agent{
 				//calculate relevant times for this ped (note: in OR, cars have to wait until ped is >1 lane away)
 				for (Yieldage m : pYields) {
 					if (m.yieldee == k) {			//check if already yielding to ped
-						endGauntlet = m.endThreat;
-						oldVals = m;
+						endGauntlet   = m.endThreat;
+						oldVals  = new Yieldage(m);
 						break;}}
 				//bring in old accel value if above is true
 				if (oldVals != null) {
@@ -621,30 +623,33 @@ public class Turtle extends Agent{
 							//k.yielders.add(this);
 							cYields.add(thisYield);}}}
 				//update final acceleration value and yielding state
-				if (thisDecel < cYieldD) {
-					cYieldD = thisDecel;}
-				if (thisYing > outYing) {
-					outYing = thisYing;}}}
+//				if (thisDecel < cYieldD) {
+//					cYieldD = thisDecel;}
+//				if (thisYing > outYing) {
+//					outYing = thisYing;}
+				}}
 		
 		delayedYields.put(stamp,cYields);
 		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
-//		if (UserPanel.BRT) {
-//			int thenKey = stamp - wayBack;
-//			if (delayedYields.size() > wayBack) {
-//				if (delayedYields.containsKey(thenKey)) {
-//					reactTo = delayedYields.get(thenKey);}
-//				else {
-//					int foo = 0;}}}
-//		else {
-//			reactTo = cYields;}
-//		
-//		for (Yieldage yg : reactTo) {
-//			if (yg.yState > -1) {
-//				yg.yieldee.yielders.add(this);
-//				if (yg.calcAcc < yieldDec) {
-//					yieldDec = yg.calcAcc;}
-//				if (yg.yState > outYing) {
-//					outYing = yg.yState;}}}
+		if (UserPanel.BRT && stamp > wayBack + 3) {
+			int thenKey = stamp - wayBack;
+			if (delayedYields.size() > wayBack) {
+				if (delayedYields.containsKey(thenKey)) {
+					reactTo = delayedYields.get(thenKey);}
+				else {
+					int foo = 0;}}
+			else {
+				reactTo = cYields;}}
+		else {
+			reactTo = cYields;}
+		
+		for (Yieldage yg : reactTo) {
+			if (yg.yState > -1) {
+				//yg.yieldee.yielders.add(this);
+				if (yg.calcAcc < cYieldD) {
+					cYieldD = yg.calcAcc;}
+				if (yg.yState > outYing) {
+					outYing = yg.yState;}}}
 		if (cYieldD < -UserPanel.emergDec) {
 			cYieldD = -UserPanel.emergDec;}
 //		//take note of any conflicts		//TODO: this was moved to test
@@ -701,6 +706,9 @@ public class Turtle extends Agent{
 				rv2 = hiVal2;}
 			if (storSize > backN + 10) {
 				inList.remove(0);}}
+		else {
+			rv1 = inVal1;
+			rv2 = inVal2;}
 		return new double[] {tStamp,rv1,rv2};
 	}
 	
@@ -715,29 +723,40 @@ public class Turtle extends Agent{
 		double pedTlo = -1;		//time until ped at conflict point
 		double pedThi = -1;		//time until ped leaves CP
 		double ttc = -1;
+		double lw = RoadBuilder.laneW;
 		if (v != 0) {
 			ttc = (double)dir*(pedX - xLoc)/v;}
 		if (ttc >= 0) {
-			if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
-				if (pedY >= (yLoc - carW/2)) {
+			if (p.dir == 1 && pedY <= (lnTop + lw)) {
+			//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
+				if (pedY >= (lnBot - lw)) {
+				//if (pedY >= (yLoc - carW/2)) {
 					pedTlo = 0;}
 				else {
 					pedTlo = 1000;
 					if (p.v[1] != 0) {
-						pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
+						pedTlo = ((lnBot - lw) - pedY)/p.v[1];}}
+						//pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
 				pedThi = 1000;
 				if (p.v[1] != 0) {
-					pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
-			else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
-				if (pedY <= (yLoc + carW/2)) {
+					pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
+					//pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
+			//(lnTop + lw)
+			//(lnBot - lw)
+			else if (p.dir == -1 && pedY >= (lnBot - lw)) {
+			//else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
+				//if (pedY <= (yLoc + carW/2)) {
+				if (pedY <= (lnTop + lw)) {
 					pedTlo = 0;}
 				else {
 					pedTlo = 1000;
 					if (p.v[1] != 0) {
-						pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}}		//TODO: include ped r and make ped calc 2D
+						pedTlo = -(pedY - (lnTop + lw))/p.v[1];}}
+						//pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}}		//TODO: include ped r and make ped calc 2D
 				pedThi = 1000;
 				if (p.v[1] != 0) {
-					pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
+					pedThi = -(pedY - (lnBot - lw))/p.v[1];}}
+					//pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
 			if (pedTlo != -1) {
 				if (ttc >= pedTlo && ttc <= pedThi) {
 					if (ttc <= confLim) {
@@ -961,6 +980,13 @@ public class Turtle extends Agent{
 			this.endThreat = endThreat;
 			this.yState = yState;
 			this.time = RoadBuilder.clock.getTickCount();}
+		Yieldage(Yieldage src) {
+			this.yieldee = src.yieldee;
+			this.calcAcc = src.calcAcc;
+			this.endThreat = src.endThreat;
+			this.yState = src.yState;
+			this.time = RoadBuilder.clock.getTickCount();
+		}
 	}
 	
 	/**

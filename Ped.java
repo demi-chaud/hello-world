@@ -69,7 +69,8 @@ public class Ped extends Agent{
 						newV = sumV(v,dv);}}
 				else {
 					if (curbed == true) {
-						crossing = 1;}
+						crossing = 1;
+					}
 					if (yLoc + newV[1] <= side + RoadBuilder.roadW + r) {
 						curbed = true;
 						dv = yield();
@@ -393,7 +394,7 @@ public class Ped extends Agent{
 			goes = 1;
 			front = 1;}
 		else {
-			if (thisTailT > critGap && TTCol - threatBeg > critGap) {
+			if (thisTailT > critGap && threatBeg + critGap < TTCol) {
 				goes = 1;
 				front = 1;}
 			else if (threatBeg > TTClear) {
@@ -465,7 +466,7 @@ public class Ped extends Agent{
 						forcesY.add(interFy);}}}}
 		
 		//stop at curb if necessary
-		if (curbed == true && !UserPanel.calcFun) {
+		if (curbed == true /*&& !UserPanel.calcFun*/) {
 			double dCurb;
 			if (direct == 1) {dCurb = side - yLoc;}
 			else {dCurb = yLoc - side - RoadBuilder.roadW;}
