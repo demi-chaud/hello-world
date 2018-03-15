@@ -24,9 +24,9 @@ public class Turtle extends Agent{
 	private ArrayList<Turtle> sameDir, ahead, leaders, behind, followers;
 	private ArrayList<Ped> crossingP, crossingP1, crossingP2;
 	private ArrayList<ViewAngle> obstructers, obstructees;
-	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
-	private ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
-	private ArrayList<Yieldage> pYields = new ArrayList<Yieldage>();
+//	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
+//	private ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
+//	private ArrayList<Yieldage> pYields = new ArrayList<Yieldage>();
 	private Map<Integer,ArrayList<Yieldage>> delayedYields = new HashMap<Integer,ArrayList<Yieldage>>();
 	private List<double[]> storage = new ArrayList<double[]>();
 	private List<double[]> shldBrakeStorage = new ArrayList<double[]>();
@@ -114,14 +114,15 @@ public class Turtle extends Agent{
 		double[] brakeOutput = brake(myLoc, lane, dir); 
 		double newbAccel = brakeOutput[0];
 		double oldbAccel;
-		if (UserPanel.BRT) {
-			double[] delayedValues = delayValue(shldBrakeStorage,newbAccel,brakeOutput[1]);
-			oldbAccel = delayedValues[1];
-			ying = (int)Math.round(delayedValues[2]);}
-		else {
+//		if (UserPanel.BRT) {
+//			double[] delayedValues = delayValue(shldBrakeStorage,newbAccel,brakeOutput[1]);
+//			oldbAccel = delayedValues[1];
+//			ying = (int)Math.round(delayedValues[2]);}
+//		else {
 			oldbAccel = newbAccel;
 			//yieldDec = newbAccel;
-			ying = (int)Math.round(brakeOutput[1]);}
+			ying = (int)Math.round(brakeOutput[1]);
+//			}
 		if (!distracted || autonomous) {
 			if (oldbAccel < 0 && newbAccel < 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
@@ -337,8 +338,9 @@ public class Turtle extends Agent{
 		crossingP1	= new ArrayList<Ped>();
 		obstructers = new ArrayList<ViewAngle>();
 		obstructees = new ArrayList<ViewAngle>();
-		pYields = new ArrayList<Yieldage>(cYields);
-		cYields = new ArrayList<Yieldage>();
+		//pYields = new ArrayList<Yieldage>(cYields);
+		ArrayList<Yieldage> pYields = new ArrayList<Yieldage>();
+		ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
 		ArrayList<Yieldage> reactTo = new ArrayList<Yieldage>();
 		double threatBeg, threatEnd, tHardYield, outYing;
 		double lnW		 = RoadBuilder.laneW;
@@ -444,6 +446,12 @@ public class Turtle extends Agent{
 				tooFar.add(d);}}
 		if (!tooFar.isEmpty()) {
 			crossingP.removeAll(tooFar);}
+		
+		int stamp = (int)RoadBuilder.clock.getTickCount();
+		int lastKey;
+		if (!delayedYields.isEmpty()) {
+			lastKey = Collections.max(delayedYields.keySet());
+			pYields = delayedYields.get(lastKey);}
 		
 		//yield to crossing peds
 		if (!crossingP.isEmpty()) {
@@ -614,32 +622,33 @@ public class Turtle extends Agent{
 							//k.yielders.add(this);
 							cYields.add(thisYield);}}}
 				//update final acceleration value and yielding state
-				if (thisDecel < cYieldD) {
-					cYieldD = thisDecel;}
-				if (thisYing > outYing) {
-					outYing = thisYing;}}}
+//				if (thisDecel < cYieldD) {
+//					cYieldD = thisDecel;}
+//				if (thisYing > outYing) {
+//					outYing = thisYing;}
+				}}
 		
-//		delayedYields.put(stamp,cYields);
-//		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
-//		if (UserPanel.BRT && stamp > wayBack + 3) {
-//			int thenKey = stamp - wayBack;
-//			if (delayedYields.size() > wayBack) {
-//				if (delayedYields.containsKey(thenKey)) {
-//					reactTo = delayedYields.get(thenKey);}
-//				else {
-//					int foo = 0;}}
-//			else {
-//				reactTo = cYields;}}
-//		else {
-//			reactTo = cYields;}
-//		
-//		for (Yieldage yg : reactTo) {
-//			if (yg.yState > -1) {
-//				//yg.yieldee.yielders.add(this);
-//				if (yg.calcAcc < cYieldD) {
-//					cYieldD = yg.calcAcc;}
-//				if (yg.yState > outYing) {
-//					outYing = yg.yState;}}}
+		delayedYields.put(stamp,cYields);
+		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
+		if (UserPanel.BRT && stamp > wayBack + 3) {
+			int thenKey = stamp - wayBack;
+			if (delayedYields.size() > wayBack) {
+				if (delayedYields.containsKey(thenKey)) {
+					reactTo = delayedYields.get(thenKey);}
+				else {
+					int foo = 0;}}
+			else {
+				reactTo = cYields;}}
+		else {
+			reactTo = cYields;}
+		
+		for (Yieldage yg : reactTo) {
+			if (yg.yState > -1) {
+				//yg.yieldee.yielders.add(this);
+				if (yg.calcAcc < cYieldD) {
+					cYieldD = yg.calcAcc;}
+				if (yg.yState > outYing) {
+					outYing = yg.yState;}}}
 		if (cYieldD < -UserPanel.emergDec) {
 			cYieldD = -UserPanel.emergDec;}
 //		//take note of any conflicts		//TODO: this was moved to test
@@ -648,9 +657,9 @@ public class Turtle extends Agent{
 //				for (Ped n : crossingP1) {
 //					conflict(n);}}}
 		
-//		if (delayedYields.size() > wayBack + 10) {
-//			int lowKey = Collections.min(delayedYields.keySet());
-//			delayedYields.remove(lowKey);}
+		if (delayedYields.size() > wayBack + 10) {
+			int lowKey = Collections.min(delayedYields.keySet());
+			delayedYields.remove(lowKey);}
 		
 		double[] rv = new double[] {cYieldD,outYing};
 		return rv;
