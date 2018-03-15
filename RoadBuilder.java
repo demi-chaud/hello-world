@@ -68,7 +68,6 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		panel = new UserPanel(this);
 		flowSource = new Scheduler();
 		flowSource.allConf = new ArrayList<Turtle.Conflict>();
-		flowSource.allCrash = new ArrayList<Turtle.Crash>();
 		context.add(flowSource);
 		int rnd1  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);
 		int rnd2  = (int)Math.round(rnd.nextDouble()*UserPanel.greenDurS);

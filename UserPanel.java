@@ -51,6 +51,8 @@ public class UserPanel implements ActionListener{
 	static public boolean calcFun	= false;  //build fundamental diagram
 	static public boolean bothCar	= true;   //cars both directions?
 	static public boolean IIDM		= true;   //include Improved IDM?
+//	static public boolean pedsUp	= true;
+//	static public boolean pedsDn	= true;
 	
 	// declare variables in real world units
 	static final  double pedVavgKH		= 5;			// km/hr			default:   5 	 (source Zebala 2012)
@@ -153,8 +155,11 @@ public class UserPanel implements ActionListener{
 	private String vehRhos;
 	private String pedRhos;
 	private JTextField pRho;
+//	private String delTs	= String.valueOf(delayTs);
+//	private String tSteps	= String.valueOf(tStep);
 	private String confTs	= String.valueOf(confLimS);
 	private String pV2Xs;
+//	private String pV2Is	= String.valueOf(percV2I);
 	private String pAutoS;
 	private String pBothS;
 	
@@ -186,8 +191,8 @@ public class UserPanel implements ActionListener{
 		redDurS	= cycleTimeS - greenDurS - amberDurS;	
 		// convert variables to model units
 		sLimit 		= sLimitKH/vBase;
-		sLimitMu	= sLimitMuKH/vBase;
-		sLimit_sd	= sLimitSDKH/vBase;
+		sLimitMu		= sLimitMuKH/vBase;
+		sLimit_sd		= sLimitSDKH/vBase;
 		lambdaCar	= vehRho * tStep / 3600;
 		lambdaPed	= pedRho * tStep / 3600;
 		poisExpV	= Math.exp(-lambdaCar);
@@ -232,6 +237,10 @@ public class UserPanel implements ActionListener{
 		JCheckBox errOn   = new JCheckBox("Est Errors?",	estErr);
 		JCheckBox brtOn   = new JCheckBox("BRT?",			BRT);
 		JCheckBox adrtOn  = new JCheckBox("ADRT?",			ADRT);
+//		JCheckBox iidmOn  = new JCheckBox("IIDM?",			IIDM);
+//		JCheckBox car2way = new JCheckBox("Cars both dir?", bothCar);
+//		JCheckBox pedUp   = new JCheckBox("Peds up?",		pedsUp);
+//		JCheckBox pedDown = new JCheckBox("Peds down?",		pedsDn);
 		
 		JLabel   sLabel = new JLabel("Speed limit (km/hr)");
 		JTextField sLim = new JTextField(sLimits, 6);
@@ -242,18 +251,27 @@ public class UserPanel implements ActionListener{
 		JLabel   pLabel = new JLabel("Pedestrians/hr");
 		pRho = new JTextField(pedRhos, 6);
 			pRho.setActionCommand("pRho");
+//		JLabel   tLabel = new JLabel("Reaction time (sec)");
+//		JTextField delT = new JTextField(delTs,   6);
+//			delT.setActionCommand("delT");
 		JLabel	 cLabel = new JLabel("Conflict limit (sec)");
 		JTextField conf = new JTextField(confTs,  6);
 			conf.setActionCommand("conf");
 		JLabel	 v2xLab = new JLabel("Percent V2X");
 		JTextField v2xF = new JTextField(pV2Xs,   3);
 			v2xF.setActionCommand("V2X");
+//		JLabel	 v2iLab = new JLabel("Percent V2I");
+//		JTextField v2iF = new JTextField(pV2Is,   3);
+//			v2iF.setActionCommand("V2I");
 		JLabel	 autLab = new JLabel("Percent automated");
 		JTextField autF = new JTextField(pAutoS,  3);
 			autF.setActionCommand("Automated");
 		JLabel	 bthLab = new JLabel("Percent CAV");
 		JTextField bthF = new JTextField(pBothS,  3);
 			bthF.setActionCommand("CAV");
+//		JLabel   tckLab = new JLabel("Tick duration in sec:");
+//		JTextField tckT = new JTextField(tSteps,  6);
+//			tckT.setActionCommand("tckT");
 		
 		funDia.addActionListener(this);
 		rlOn.addActionListener(this);
@@ -261,11 +279,18 @@ public class UserPanel implements ActionListener{
 		brtOn.addActionListener(this);
 		adrtOn.addActionListener(this);
 		
+//		iidmOn.addActionListener(this);
+//		car2way.addActionListener(this);
+//		pedUp.addActionListener(this);
+//		pedDown.addActionListener(this);
 		sLim.addActionListener(this);
 		pRho.addActionListener(this);
 		vRho.addActionListener(this);
+//		delT.addActionListener(this);
 		conf.addActionListener(this);
+//		tckT.addActionListener(this);
 		v2xF.addActionListener(this);
+//		v2iF.addActionListener(this);
 		autF.addActionListener(this);
 		bthF.addActionListener(this);
 		
@@ -274,16 +299,26 @@ public class UserPanel implements ActionListener{
 		newPanel.add(errOn);
 		newPanel.add(brtOn);
 		newPanel.add(adrtOn);
+//		newPanel.add(iidmOn);
+//		newPanel.add(car2way);
+//		newPanel.add(pedUp);
+//		newPanel.add(pedDown);
 		newPanel.add(sLabel);
 		newPanel.add(sLim);
 		newPanel.add(vLabel);
 		newPanel.add(vRho);
 		newPanel.add(pLabel);
 		newPanel.add(pRho);
+//		newPanel.add(tLabel);
+//		newPanel.add(delT);
+//		newPanel.add(tckLab);
+//		newPanel.add(tckT);
 		newPanel.add(cLabel);
 		newPanel.add(conf);
 		newPanel.add(v2xLab);
 		newPanel.add(v2xF);
+//		newPanel.add(v2iLab);
+//		newPanel.add(v2iF);
 		newPanel.add(autLab);
 		newPanel.add(autF);
 		newPanel.add(bthLab);
@@ -335,6 +370,22 @@ public class UserPanel implements ActionListener{
 				if (checkSource.isSelected()) ADRT = true;
 				else ADRT = false;
 				break;
+//			case "IIDM?":
+//				if (checkSource.isSelected()) IIDM = true;
+//				else IIDM = false;
+//				break;
+//			case "Cars both dir?":
+//				if (checkSource.isSelected()) bothCar = true;
+//				else bothCar = false;
+//				break;
+//			case "Peds up?":
+//				if (checkSource.isSelected()) pedsUp = true;
+//				else pedsUp = false;
+//				break;
+//			case "Peds down?":
+//				if (checkSource.isSelected()) pedsDn = true;
+//				else pedsDn = false;
+//				break;
 			default: break;}
 			break;
 		case "TextFieldUI":
@@ -343,13 +394,7 @@ public class UserPanel implements ActionListener{
 			case "sLim":
 				String newSVal = textSource.getText();
 				sLimitKH = Integer.parseInt(newSVal);
-				sLimitMuKH = sLimitKH + 2;
 				sLimit = sLimitKH/vBase;
-				sLimitMu = sLimitMuKH/vBase;
-				maxMaxV = sLimitMu + 4*sLimit_sd;
-				minMaxV = sLimitMu - 4*sLimit_sd;
-				amberDurS = RedLight.amberT(sLimitKH);
-				redDurS = cycleTimeS - greenDurS - amberDurS;	
 				break;
 			case "vRho":
 				String newVVal = textSource.getText();
@@ -361,6 +406,16 @@ public class UserPanel implements ActionListener{
 				pedRho = Integer.parseInt(newPVal);
 				calcPeds();
 				break;
+//			case "delT":
+//				String newTVal = textSource.getText();
+//				delayTs = Double.parseDouble(newTVal);
+//				break;
+//			case "tckT":
+//				String newTick = textSource.getText();
+//				tStep = Double.parseDouble(newTick);
+//				calcCars();
+//				calcPeds();
+//				break;
 			case "conf":
 				String newConfLim = textSource.getText();
 				confLimS = Double.parseDouble(newConfLim);
@@ -370,6 +425,10 @@ public class UserPanel implements ActionListener{
 				percV2X = Double.parseDouble(newPv2x);
 				calcCars();
 				break;
+//			case "V2I":
+//				String newPv2i = textSource.getText();
+//				percV2I = Double.parseDouble(newPv2i);
+//				break;
 			case "Automated":
 				String newPauto = textSource.getText();
 				percAuto = Double.parseDouble(newPauto);
