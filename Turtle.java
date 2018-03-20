@@ -124,7 +124,7 @@ public class Turtle extends Agent{
 			ying = (int)Math.round(brakeOutput[1]);
 //			}
 		if (!distracted || autonomous) {
-			if (oldbAccel <= 0 && newbAccel <= 0) {
+			if (oldbAccel < 0 && newbAccel < 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
 					yieldDec = newbAccel;
 					acc = newbAccel;}}}
@@ -353,13 +353,8 @@ public class Turtle extends Agent{
 			wPedV = UserPanel.wien1*wPedV + UserPanel.wien2*etaPedV;
 			stopDist = stopDist*Math.exp(UserPanel.Vs*wPed);
 			conDist  = conDist*Math.exp(UserPanel.Vs*wPed);
-			if (v != 0) {
-				percV = v - conDist*sigR*wPedV;}
-			else {
-				percV = v;}}
+			percV = v - conDist*sigR*wPedV;}
 		else percV = v;
-		if (percV < 0) {
-			percV = 0;}
 		if (realStopDist >= 0) {
 			if (stopDist < 0) {
 				int foo = 0;}
@@ -477,10 +472,8 @@ public class Turtle extends Agent{
 				if (oldVals != null) {
 					double newDecel = 1;
 					if (k.dir == 1 && endGauntlet > pedY) {
-						if (v > 0) {
+						if (percV > 0) {
 							threatEnd = k.accT*(1-k.v[1]/k.maxV) + (endGauntlet - pedY)/k.maxV;
-							if (k.v[1] == 0) {
-								threatEnd = 1e12;}
 							if (realStopDist >= 0) {
 								if (stopDist < 0) {
 									int foo = 0;}
@@ -505,8 +498,6 @@ public class Turtle extends Agent{
 					else if (k.dir == -1 && endGauntlet < pedY) {
 						if (percV > 0) {
 							threatEnd = k.accT*(1-Math.abs(k.v[1]/k.maxV)) + (pedY - endGauntlet)/k.maxV;
-							if (k.v[1] == 0) {
-								threatEnd = 1e12;}
 							if (realStopDist >= 0) {
 								if (stopDist < 0) {
 									int foo = 0;}
@@ -584,8 +575,6 @@ public class Turtle extends Agent{
 								threatEnd = k.accT + (pedY - lnBot + lnW)/k.maxV;}}}
 					if (threatBeg < 0) {
 						threatBeg = 0;}			//correction for ped within current lane
-					if (threatBeg == 0 && k.v[1] == 0) {
-						threatEnd = 1e12;}
 					
 					//decide whether or not to yield for this ped
 					if (percV != 0) {				//ttstop is undefined if car is already stopped

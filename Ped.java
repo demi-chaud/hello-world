@@ -445,26 +445,25 @@ public class Ped extends Agent{
 		
 		//calculate interactive forces
 		//TODO: write code to make a threshold for interaction instead of the arbitrary horizon
-		if (RoadBuilder.flowSource.nXing < 20) {
-			for (Ped a : RoadBuilder.flowSource.allPeds) {
-				if (a != this && (a.dir == dir || a.crossing == 2)) {
-					NdPoint	otherLoc = space.getLocation(a);
-					double	otherY	 = otherLoc.getY();
-					double	visible	 = Math.signum((double)dir*(otherY-yLoc));
-					if (visible == 1) {		//peds only affected by those in front of them
-						double absDist = space.getDistance(location, otherLoc);
-						if (absDist < horiz) {
-							double delX    = location.getX()-otherLoc.getX();
-							double delY    = location.getY()-otherLoc.getY();
-							double delXabs = Math.abs(delX);
-							double signFx  = Math.signum(delX);
-							double signFy  = Math.signum(delY);
-							double theta   = FastMath.asin(delXabs/absDist);
-							double rij     = r + a.r;
-							Double interFx = signFx*A*Math.exp((rij-absDist)/B)*Math.sin(theta)/m;
-							Double interFy = signFy*A*Math.exp((rij-absDist)/B)*Math.cos(theta)/m;
-							forcesX.add(interFx);
-							forcesY.add(interFy);}}}}}
+		for (Ped a : RoadBuilder.flowSource.allPeds) {
+			if (a != this && (a.dir == dir || a.crossing == 2)) {
+				NdPoint	otherLoc = space.getLocation(a);
+				double	otherY	 = otherLoc.getY();
+				double	visible	 = Math.signum((double)dir*(otherY-yLoc));
+				if (visible == 1) {		//peds only affected by those in front of them
+					double absDist = space.getDistance(location, otherLoc);
+					if (absDist < horiz) {
+						double delX    = location.getX()-otherLoc.getX();
+						double delY    = location.getY()-otherLoc.getY();
+						double delXabs = Math.abs(delX);
+						double signFx  = Math.signum(delX);
+						double signFy  = Math.signum(delY);
+						double theta   = FastMath.asin(delXabs/absDist);
+						double rij     = r + a.r;
+						Double interFx = signFx*A*Math.exp((rij-absDist)/B)*Math.sin(theta)/m;
+						Double interFy = signFy*A*Math.exp((rij-absDist)/B)*Math.cos(theta)/m;
+						forcesX.add(interFx);
+						forcesY.add(interFy);}}}}
 		
 		//stop at curb if necessary
 		if (curbed == true /*&& !UserPanel.calcFun*/) {
