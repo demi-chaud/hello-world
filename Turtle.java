@@ -282,8 +282,7 @@ public class Turtle extends Agent{
 		double[] yieldOutput = new double[2];
 		if (threat == 1) {
 			yieldOutput = yield(stopDab,xwalkD); 
-			aBrake = yieldOutput[0];
-			stopD = stopD;}
+			aBrake = yieldOutput[0];}
 		else {
 			yieldOutput[1] = -1;}
 
@@ -671,7 +670,6 @@ public class Turtle extends Agent{
 		
 		if (delayedYields.size() > wayBack + 10) {
 			int lowKey = Collections.min(delayedYields.keySet());
-			lowKey = lowKey;
 			delayedYields.remove(lowKey);}
 		
 		double[] rv = new double[] {cYieldD,outYing};

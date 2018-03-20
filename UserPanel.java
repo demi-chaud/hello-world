@@ -45,7 +45,7 @@ public class UserPanel implements ActionListener{
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
 	
 	static public boolean estErr 	= true;		// estimation errors
-	static public boolean BRT		= false;
+	static public boolean BRT		= true;
 	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
 	static public boolean calcFun	= false;  //build fundamental diagram
