@@ -49,7 +49,7 @@ public class UserPanel implements ActionListener{
 	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
 	static public boolean calcFun	= false;  //build fundamental diagram
-	static public boolean bothCar	= true;   //cars both directions?
+	static public boolean bothCar	= !calcFun;   //cars both directions?
 	static public boolean IIDM		= true;   //include Improved IDM?
 	
 	// declare variables in real world units

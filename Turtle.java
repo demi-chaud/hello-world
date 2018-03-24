@@ -97,12 +97,6 @@ public class Turtle extends Agent{
 		else {
 			newAcc = accel(myLoc, lane, dir, false);}
 		
-		//moved here. TODO: check results
-		double xwalkD	= RoadBuilder.xWalkx + ((double)dir * Ped.xWalkHalfWidth) - xLoc;
-		double threat	= Math.signum(dir*xwalkD);
-		if (threat == 1 && v != 0) {
-			conflict();}
-		
 		//delayed CF reaction: implements acc calculated and stored delayT ago
 		if (UserPanel.ADRT) {
 			double[] delayedValuesAcc = delayValue(storage,newAcc,v);
@@ -135,6 +129,12 @@ public class Turtle extends Agent{
 			nMaxDecel = 0;}
 		vNew = v + acc;
 		if (vNew < 0) {vNew = 0;}
+		
+		//moved here. TODO: check results
+		double xwalkD	= RoadBuilder.xWalkx + ((double)dir * Ped.xWalkHalfWidth) - xLoc;
+		double threat	= Math.signum(dir*xwalkD);
+		if (threat == 1) {
+			conflict();}
 	}		
 	
 	/**
@@ -744,8 +744,11 @@ public class Turtle extends Agent{
 		double pedThi = -1;		//time until ped leaves CP
 		double ttc = -1;
 		double lw = RoadBuilder.laneW;
-		if (v != 0) {
-			ttc = (double)dir*(pedX - xLoc)/v;}
+		double worstV = Math.max(v, vNew);
+		if (worstV != 0) {
+			ttc = ((double)dir*(pedX - xLoc) - p.r)/worstV;}
+		if (ttc < 0 && ttc >= length/worstV) {
+			int foo = 0;}
 		if (ttc >= 0 && ttc <= confLim) {
 			if (p.dir == 1 && pedY <= (lnTop + lw)) {
 			//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
@@ -817,8 +820,6 @@ public class Turtle extends Agent{
 		//check for impending crashes
 		double crashPedTlo = -1;
 		double crashPedThi = -1;
-		if (v != 0) {
-			ttc = ((double)dir*(pedX - xLoc) - p.r)/v;}
 		if (ttc >= 0 && ttc <= UserPanel.tStep) {
 			if (p.dir == 1 && pedY <= (yLoc + carW/2 + p.r)) {
 				if (pedY >= (yLoc - carW/2 - p.r)) {
@@ -842,7 +843,6 @@ public class Turtle extends Agent{
 					crashPedThi = -(pedY - (yLoc - carW/2 - p.r))/p.v[1];}}
 			if (crashPedTlo != -1) {
 				if (ttc >= crashPedTlo && ttc <= crashPedThi) {
-					//Crash thisCrash = new Crash(this,p);
 					int init = 1;
 					int dup = 0;
 					int hasDup = 0;
@@ -866,7 +866,9 @@ public class Turtle extends Agent{
 												if (ttc < c1.TTC) {
 													thisCrash.init = 0;
 													toAdd = thisCrash;
-													toRem = c1;}}}}}}}}
+													toRem = c1;
+													break;}}}}}
+								break;}}}
 					if (dup == 0) {
 						RoadBuilder.flowSource.allConf.add(thisCrash);}
 					else {

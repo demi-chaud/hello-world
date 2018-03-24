@@ -47,8 +47,9 @@ public class Scheduler extends Agent {
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
 	//String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	String	directory = "";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
@@ -405,6 +406,8 @@ public class Scheduler extends Agent {
 	 * Initializes schedule agent to hold lists
 	 */
 	public Scheduler() {
+		if (homeDir == "C:\\Users\\themi") directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+		else directory = homeDir + "\\workspace\\driving1\\results\\";
 		allCars = new ArrayList<Turtle>();
 		allPeds = new ArrayList<Ped>();
 		allConf = new ArrayList<Turtle.Conflict>();		
