@@ -41,7 +41,7 @@ public class UserPanel implements ActionListener{
 	public double sLimitKH;
 	public double hPercLimM;
 	
-	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
+	static public double confLimS	= 1.5;			// seconds			default:   1.5
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
 	
 	static public boolean estErr 	= true;		// estimation errors

@@ -264,7 +264,10 @@ public class Ped extends Agent{
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
 		int	goes = 0;
 		//TODO: make xTime lane-dependent for some peds
-		xTime 	  = accT + (endPtDist - side) / maxVY; 
+		if (maxVY != 0) {
+			xTime = accT + (endPtDist - side) / maxVY;}
+		else {
+			xTime = accT + (endPtDist - side) / maxV;}
 		sigR	  = 0.01*UserPanel.tStep;	//st. dev. of relative approach rate
 		approachX = t.xLoc;
 		xDist	  = Math.abs(xLoc - approachX);
@@ -293,7 +296,10 @@ public class Ped extends Agent{
 		if (ln == 0) {
 			threatBeg = 0;}
 		else {
-			threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxVY;}	//ped enters lane //TODO:mention this 0.25 and 1 below in writeup
+			if (maxVY != 0) {
+				threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxVY;}	//ped enters lane //TODO:mention this 0.25 and 1 below in writeup
+			else {
+				threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxV;}}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
 		TTCol = 1000;
 		TTClear = 1000;
@@ -341,7 +347,10 @@ public class Ped extends Agent{
 		double t2v, t2x, dist2, t2d;
 		double threatBeg; //, threatEnd;
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
-		xTime = accT + (endPtDist - side) / maxVY; 
+		if (maxVY != 0) {
+			xTime = accT + (endPtDist - side) / maxVY;}
+		else {
+			xTime = accT + (endPtDist - side) / maxV;}
 		sigR = 0.01*UserPanel.tStep;	//standard deviation of relative approach rate
 		t1x		= t1.xLoc;
 		t2x 	= t2.xLoc;
@@ -381,7 +390,10 @@ public class Ped extends Agent{
 		if (ln == 0) {
 			threatBeg = 0;}
 		else {
-			threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}
+			if (maxVY != 0) {
+				threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}
+			else {
+				threatBeg = accT + (ln*RoadBuilder.laneW/maxV);}}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;
 		TTCol	= 1000;
 		TTClear = 1000;
@@ -433,7 +445,10 @@ public class Ped extends Agent{
 		//calculate heading to endpoint
 		endPtDist  = space.getDistance(location, endPt); 
 		double endPtDelX  = endPt.getX()-location.getX();
-		endPtTheta = FastMath.asin((double)direct*endPtDelX/endPtDist);
+		if (endPtDist != 0) {
+			endPtTheta = FastMath.asin((double)direct*endPtDelX/endPtDist);}
+		else {
+			endPtTheta = 0;}
 		if (direct == -1) {
 			endPtTheta += Math.PI;}
 		
@@ -459,7 +474,11 @@ public class Ped extends Agent{
 							double delXabs = Math.abs(delX);
 							double signFx  = Math.signum(delX);
 							double signFy  = Math.signum(delY);
-							double theta   = FastMath.asin(delXabs/absDist);
+							double theta;
+							if (absDist != 0) {
+								theta = FastMath.asin(delXabs/absDist);}
+							else {
+								theta = 0;}
 							double rij     = r + a.r;
 							Double interFx = signFx*A*Math.exp((rij-absDist)/B)*Math.sin(theta)/m;
 							Double interFy = signFy*A*Math.exp((rij-absDist)/B)*Math.cos(theta)/m;
@@ -596,8 +615,8 @@ public class Ped extends Agent{
 		r     = 0.275/RoadBuilder.spaceScale;					//ped radius (space units)
 		
 		//store endpoint
-		if (dir == 1) endPt = new NdPoint(RoadBuilder.xWalkx + 1/RoadBuilder.spaceScale, RoadBuilder.worldW);
-		else endPt = new NdPoint(RoadBuilder.xWalkx - 1/RoadBuilder.spaceScale, 0);
+		if (dir == 1) endPt = new NdPoint(RoadBuilder.xWalkx + 1/RoadBuilder.spaceScale, RoadBuilder.worldW + 1);
+		else endPt = new NdPoint(RoadBuilder.xWalkx - 1/RoadBuilder.spaceScale, -1);
 	}
 	
 	/**
