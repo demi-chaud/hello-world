@@ -41,14 +41,14 @@ public class UserPanel implements ActionListener{
 	public double sLimitKH;
 	public double hPercLimM;
 	
-	static public double confLimS	= 1.7;			// seconds			default:   1.7		//kinda arbitrary
+	static public double confLimS	= 1.5;			// seconds			default:   1.5
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
 	
 	static public boolean estErr 	= true;		// estimation errors
 	static public boolean BRT		= true;
 	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
-	static public boolean calcFun	= false;  //build fundamental diagram
+	static public boolean calcFun	= true;  //build fundamental diagram
 	static public boolean bothCar	= !calcFun;   //cars both directions?
 	static public boolean IIDM		= true;   //include Improved IDM?
 	
@@ -122,6 +122,7 @@ public class UserPanel implements ActionListener{
 	public double maxMaxV;
 	public double minMaxV;
 	
+	public String paramStr = "";
 	
 	// convert variables to model units
 	static final  double pedVavg		= pedVavgKH/vBase;
@@ -179,6 +180,38 @@ public class UserPanel implements ActionListener{
 		pedRho		= src.pedRho;
 		hPercLimM	= src.hPercLimM;	// human pedestrian perception (meters) default: 100
 		sLimitKH	= src.sLimitKH;		// km/hr								default:  45
+		
+		String outStr = "";
+		String[] pNames = src.getInitParam();
+		for (String cName : pNames) {
+			String valStr = "";
+			switch (cName) {
+				case "vehRho":
+					valStr = String.valueOf(vehRho);
+					break;
+				case "pedRho":
+					valStr = String.valueOf(pedRho);
+					break;
+				case "sLimitKH":
+					valStr = String.valueOf(sLimitKH);
+					break;
+				case "percV2X":
+					valStr = String.valueOf(percV2X);
+					break;
+				case "percAuto":
+					valStr = String.valueOf(percAuto);
+					break;
+				case "percBoth":
+					valStr = String.valueOf(percBoth);
+					break;
+				case "hPercLimM":
+					valStr = String.valueOf(hPercLimM);
+					break;
+				default:
+					break;}
+			outStr += cName + ":" + param.getValueAsString(cName) + " ";}
+		paramStr = outStr;
+		System.out.println(outStr + " - START");
 		
 		sLimitMuKH = sLimitKH + 2;	// km/hr			source:	Fitzpatrick et al 2003
 		sLimitSDKH = 4.5;			// km/hr					ditto

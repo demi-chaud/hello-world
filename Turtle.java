@@ -259,7 +259,10 @@ public class Turtle extends Agent{
 					if (vDiff > 0) {
 						accCAH = effAcc - Math.pow(vDiff, 3)/(2*head);}
 					if (leader.v*vDiff <= -2*head*effAcc) {
-						accCAH = v*v*effAcc/(leader.v*leader.v - 2*head*effAcc);}}
+						if (leader.v*leader.v != 2*head*effAcc) {
+							accCAH = v*v*effAcc/(leader.v*leader.v - 2*head*effAcc);}
+						else {
+							accCAH = effAcc;}}}
 				if (a < accCAH) {
 					a = (1-cool)*a + cool*(accCAH + mina*Math.tanh((a-accCAH)/mina));}}}
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
@@ -366,7 +369,10 @@ public class Turtle extends Agent{
 			if (percV != 0) {
 				tHardYield = 2*stopDist/percV;
 				ttstopBar  = stopDist/percV;
-				realTtStopBar = realStopDist/v;}
+				if (v != 0) {
+					realTtStopBar = realStopDist/v;}
+				else {
+					realTtStopBar = 1e12;}}
 			else {
 				ttstopBar  = 1e12;		//arbitrarily large
 				realTtStopBar = 1e12;
@@ -747,8 +753,8 @@ public class Turtle extends Agent{
 		double worstV = Math.max(v, vNew);
 		if (worstV != 0) {
 			ttc = ((double)dir*(pedX - xLoc) - p.r)/worstV;}
-		if (ttc < 0 && ttc >= length/worstV) {
-			int foo = 0;}
+//		if (ttc < 0 && ttc >= -length/worstV) {
+//			int foo = 0;}
 		if (ttc >= 0 && ttc <= confLim) {
 			if (p.dir == 1 && pedY <= (lnTop + lw)) {
 			//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
@@ -818,12 +824,12 @@ public class Turtle extends Agent{
 							RoadBuilder.flowSource.allConf.remove(toRem);}}}}}
 		
 		//check for impending crashes
-		double crashPedTlo = -1;
+		double crashPedTlo = -1e15;
 		double crashPedThi = -1;
-		if (ttc >= 0 && ttc <= UserPanel.tStep) {
+		if (worstV != 0 && ttc >= -length/worstV && ttc <= 1) {
 			if (p.dir == 1 && pedY <= (yLoc + carW/2 + p.r)) {
 				if (pedY >= (yLoc - carW/2 - p.r)) {
-					crashPedTlo = 0;}
+					crashPedTlo = -1e5;}
 				else {
 					crashPedTlo = 1000;
 					if (p.v[1] != 0) {
@@ -833,7 +839,7 @@ public class Turtle extends Agent{
 					crashPedThi = ((yLoc + carW/2 + p.r) - pedY)/p.v[1];}}
 			else if (p.dir == -1 && pedY >= (yLoc - carW/2 - p.r)) {
 				if (pedY <= (yLoc + carW/2 + p.r)) {
-					crashPedTlo = 0;}
+					crashPedTlo = -1e5;}
 				else {
 					crashPedTlo = 1000;
 					if (p.v[1] != 0) {
@@ -841,7 +847,9 @@ public class Turtle extends Agent{
 				crashPedThi = 1000;
 				if (p.v[1] != 0) {
 					crashPedThi = -(pedY - (yLoc - carW/2 - p.r))/p.v[1];}}
-			if (crashPedTlo != -1) {
+			if (crashPedTlo != -1e15) {
+//				if (ttc < 0 && crashPedTlo == -1e5) {
+//					int foo = 0;}
 				if (ttc >= crashPedTlo && ttc <= crashPedThi) {
 					int init = 1;
 					int dup = 0;

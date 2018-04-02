@@ -92,7 +92,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	}
 	
 	public String[] getInitParam() {
-		String[] params = {"sLimitKH","vehRho","pedRho","percV2X","percAuto","percBoth","hPercLimM"};
+		String[] params = {"pedRho","vehRho","sLimitKH","hPercLimM","percV2X","percAuto","percBoth"};
 		return params;
 	}
 	
