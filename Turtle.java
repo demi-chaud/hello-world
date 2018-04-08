@@ -755,33 +755,41 @@ public class Turtle extends Agent{
 //		if (ttc < 0 && ttc >= -length/worstV) {
 //			int foo = 0;}
 		if (ttc >= 0 && ttc <= confLim) {
-			if (p.dir == 1 && pedY <= (lnTop + lw)) {
+			if (p.dir == 1 && pedY <= (lnTop)) {
+			//if (p.dir == 1 && pedY <= (lnTop + lw)) {
 			//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
-				if (pedY >= (lnBot - lw)) {
+				if (pedY >= (lnBot)) {
+				//if (pedY >= (lnBot - lw)) {
 				//if (pedY >= (yLoc - carW/2)) {
 					pedTlo = 0;}
 				else {
 					pedTlo = 1000;
 					if (p.v[1] != 0) {
-						pedTlo = ((lnBot - lw) - pedY)/p.v[1];}}
+						pedTlo = ((lnBot) - pedY)/p.v[1];}}
+						//pedTlo = ((lnBot - lw) - pedY)/p.v[1];}}
 						//pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
 				pedThi = 1000;
 				if (p.v[1] != 0) {
-					pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
+					pedThi = ((lnTop) - pedY)/p.v[1];}}
+					//pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
 					//pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
-			else if (p.dir == -1 && pedY >= (lnBot - lw)) {
+			else if (p.dir == -1 && pedY >= (lnBot)) {
+			//else if (p.dir == -1 && pedY >= (lnBot - lw)) {
 			//else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
 				//if (pedY <= (yLoc + carW/2)) {
-				if (pedY <= (lnTop + lw)) {
+				//if (pedY <= (lnTop + lw)) {
+				if (pedY <= (lnTop)) {
 					pedTlo = 0;}
 				else {
 					pedTlo = 1000;
 					if (p.v[1] != 0) {
-						pedTlo = -(pedY - (lnTop + lw))/p.v[1];}}
+						pedTlo = -(pedY - (lnTop))/p.v[1];}}
+						//pedTlo = -(pedY - (lnTop + lw))/p.v[1];}}
 						//pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}}		//TODO: include ped r and make ped calc 2D
 				pedThi = 1000;
 				if (p.v[1] != 0) {
-					pedThi = -(pedY - (lnBot - lw))/p.v[1];}}
+					pedThi = -(pedY - (lnBot))/p.v[1];}}
+					//pedThi = -(pedY - (lnBot - lw))/p.v[1];}}
 					//pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
 			if (pedTlo != -1) {
 				if (ttc >= pedTlo && ttc <= pedThi) {

@@ -38,10 +38,19 @@ public class Ped extends Agent{
 	public Turtle nearest0, nearest1, nearest2, nearest3;
 	public NdPoint myLoc;
 	public double[] v, dv, newV;
-	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r, critGap;
+	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r, critGap, tickAtCrossDecision;
 	public int dir;			// dir = 1 walks up, -1 walks down
 	public int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
 	public int front;		// 1=xing in front of car, -1=behind; for testing
+	public Map<Integer,Double> dictThtBegAtDecision, dictTTcolAtDecision, dictRealTTcolAtDecision, 
+			dictTTclearAtDecision, dictRealTTClearAtDecision, dictTailTAtDecision, dictRealTailTAtDecision;
+	
+//	double realXDist = Math.sqrt(dist * dist - yDist*yDist);
+//	if (approachV != 0) realTTCol = realXDist / t.v;
+//	else realTTCol = 1e5;
+//	thtBegAtDecision.put(ln, threatBeg); 
+//	ttcolAtDecision.put(ln, TTCol);
+//	realTTcolAtDecision.put(ln, realTTCol);
 	
 	/**
 	 * Calculates ped acceleration
@@ -59,6 +68,14 @@ public class Ped extends Agent{
 			else {boxed = false;}}
 		else {boxed = false;}
 //		newV  = limitV(newV);
+		
+		dictThtBegAtDecision = new HashMap<Integer,Double>();
+		dictTTcolAtDecision = new HashMap<Integer,Double>();
+		dictRealTTcolAtDecision = new HashMap<Integer,Double>();
+		dictTailTAtDecision = new HashMap<Integer,Double>();
+		dictRealTailTAtDecision = new HashMap<Integer,Double>();
+		dictTTclearAtDecision = new HashMap<Integer,Double>();
+		dictRealTTClearAtDecision = new HashMap<Integer,Double>();
 		
 		switch (crossing) {
 		case 0: if (dir == 1) {
@@ -242,8 +259,10 @@ public class Ped extends Agent{
 		curbed = true;
 		if (!approaching.isEmpty()) {
 			if (go0 && go1 && go2 && go3) {
+				tickAtCrossDecision = RoadBuilder.clock.getTickCount();
 				curbed = false;}}
 		else {
+			tickAtCrossDecision = RoadBuilder.clock.getTickCount();
 			curbed = false;}
 		
 		frogger = accel(myLoc,dir);
@@ -259,7 +278,7 @@ public class Ped extends Agent{
 	 */
 	public int lag(Turtle t, int ln) {
 		//TODO: include estimation errors/delay
-		double approachV, approachX, dist, xDist, yDist, TTCol, TTClear;
+		double approachV, approachX, dist, xDist, yDist, TTCol, TTClear, realTTCol, realTTClear;
 		double threatBeg; //, threatEnd;
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
 		int	goes = 0;
@@ -274,6 +293,14 @@ public class Ped extends Agent{
 		yDist	  = (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
 		dist	  = space.getDistance(myLoc, t.myLoc);
 		approachV = t.v;
+		
+		double realXDist = Math.sqrt(dist * dist - yDist*yDist);
+		if (approachV != 0) {
+			realTTCol = realXDist / t.v;
+			realTTClear = realTTCol + t.length/approachV + 1/UserPanel.tStep;}
+		else {
+			realTTCol = 1000;
+			realTTClear = 1000;}
 		
 		//include errors
 		if (UserPanel.estErr == true) {
@@ -306,6 +333,11 @@ public class Ped extends Agent{
 		if (approachV != 0) {
 			TTCol	= xDist/approachV;
 			TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
+		dictThtBegAtDecision.put(ln, threatBeg); 
+		dictTTcolAtDecision.put(ln, TTCol);
+		dictRealTTcolAtDecision.put(ln, realTTCol);
+		dictTTclearAtDecision.put(ln, TTClear);
+		dictRealTTClearAtDecision.put(ln, realTTClear);
 		
 		//decide if lag is big enough to start crossing
 		if (yielders.contains(t)) {
@@ -343,7 +375,7 @@ public class Ped extends Agent{
 	public int gap(Turtle t1, int ln) {		//TODO: peds still fucking up the rolling gap
 		int goes = 0;						//TODO: make the perception of necessary stopping speed error-prone
 		Turtle t2 = t1.follower;
-		double t1x, dist1, t1d, yDist, TTCol, TTClear; //, t1v;
+		double t1x, dist1, t1d, yDist, TTCol, TTClear, realTTCol, realTTClear, realTailT; //, t1v;
 		double t2v, t2x, dist2, t2d;
 		double threatBeg; //, threatEnd;
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
@@ -360,6 +392,18 @@ public class Ped extends Agent{
 		dist1	= space.getDistance(myLoc, t1.myLoc);
 		dist2	= space.getDistance(myLoc, t2.myLoc);
 		t2v		= t2.v;		
+		
+		double realXDist = t1d;
+		double realXDist2 = t2d;
+		double realTail = Math.abs(t2d - t1d) - t1.length;
+		if (t2v != 0) {
+			realTTCol = realXDist / t2v;
+			realTTClear = realTTCol + t2.length/t2v + 1/UserPanel.tStep;
+			realTailT = realTail/t2v;}
+		else {
+			realTTCol = 1000;
+			realTTClear = 1000;
+			realTailT = 1000;}
 		
 		//include errors
 		if (UserPanel.estErr == true) {
@@ -400,6 +444,14 @@ public class Ped extends Agent{
 		if (t2v != 0) {
 			TTCol	= Math.abs(t2d/t2v);
 			TTClear	= TTCol + t2.length/t2v + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
+		
+		dictThtBegAtDecision.put(ln, threatBeg); 
+		dictTTcolAtDecision.put(ln, TTCol);
+		dictRealTTcolAtDecision.put(ln, realTTCol);
+		dictTTclearAtDecision.put(ln, TTClear);
+		dictRealTTClearAtDecision.put(ln, realTTClear);
+		dictTailTAtDecision.put(ln, thisTailT);
+		dictRealTailTAtDecision.put(ln, realTailT);
 		
 		//decide if gap is big enough to start crossing
 		if (yielders.contains(t2)) {
