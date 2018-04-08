@@ -48,7 +48,7 @@ public class UserPanel implements ActionListener{
 	static public boolean BRT		= true;
 	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
-	static public boolean calcFun	= true;  //build fundamental diagram
+	static public boolean calcFun	= false;  //build fundamental diagram
 	static public boolean bothCar	= !calcFun;   //cars both directions?
 	static public boolean IIDM		= true;   //include Improved IDM?
 	

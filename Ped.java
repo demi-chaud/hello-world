@@ -26,7 +26,7 @@ public class Ped extends Agent{
 	//TODO: make sure there's a separate Wiener process for every single observation (think through which are related)
 	private boolean curbed, boxed;
 	private int age;
-	private	double endPtDist, endPtTheta, critGap;
+	private	double endPtDist, endPtTheta;
 	private double side	= RoadBuilder.sidewalk;
 	private double wS1, wSn1, wV1, wVn1, etaS, etaV, sigR;	//errors
 	private double m, horiz, A, B, k;  					//interactive force constants (accT is also)
@@ -38,7 +38,7 @@ public class Ped extends Agent{
 	public Turtle nearest0, nearest1, nearest2, nearest3;
 	public NdPoint myLoc;
 	public double[] v, dv, newV;
-	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r;
+	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r, critGap;
 	public int dir;			// dir = 1 walks up, -1 walks down
 	public int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
 	public int front;		// 1=xing in front of car, -1=behind; for testing

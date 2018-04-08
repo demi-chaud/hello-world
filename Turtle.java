@@ -22,7 +22,8 @@ import driving1.RedLight.state;
 public class Turtle extends Agent{
 	ContinuousSpace<Object> space;
 	private ArrayList<Turtle> sameDir, ahead, leaders, behind, followers;
-	private ArrayList<Ped> crossingP, crossingP1, crossingP2;
+	private ArrayList<Ped> crossingP, crossingP2;
+	public  Map<Ped,Double> blockedPeds;					//most recent tick with blockage
 	private ArrayList<ViewAngle> obstructers, obstructees;
 //	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
 //	private ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
@@ -38,7 +39,7 @@ public class Turtle extends Agent{
 	private Random  rndIDM = new Random();
 	private boolean	distracted = false;
 	private double	timeD, durD, timeSinceD, interD, interDlam;						//distraction
-	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;						//delay
+	private double	delayTs, tN, tBeta, brt_tN, brtBeta;						//delay
 	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
 	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed, wPedV, etaPedV;			//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
@@ -50,7 +51,7 @@ public class Turtle extends Agent{
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
 	public	boolean connected, autonomous;
-	public  double	v, vNew, acc, xLoc, yLoc, length, tail, driverX, driverY, decelT;
+	public  double	v, vNew, acc, xLoc, yLoc, length, tail, driverX, driverY, decelT, BRTs;
 	public	double	stopDab;
 	public  int		lane;	//  0 = outer lane, 1 = inner lane
 	public	int		dir;	//  1 = going right, -1 = going left
@@ -222,7 +223,7 @@ public class Turtle extends Agent{
 		
 		//calculate CF acceleration (with errors)
 		if (leader != null) {
-			if (UserPanel.estErr && !autonomous) {		//includes estimation error in headway measurement
+			if (UserPanel.estErr /*&& !autonomous*/) {		//includes estimation error in headway measurement
 				etaS = rnd.nextGaussian();
 				etaV = rnd.nextGaussian();
 				wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
@@ -338,7 +339,6 @@ public class Turtle extends Agent{
 		//TODO: add errors in distance and reading of ped v
 		//TODO: rewrite error-making code as method in Agent class
 		crossingP	= new ArrayList<Ped>();
-		crossingP1	= new ArrayList<Ped>();
 		obstructers = new ArrayList<ViewAngle>();
 		obstructees = new ArrayList<ViewAngle>();
 		//pYields = new ArrayList<Yieldage>(cYields);
@@ -349,7 +349,8 @@ public class Turtle extends Agent{
 		double lnW		 = RoadBuilder.laneW;
 		double realStopDist = stopDist;
 		double realConDist	= conDist;
-		if (UserPanel.estErr && !autonomous) {		//includes estimation error
+		int stamp = (int)RoadBuilder.clock.getTickCount();
+		if (UserPanel.estErr /* && !autonomous*/) {		//includes estimation error
 			etaPed = rnd.nextGaussian();
 			etaPedV = rnd.nextGaussian();
 			wPed = UserPanel.wien1*wPed + UserPanel.wien2*etaPed;
@@ -400,7 +401,15 @@ public class Turtle extends Agent{
 		for (Ped i : RoadBuilder.flowSource.allPeds) {
 			if (i.crossing == 2) {
 				crossingP.add(i);}}
-		crossingP1 = new ArrayList<Ped>(crossingP); 		//crossingP will be depleted by double threats
+		
+		//perception distance
+		ArrayList<Ped> tooFar = new ArrayList<Ped>();
+		for (Ped d : crossingP) {
+			double pDist = Math.abs(xLoc - d.xLoc);
+			if (pDist > percLimit) {
+				tooFar.add(d);}}
+		if (!tooFar.isEmpty()) {
+			crossingP.removeAll(tooFar);}
 		
 		//double threat
 		for (Turtle i : ahead) {				//are there any cars potentially blocking view?
@@ -447,18 +456,9 @@ public class Turtle extends Agent{
 					Ped thisPed = j.ped;
 					double pedTheta = j.theta;
 					if (pedTheta >= theta1 && pedTheta <= theta2) {
+						blockedPeds.put(thisPed, (double)stamp);
 						crossingP.remove(thisPed);}}}}
-
-		//perception distance
-		ArrayList<Ped> tooFar = new ArrayList<Ped>();
-		for (Ped d : crossingP) {
-			double pDist = Math.abs(xLoc - d.xLoc);
-			if (pDist > percLimit) {
-				tooFar.add(d);}}
-		if (!tooFar.isEmpty()) {
-			crossingP.removeAll(tooFar);}
 		
-		int stamp = (int)RoadBuilder.clock.getTickCount();
 		int lastKey;
 		if (!delayedYields.isEmpty()) {
 			lastKey = Collections.max(delayedYields.keySet());
@@ -668,11 +668,6 @@ public class Turtle extends Agent{
 					outYing = yg.yState;}}}
 		if (cYieldD < -UserPanel.emergDec) {
 			cYieldD = -UserPanel.emergDec;}
-//		//take note of any conflicts		//TODO: this was moved to test
-//		if (!crossingP1.isEmpty()) {
-//			if (realTtStopBar < confLim) {
-//				for (Ped n : crossingP1) {
-//					conflict(n);}}}
 		
 		if (delayedYields.size() > wayBack + 10) {
 			int lowKey = Collections.min(delayedYields.keySet());
@@ -744,6 +739,10 @@ public class Turtle extends Agent{
 				for (Ped n : crossingP2) {
 					conflict(n);}}}}
 	public void conflict(Ped p) {
+		double sinceBlocked = -1;
+		double stamp = RoadBuilder.clock.getTickCount();
+		if (blockedPeds.containsKey(p)) {
+			sinceBlocked = stamp - blockedPeds.get(p);}
 		double pedX = p.xLoc;
 		double pedY = p.yLoc;
 		double pedTlo = -1;		//time until ped at conflict point
@@ -790,7 +789,7 @@ public class Turtle extends Agent{
 					int dup = 0;
 					int hasDup = 0;
 					double range = (double)dir*(pedX - xLoc);
-					Conflict thisConf = new Conflict(this,p,ttc,range,init,hasDup);
+					Conflict thisConf = new Conflict(this,p,ttc,range,init,hasDup,sinceBlocked);
 					Conflict toAdd = null;
 					Conflict toRem = null;
 					for (Conflict c : RoadBuilder.flowSource.allConf) {
@@ -854,7 +853,7 @@ public class Turtle extends Agent{
 					int init = 1;
 					int dup = 0;
 					int hasDup = 0;
-					Conflict thisCrash = new Conflict(this,p,0,0,init,hasDup);
+					Conflict thisCrash = new Conflict(this,p,0,0,init,hasDup,sinceBlocked);
 					Conflict toAdd = null;
 					Conflict toRem = null;
 					
@@ -926,17 +925,18 @@ public class Turtle extends Agent{
 		if (jamHead < RoadBuilder.panel.minJamHead) jamHead = RoadBuilder.panel.minJamHead;
 		//jamHead	= rnd.nextGaussian()*(UserPanel.jamHeadShape)+UserPanel.jamHeadScale;
 		length	= UserPanel.carLength;
-		if (!autonomous) {
+//		if (!autonomous) {
 			percLimit = RoadBuilder.panel.hPercLim;
 			BRTs = calcBRT() + 0.35;  // + 0.15 mvmt time (Lister 1950) + 0.2 device response time (Grover 2008)
 			double delayT0 = rndADRT.nextGaussian() * 1.193759285934727 - 1.60692043370482;
 			delayTs	= Math.exp(delayT0) + 0.25;
 			if (delayTs > 2.5) {
-				delayTs = 2.5;}}
-		else {
-			percLimit = RoadBuilder.panel.aPercLim;
-			BRTs = 0.51;  //seconds (source Grover 2008)
-			delayTs = 0.4;}
+				delayTs = 2.5;}
+//			}
+//		else {
+//			percLimit = RoadBuilder.panel.aPercLim;
+//			BRTs = 0.51;  //seconds (source Grover 2008)
+//			delayTs = 0.4;}
 		tN		= Math.floor(delayTs/UserPanel.tStep);
 		tBeta	= (delayTs/UserPanel.tStep) - tN;
 		brt_tN	= Math.floor(BRTs/UserPanel.tStep);
@@ -973,6 +973,7 @@ public class Turtle extends Agent{
 		accCAH		= -1000;
 		interDlam	= UserPanel.interDlam;
 		nMaxDecel	= 0;
+		blockedPeds = new HashMap<Ped, Double>();
 	}
 	
 	/* Fits driver's distance from stopBar to lognormal distribution */
@@ -1044,7 +1045,7 @@ public class Turtle extends Agent{
 		Ped ped;
 		Turtle car;
 		int dirP, dirC, lane, yingVal, nMaxD, init, hasDup;
-		double TTC, range, yDec, vel, timeD, sinceD, tick, yDist;
+		double TTC, range, yDec, vel, timeD, sinceD, tick, yDist, minGap, brt, sinceBlocked;
 		boolean conn, auto;
 		ArrayList<double[]> pedVid;
 		ArrayList<Video> video;
@@ -1052,7 +1053,7 @@ public class Turtle extends Agent{
 		double spaceScale = UserPanel.spaceScale;
 //		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldD, int nMaxD,
 //				double timeSinceD, double timeD, int init, int hasDup, boolean conn, boolean auto) {
-		Conflict(Turtle car, Ped ped, double ttc, double range, int init, int hasDup) {
+		Conflict(Turtle car, Ped ped, double ttc, double range, int init, int hasDup, double _sinceBlocked) {
 			this.ped	= ped;
 			this.car	= car;
 			this.dirP	= ped.dir;
@@ -1071,6 +1072,9 @@ public class Turtle extends Agent{
 			this.auto	= car.autonomous;
 			this.init	= init;
 			this.hasDup	= hasDup;
+			this.minGap = ped.critGap;
+			this.brt	= car.BRTs;
+			this.sinceBlocked = _sinceBlocked;
 			double yDistCenters = ped.yLoc - car.yLoc;
 			double above = Math.signum(yDistCenters);
 			if (above == 0) this.yDist = 0;
