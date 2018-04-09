@@ -22,7 +22,8 @@ import driving1.RedLight.state;
 public class Turtle extends Agent{
 	ContinuousSpace<Object> space;
 	private ArrayList<Turtle> sameDir, ahead, leaders, behind, followers;
-	private ArrayList<Ped> crossingP, crossingP1, crossingP2;
+	private ArrayList<Ped> crossingP, crossingP2;
+	public  Map<Ped,Double> blockedPeds;					//most recent tick with blockage
 	private ArrayList<ViewAngle> obstructers, obstructees;
 //	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
 //	private ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
@@ -38,8 +39,8 @@ public class Turtle extends Agent{
 	private Random  rndIDM = new Random();
 	private boolean	distracted = false;
 	private double	timeD, durD, timeSinceD, interD, interDlam;						//distraction
-	private double	delayTs, tN, tBeta, BRTs, brt_tN, brtBeta;						//delay
-	private double	tGap, jamHead, maxv, mina, maxa, newAcc, head, zIIDM, accCAH;	//car-following
+	private double	delayTs, tN, tBeta, brt_tN, brtBeta;						//delay
+	private double	tGap, jamHead, maxv, mina, maxa, head, zIIDM, accCAH;	//car-following
 	private double	wS, etaS, wV, etaV, sigR, wPed, etaPed, wPedV, etaPedV;			//errors
 	private double	confLim, stopBar, ttstopBar, realTtStopBar, lnTop, lnBot;		//yielding
 	private double	hardYield, cYieldD, yieldDec, percLimit, percV;					//also yielding
@@ -50,7 +51,7 @@ public class Turtle extends Agent{
 	public  NdPoint	myLoc;
 	public  Turtle	leader, follower;
 	public	boolean connected, autonomous;
-	public  double	v, vNew, acc, xLoc, yLoc, length, tail, driverX, driverY, decelT;
+	public  double	v, vNew, acc, newAcc, xLoc, yLoc, length, tail, driverX, driverY, decelT, BRTs;
 	public	double	stopDab;
 	public  int		lane;	//  0 = outer lane, 1 = inner lane
 	public	int		dir;	//  1 = going right, -1 = going left
@@ -105,6 +106,7 @@ public class Turtle extends Agent{
 			acc = newAcc;}
 		
 		//delayed braking reaction
+		int foo = 0;
 		double[] brakeOutput = brake(myLoc, lane, dir); 
 		double newbAccel = brakeOutput[0];
 		double oldbAccel;
@@ -150,7 +152,8 @@ public class Turtle extends Agent{
 				space.moveByDisplacement(this,vNew,0);	// new version from Kesting, Treiber and Helbing 2009
 				//space.moveByDisplacement(this,displacement,0);	//"Agents for Traffic Simulation"
 				myLoc = space.getLocation(this);
-				xLoc = myLoc.getX();}}
+				xLoc = myLoc.getX();
+				driverX = xLoc - (double)dir*length/2;}}
 		else {
 			if (xLoc - vNew <= 0) {
 				RoadBuilder.flowSource.killListC.add(this);
@@ -160,7 +163,8 @@ public class Turtle extends Agent{
 				space.moveByDisplacement(this,-vNew,0);
 				//space.moveByDisplacement(this,displacement,0);
 				myLoc = space.getLocation(this);
-				xLoc = myLoc.getX();}}
+				xLoc = myLoc.getX();
+				driverX = xLoc - (double)dir*length/2;}}
 		v = vNew;
 		decelT = v/UserPanel.emergDec;
 	}
@@ -222,7 +226,7 @@ public class Turtle extends Agent{
 		
 		//calculate CF acceleration (with errors)
 		if (leader != null) {
-			if (UserPanel.estErr && !autonomous) {		//includes estimation error in headway measurement
+			if (UserPanel.estErr /*&& !autonomous*/) {		//includes estimation error in headway measurement
 				etaS = rnd.nextGaussian();
 				etaV = rnd.nextGaussian();
 				wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
@@ -338,7 +342,6 @@ public class Turtle extends Agent{
 		//TODO: add errors in distance and reading of ped v
 		//TODO: rewrite error-making code as method in Agent class
 		crossingP	= new ArrayList<Ped>();
-		crossingP1	= new ArrayList<Ped>();
 		obstructers = new ArrayList<ViewAngle>();
 		obstructees = new ArrayList<ViewAngle>();
 		//pYields = new ArrayList<Yieldage>(cYields);
@@ -349,7 +352,8 @@ public class Turtle extends Agent{
 		double lnW		 = RoadBuilder.laneW;
 		double realStopDist = stopDist;
 		double realConDist	= conDist;
-		if (UserPanel.estErr && !autonomous) {		//includes estimation error
+		int stamp = (int)RoadBuilder.clock.getTickCount();
+		if (UserPanel.estErr /* && !autonomous*/) {		//includes estimation error
 			etaPed = rnd.nextGaussian();
 			etaPedV = rnd.nextGaussian();
 			wPed = UserPanel.wien1*wPed + UserPanel.wien2*etaPed;
@@ -368,6 +372,8 @@ public class Turtle extends Agent{
 				int foo = 0;}
 			if (percV != 0) {
 				tHardYield = 2*stopDist/percV;
+				if (-percV * tHardYield > UserPanel.emergDec) {
+					tHardYield = 1e-12;}
 				ttstopBar  = stopDist/percV;
 				if (v != 0) {
 					realTtStopBar = realStopDist/v;}
@@ -388,7 +394,6 @@ public class Turtle extends Agent{
 		double tClear = -1;
 		if (percV != 0) {
 			tClear = (Math.abs(conDist) + length)/percV;}
-		driverX		= xLoc-(double)dir*length/2;
 		threatBeg 	= 0;
 		threatEnd 	= -1;
 		outYing = -1;
@@ -400,7 +405,15 @@ public class Turtle extends Agent{
 		for (Ped i : RoadBuilder.flowSource.allPeds) {
 			if (i.crossing == 2) {
 				crossingP.add(i);}}
-		crossingP1 = new ArrayList<Ped>(crossingP); 		//crossingP will be depleted by double threats
+		
+		//perception distance
+		ArrayList<Ped> tooFar = new ArrayList<Ped>();
+		for (Ped d : crossingP) {
+			double pDist = Math.abs(xLoc - d.xLoc);
+			if (pDist > percLimit) {
+				tooFar.add(d);}}
+		if (!tooFar.isEmpty()) {
+			crossingP.removeAll(tooFar);}
 		
 		//double threat
 		for (Turtle i : ahead) {				//are there any cars potentially blocking view?
@@ -447,18 +460,9 @@ public class Turtle extends Agent{
 					Ped thisPed = j.ped;
 					double pedTheta = j.theta;
 					if (pedTheta >= theta1 && pedTheta <= theta2) {
+						blockedPeds.put(thisPed, (double)stamp);
 						crossingP.remove(thisPed);}}}}
-
-		//perception distance
-		ArrayList<Ped> tooFar = new ArrayList<Ped>();
-		for (Ped d : crossingP) {
-			double pDist = Math.abs(xLoc - d.xLoc);
-			if (pDist > percLimit) {
-				tooFar.add(d);}}
-		if (!tooFar.isEmpty()) {
-			crossingP.removeAll(tooFar);}
 		
-		int stamp = (int)RoadBuilder.clock.getTickCount();
 		int lastKey;
 		if (!delayedYields.isEmpty()) {
 			lastKey = Collections.max(delayedYields.keySet());
@@ -467,6 +471,11 @@ public class Turtle extends Agent{
 		//yield to crossing peds
 		if (!crossingP.isEmpty()) {
 			for (Ped k : crossingP) {
+				
+//				if (k.v[1] == 0) {
+//					
+//				}
+				
 				Yieldage   oldVals = null;
 				double		  pedY = k.yLoc;
 				double	 thisDecel = 0;
@@ -484,7 +493,8 @@ public class Turtle extends Agent{
 					double newDecel = 1;
 					if (k.dir == 1 && endGauntlet > pedY) {
 						if (v > 0) {
-							threatEnd = k.accT*(1-k.v[1]/k.maxV) + (endGauntlet - pedY)/k.maxV;
+							//threatEnd = k.accT*(1-k.v[1]/k.maxV) + (endGauntlet - pedY)/k.maxV;
+							threatEnd = (endGauntlet - pedY)/Math.abs(k.v[1]);
 							if (k.v[1] == 0) {
 								threatEnd = 1e12;}
 							if (realStopDist >= 0) {
@@ -496,7 +506,8 @@ public class Turtle extends Agent{
 								else {			//soft yield
 									newDecel = 0;
 									if (threatEnd != 0) {
-										newDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);}
+										newDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);
+										if (newDecel > 0) newDecel = 0;}
 									thisYing = 0;}}
 							else {
 								newDecel = hardYield;
@@ -510,7 +521,8 @@ public class Turtle extends Agent{
 							oldVals.yState = thisYing;}}
 					else if (k.dir == -1 && endGauntlet < pedY) {
 						if (percV > 0) {
-							threatEnd = k.accT*(1-Math.abs(k.v[1]/k.maxV)) + (pedY - endGauntlet)/k.maxV;
+							//threatEnd = k.accT*(1-Math.abs(k.v[1]/k.maxV)) + (pedY - endGauntlet)/k.maxV;
+							threatEnd = (pedY - endGauntlet)/Math.abs(k.v[1]);
 							if (k.v[1] == 0) {
 								threatEnd = 1e12;}
 							if (realStopDist >= 0) {
@@ -522,7 +534,8 @@ public class Turtle extends Agent{
 								else {			//soft yield
 									newDecel = 0;
 									if (threatEnd != 0) {
-										newDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);}
+										newDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);
+										if (newDecel > 0) newDecel = 0;}
 									thisYing = 0;}}
 							else {
 								newDecel = hardYield;
@@ -548,22 +561,52 @@ public class Turtle extends Agent{
 									threatEnd = 0;}										//bc crossing = 3 once ped is clear)
 								else {						//ped out of this lane, not yet clear
 									threatBeg = 0;
-									threatEnd = (lnTop + lnW - pedY)/k.maxV;}}
+									if (k.v[1] != 0) {
+										threatEnd = (lnTop + lnW - pedY)/Math.abs(k.v[1]);}
+									else {
+										threatEnd = 1e12;}}}
+									//threatEnd = (lnTop + lnW - pedY)/k.maxV;}}
 							else {							//ped in this lane
 								threatBeg = 0;
-								threatEnd = k.accT + (lnTop + lnW - pedY)/k.maxV;}}
+								if (k.v[1] != 0) {
+									threatEnd = (lnTop + lnW - pedY)/Math.abs(k.v[1]);}
+								else {
+									threatEnd = 1e12;}
+								//threatEnd = k.accT + (lnTop + lnW - pedY)/k.maxV;}}
+							}}
 						else {
 							if (lane == 0) {
 								if (dir == 1) {				//car in bottom lane, ped hasn't started to cross
 									threatBeg = 0;
-									threatEnd = k.accT + 2*lnW/k.maxV;}
+									if (k.v[1] != 0) {
+										threatEnd = 2*lnW/Math.abs(k.v[1]);}
+									else {
+										threatEnd = k.accT + 2*lnW/k.maxV;}
+									//threatEnd = k.accT + 2*lnW/k.maxV;
+									}
 								else {						//car in top lane, ped clear after just this lane
-									threatBeg	= (lnBot - lnW - pedY)/k.maxV;  //one lane buffer
-									threatEnd	= (lnTop - pedY)/k.maxV;
-									endGauntlet	= lnTop;}}
+									if (k.v[1] != 0) {
+										threatBeg	= (lnBot - lnW - pedY)/Math.abs(k.v[1]);  //one lane buffer
+										threatEnd	= (lnTop + lnW/2 - pedY)/Math.abs(k.v[1]);
+										endGauntlet	= lnTop + lnW/2;}
+									else {
+										threatBeg	= (lnBot - lnW - pedY)/k.maxV;  //one lane buffer
+										threatEnd	= 1e12;
+										endGauntlet	= lnTop + lnW/2;}
+//									threatBeg	= (lnBot - lnW - pedY)/k.maxV;  //one lane buffer
+//									threatEnd	= (lnTop - pedY)/k.maxV;
+//									endGauntlet	= lnTop;
+									}}
 							else {							//ped in or below same lane
-								threatBeg = (lnBot - lnW - pedY)/k.maxV;
-								threatEnd = k.accT + (lnTop + lnW - pedY)/k.maxV;}}}
+								if (k.v[1] != 0) {
+									threatBeg = (lnBot - lnW - pedY)/Math.abs(k.v[1]);
+									threatEnd = k.accT + (lnTop + lnW - pedY)/Math.abs(k.v[1]);}
+								else {
+									threatBeg = (lnBot - lnW - pedY)/k.maxV;
+									threatEnd = 1e12;}
+//								threatBeg = (lnBot - lnW - pedY)/k.maxV;
+//								threatEnd = k.accT + (lnTop + lnW - pedY)/k.maxV;
+								}}}
 					else {								//ped walking down
 						endGauntlet = lnBot - lnW;
 						if (pedY < lnTop) {
@@ -572,22 +615,49 @@ public class Turtle extends Agent{
 									threatEnd = 0;}										//bc crossing = 3 once ped is clear)
 								else {						//ped out of this lane, not yet clear
 									threatBeg = 0;
-									threatEnd = (pedY - lnBot + lnW)/k.maxV;}}
+									if (k.v[1] != 0) {
+										threatEnd = (pedY - lnBot + lnW)/Math.abs(k.v[1]);}
+									else {
+										threatEnd = 1e12;}}}
+//									threatEnd = (pedY - lnBot + lnW)/k.maxV;}}
 							else {							//ped in this lane
 								threatBeg = 0;
-								threatEnd = k.accT + (pedY - lnBot + lnW)/k.maxV;}}
+								if (k.v[1] != 0) {
+									threatEnd = (pedY - lnBot + lnW)/Math.abs(k.v[1]);}
+								else {
+									threatEnd = 1e12;}}}
+//								threatEnd = k.accT + (pedY - lnBot + lnW)/k.maxV;}}
 						else {
 							if (lane == 0) {
 								if (dir == -1) {			//car in top lane, ped hasn't started to cross
-									threatBeg = 0;			
-									threatEnd = k.accT + 2*lnW/k.maxV;}
+									threatBeg = 0;	
+									if (k.v[1] != 0) {
+										threatEnd = 2*lnW/Math.abs(k.v[1]);}
+									else {
+										threatEnd = k.accT + 2*lnW/k.maxV;}}
+//									threatEnd = k.accT + 2*lnW/k.maxV;}
 								else {						//car in bottom lane, ped clear after just this lane
-									threatBeg	= (pedY - lnTop - lnW)/k.maxV;  //one lane buffer
-									threatEnd	= (pedY - lnBot)/k.maxV;
-									endGauntlet	= lnBot;}}
+									if (k.v[1] != 0) {
+										threatBeg	= (pedY - lnTop - lnW)/Math.abs(k.v[1]);  //one lane buffer
+										threatEnd	= (pedY - lnBot - lnW/2)/Math.abs(k.v[1]);
+										endGauntlet	= lnBot - lnW/2;}
+									else {
+										threatBeg	= (pedY - lnTop - lnW)/k.maxV;  //one lane buffer
+										threatEnd	= 1e12;
+										endGauntlet	= lnBot - lnW/2;}}}
+									
+//									threatBeg	= (pedY - lnTop - lnW)/k.maxV;  //one lane buffer
+//									threatEnd	= (pedY - lnBot)/k.maxV;
+//									endGauntlet	= lnBot;}}
 							else {
-								threatBeg = (pedY - lnTop - lnW)/k.maxV;  //one lane buffer
-								threatEnd = k.accT + (pedY - lnBot + lnW)/k.maxV;}}}
+								if (k.v[1] != 0) {
+									threatBeg = (pedY - lnTop - lnW)/Math.abs(k.v[1]);
+									threatEnd = k.accT + (pedY - lnBot + lnW)/Math.abs(k.v[1]);}
+								else {
+									threatBeg = (pedY - lnTop - lnW)/k.maxV;
+									threatEnd = 1e12;}}}}
+//								threatBeg = (pedY - lnTop - lnW)/k.maxV;  //one lane buffer
+//								threatEnd = k.accT + (pedY - lnBot + lnW)/k.maxV;}}}
 					if (threatBeg < 0) {
 						threatBeg = 0;}			//correction for ped within current lane
 					if (threatBeg == 0 && k.v[1] == 0) {
@@ -613,7 +683,8 @@ public class Turtle extends Agent{
 								else {			//soft yield
 									thisDecel = 0;
 									if (threatEnd != 0) {
-										thisDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);}
+										thisDecel = -2*(percV*threatEnd - stopDist) / (threatEnd*threatEnd);
+										if (thisDecel > 0) thisDecel = 0;}
 									thisYing  = 0;}
 								Yieldage thisYield = new Yieldage(k,thisDecel,endGauntlet,thisYing);
 								//k.yielders.add(this);
@@ -646,6 +717,7 @@ public class Turtle extends Agent{
 				}}
 		
 		delayedYields.put(stamp,cYields);
+		int foo = 0;
 		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
 		if (UserPanel.BRT && stamp > wayBack + 3) {
 			int thenKey = stamp - wayBack;
@@ -653,7 +725,7 @@ public class Turtle extends Agent{
 				if (delayedYields.containsKey(thenKey)) {
 					reactTo = delayedYields.get(thenKey);}
 				else {
-					int foo = 0;}}
+					int bar = 0;}}
 			else {
 				reactTo = cYields;}}
 		else {
@@ -661,18 +733,14 @@ public class Turtle extends Agent{
 		
 		for (Yieldage yg : reactTo) {
 			if (yg.yState > -1) {
-				//yg.yieldee.yielders.add(this);
+				if (!yg.yieldee.yielders.contains(this)) {
+					yg.yieldee.yielders.add(this);}
 				if (yg.calcAcc < cYieldD) {
 					cYieldD = yg.calcAcc;}
 				if (yg.yState > outYing) {
 					outYing = yg.yState;}}}
 		if (cYieldD < -UserPanel.emergDec) {
 			cYieldD = -UserPanel.emergDec;}
-//		//take note of any conflicts		//TODO: this was moved to test
-//		if (!crossingP1.isEmpty()) {
-//			if (realTtStopBar < confLim) {
-//				for (Ped n : crossingP1) {
-//					conflict(n);}}}
 		
 		if (delayedYields.size() > wayBack + 10) {
 			int lowKey = Collections.min(delayedYields.keySet());
@@ -736,14 +804,18 @@ public class Turtle extends Agent{
 	public void conflict() {
 		double ttc	= 0;
 		crossingP2	= new ArrayList<Ped>();
-		for (Ped i : RoadBuilder.flowSource.allPeds) {
-			if (i.crossing == 2) {
-				crossingP2.add(i);}}
-		if (!crossingP2.isEmpty()) {
-			if (realTtStopBar < confLim) {
+		if (realTtStopBar < confLim) {
+			for (Ped i : RoadBuilder.flowSource.allPeds) {
+				if (i.crossing == 2 && !i.curbed) {
+					crossingP2.add(i);}}
+			if (!crossingP2.isEmpty()) {
 				for (Ped n : crossingP2) {
 					conflict(n);}}}}
 	public void conflict(Ped p) {
+		double sinceBlocked = -1;
+		double stamp = RoadBuilder.clock.getTickCount();
+		if (blockedPeds.containsKey(p)) {
+			sinceBlocked = stamp - blockedPeds.get(p);}
 		double pedX = p.xLoc;
 		double pedY = p.yLoc;
 		double pedTlo = -1;		//time until ped at conflict point
@@ -756,33 +828,41 @@ public class Turtle extends Agent{
 //		if (ttc < 0 && ttc >= -length/worstV) {
 //			int foo = 0;}
 		if (ttc >= 0 && ttc <= confLim) {
-			if (p.dir == 1 && pedY <= (lnTop + lw)) {
+			if (p.dir == 1 && pedY <= (lnTop)) {
+			//if (p.dir == 1 && pedY <= (lnTop + lw)) {
 			//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
-				if (pedY >= (lnBot - lw)) {
+				if (pedY >= (lnBot)) {
+				//if (pedY >= (lnBot - lw)) {
 				//if (pedY >= (yLoc - carW/2)) {
 					pedTlo = 0;}
 				else {
 					pedTlo = 1000;
 					if (p.v[1] != 0) {
-						pedTlo = ((lnBot - lw) - pedY)/p.v[1];}}
+						pedTlo = ((lnBot) - pedY)/p.v[1];}}
+						//pedTlo = ((lnBot - lw) - pedY)/p.v[1];}}
 						//pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
 				pedThi = 1000;
 				if (p.v[1] != 0) {
-					pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
+					pedThi = ((lnTop) - pedY)/p.v[1];}}
+					//pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
 					//pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
-			else if (p.dir == -1 && pedY >= (lnBot - lw)) {
+			else if (p.dir == -1 && pedY >= (lnBot)) {
+			//else if (p.dir == -1 && pedY >= (lnBot - lw)) {
 			//else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
 				//if (pedY <= (yLoc + carW/2)) {
-				if (pedY <= (lnTop + lw)) {
+				//if (pedY <= (lnTop + lw)) {
+				if (pedY <= (lnTop)) {
 					pedTlo = 0;}
 				else {
 					pedTlo = 1000;
 					if (p.v[1] != 0) {
-						pedTlo = -(pedY - (lnTop + lw))/p.v[1];}}
+						pedTlo = -(pedY - (lnTop))/p.v[1];}}
+						//pedTlo = -(pedY - (lnTop + lw))/p.v[1];}}
 						//pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}}		//TODO: include ped r and make ped calc 2D
 				pedThi = 1000;
 				if (p.v[1] != 0) {
-					pedThi = -(pedY - (lnBot - lw))/p.v[1];}}
+					pedThi = -(pedY - (lnBot))/p.v[1];}}
+					//pedThi = -(pedY - (lnBot - lw))/p.v[1];}}
 					//pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
 			if (pedTlo != -1) {
 				if (ttc >= pedTlo && ttc <= pedThi) {
@@ -790,7 +870,7 @@ public class Turtle extends Agent{
 					int dup = 0;
 					int hasDup = 0;
 					double range = (double)dir*(pedX - xLoc);
-					Conflict thisConf = new Conflict(this,p,ttc,range,init,hasDup);
+					Conflict thisConf = new Conflict(this,p,ttc,range,init,hasDup,sinceBlocked);
 					Conflict toAdd = null;
 					Conflict toRem = null;
 					for (Conflict c : RoadBuilder.flowSource.allConf) {
@@ -854,7 +934,7 @@ public class Turtle extends Agent{
 					int init = 1;
 					int dup = 0;
 					int hasDup = 0;
-					Conflict thisCrash = new Conflict(this,p,0,0,init,hasDup);
+					Conflict thisCrash = new Conflict(this,p,0,0,init,hasDup,sinceBlocked);
 					Conflict toAdd = null;
 					Conflict toRem = null;
 					
@@ -899,6 +979,14 @@ public class Turtle extends Agent{
 	 * @param contextGrid
 	 */
 	
+	public Turtle(Turtle src) {
+		v = src.v;
+		newAcc = src.newAcc;
+		vNew = src.vNew;
+		acc = src.acc;
+		xLoc = src.xLoc;
+		yLoc = src.yLoc;
+	}
 	public Turtle(ContinuousSpace<Object> contextSpace, int whichLane, int whichDir,
 				  boolean conn, boolean auto) {
 		space	= contextSpace;
@@ -926,17 +1014,18 @@ public class Turtle extends Agent{
 		if (jamHead < RoadBuilder.panel.minJamHead) jamHead = RoadBuilder.panel.minJamHead;
 		//jamHead	= rnd.nextGaussian()*(UserPanel.jamHeadShape)+UserPanel.jamHeadScale;
 		length	= UserPanel.carLength;
-		if (!autonomous) {
+//		if (!autonomous) {
 			percLimit = RoadBuilder.panel.hPercLim;
 			BRTs = calcBRT() + 0.35;  // + 0.15 mvmt time (Lister 1950) + 0.2 device response time (Grover 2008)
 			double delayT0 = rndADRT.nextGaussian() * 1.193759285934727 - 1.60692043370482;
 			delayTs	= Math.exp(delayT0) + 0.25;
 			if (delayTs > 2.5) {
-				delayTs = 2.5;}}
-		else {
-			percLimit = RoadBuilder.panel.aPercLim;
-			BRTs = 0.51;  //seconds (source Grover 2008)
-			delayTs = 0.4;}
+				delayTs = 2.5;}
+//			}
+//		else {
+//			percLimit = RoadBuilder.panel.aPercLim;
+//			BRTs = 0.51;  //seconds (source Grover 2008)
+//			delayTs = 0.4;}
 		tN		= Math.floor(delayTs/UserPanel.tStep);
 		tBeta	= (delayTs/UserPanel.tStep) - tN;
 		brt_tN	= Math.floor(BRTs/UserPanel.tStep);
@@ -973,14 +1062,15 @@ public class Turtle extends Agent{
 		accCAH		= -1000;
 		interDlam	= UserPanel.interDlam;
 		nMaxDecel	= 0;
+		blockedPeds = new HashMap<Ped, Double>();
 	}
 	
-	/* Fits driver's distance from stopBar to lognormal distribution */
+	/* Fits driver's distance from stopBar to lognormal distribution in model units */
 	public double calcStopBar(int dir) {
 		double dist0 = rndS.nextGaussian()*UserPanel.SsigHat + UserPanel.SmuHat;
 		double stopDistance0 = Math.exp(dist0);
-		if (stopDistance0 > 11) {
-			stopDistance0 = 11;}
+		if (stopDistance0 > RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale) {
+			stopDistance0 = RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale;}
 		double stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
 		return stopDistance;
 	}
@@ -1044,7 +1134,7 @@ public class Turtle extends Agent{
 		Ped ped;
 		Turtle car;
 		int dirP, dirC, lane, yingVal, nMaxD, init, hasDup;
-		double TTC, range, yDec, vel, timeD, sinceD, tick, yDist;
+		double TTC, range, yDec, vel, timeD, sinceD, tick, yDist, minGap, brt, sinceBlocked;
 		boolean conn, auto;
 		ArrayList<double[]> pedVid;
 		ArrayList<Video> video;
@@ -1052,7 +1142,7 @@ public class Turtle extends Agent{
 		double spaceScale = UserPanel.spaceScale;
 //		Conflict(Turtle car, Ped ped, double ttc, double range, int yieldState, double yieldD, int nMaxD,
 //				double timeSinceD, double timeD, int init, int hasDup, boolean conn, boolean auto) {
-		Conflict(Turtle car, Ped ped, double ttc, double range, int init, int hasDup) {
+		Conflict(Turtle car, Ped ped, double ttc, double range, int init, int hasDup, double _sinceBlocked) {
 			this.ped	= ped;
 			this.car	= car;
 			this.dirP	= ped.dir;
@@ -1071,6 +1161,9 @@ public class Turtle extends Agent{
 			this.auto	= car.autonomous;
 			this.init	= init;
 			this.hasDup	= hasDup;
+			this.minGap = ped.critGap;
+			this.brt	= car.BRTs;
+			this.sinceBlocked = _sinceBlocked;
 			double yDistCenters = ped.yLoc - car.yLoc;
 			double above = Math.signum(yDistCenters);
 			if (above == 0) this.yDist = 0;
