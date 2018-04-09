@@ -353,6 +353,9 @@ public class Turtle extends Agent{
 		double realStopDist = stopDist;
 		double realConDist	= conDist;
 		int stamp = (int)RoadBuilder.clock.getTickCount();
+		if (ying == 1 && dir == -1) {
+			int foo = 0;
+		}
 		if (UserPanel.estErr /* && !autonomous*/) {		//includes estimation error
 			etaPed = rnd.nextGaussian();
 			etaPedV = rnd.nextGaussian();
@@ -372,7 +375,7 @@ public class Turtle extends Agent{
 				int foo = 0;}
 			if (percV != 0) {
 				tHardYield = 2*stopDist/percV;
-				if (-percV * tHardYield > UserPanel.emergDec) {
+				if (percV * tHardYield > UserPanel.emergDec) {
 					tHardYield = 1e-12;}
 				ttstopBar  = stopDist/percV;
 				if (v != 0) {
@@ -471,11 +474,6 @@ public class Turtle extends Agent{
 		//yield to crossing peds
 		if (!crossingP.isEmpty()) {
 			for (Ped k : crossingP) {
-				
-//				if (k.v[1] == 0) {
-//					
-//				}
-				
 				Yieldage   oldVals = null;
 				double		  pedY = k.yLoc;
 				double	 thisDecel = 0;
@@ -735,10 +733,14 @@ public class Turtle extends Agent{
 			if (yg.yState > -1) {
 				if (!yg.yieldee.yielders.contains(this)) {
 					yg.yieldee.yielders.add(this);}
-				if (yg.calcAcc < cYieldD) {
-					cYieldD = yg.calcAcc;}
 				if (yg.yState > outYing) {
-					outYing = yg.yState;}}}
+					outYing = yg.yState;}
+				for (Yieldage cYg : cYields) {
+					if (cYg.yieldee.equals(yg.yieldee)) {
+						if (cYg.calcAcc < cYieldD) {
+							cYieldD = cYg.calcAcc;}}}
+				if (yg.calcAcc < cYieldD) {
+					cYieldD = yg.calcAcc;}}}
 		if (cYieldD < -UserPanel.emergDec) {
 			cYieldD = -UserPanel.emergDec;}
 		
@@ -1071,6 +1073,8 @@ public class Turtle extends Agent{
 		double stopDistance0 = Math.exp(dist0);
 		if (stopDistance0 > RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale) {
 			stopDistance0 = RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale;}
+		if (stopDistance0 < 1.5/RoadBuilder.spaceScale) {
+			stopDistance0 = 1.5/RoadBuilder.spaceScale;}
 		double stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
 		return stopDistance;
 	}

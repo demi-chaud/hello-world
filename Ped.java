@@ -45,12 +45,12 @@ public class Ped extends Agent{
 	public int front;		// 1=xing in front of car, -1=behind; for testing
 //	public Map<Integer,Double> dictThtBegAtDecision, dictTTcolAtDecision, dictRealTTcolAtDecision, 
 //			dictTTclearAtDecision, dictRealTTClearAtDecision, dictTailTAtDecision, dictRealTailTAtDecision;
-//	public Map<Integer,Turtle> dictTurtleAtDecision = new HashMap<Integer,Turtle>();
-//	public Map<Integer,Turtle> dictLeadTurtleAtDecision = new HashMap<Integer,Turtle>();
+//	public Map<Integer,Turtle> dictNearestTurtleAtDecision = new HashMap<Integer,Turtle>();
+//	public Map<Integer,Turtle> dictFollowingTurtleAtDecision = new HashMap<Integer,Turtle>();
 //	public Map<Integer,ArrayList<Double>> dictDistMSinceDecision;
 //	public Map<Integer,ArrayList<Double>> dictSpeedsSinceDecision;
 //	public Map<Integer,ArrayList<Double>> dictAccelsSinceDecision;
-//	public Map<Integer,ArrayList<Double>> dictLeadCarSpeedsSinceDecision;
+//	public Map<Integer,ArrayList<Double>> dictFollowingCarSpeedsSinceDecision;
 	
 //	double realXDist = Math.sqrt(dist * dist - yDist*yDist);
 //	if (approachV != 0) realTTCol = realXDist / t.v;
@@ -116,11 +116,11 @@ public class Ped extends Agent{
 		newV = limitV(newV);
 		
 //		if (!curbed) {
-//			for (Integer key : dictTurtleAtDecision.keySet()) {
-//				double cLocat = dictTurtleAtDecision.get(key).xLoc;
+//			for (Integer key : dictNearestTurtleAtDecision.keySet()) {
+//				double cLocat = dictNearestTurtleAtDecision.get(key).xLoc;
 //				double cM = Math.abs(cLocat - this.xLoc) * RoadBuilder.spaceScale;
-//				double cV = dictTurtleAtDecision.get(key).v;
-//				double cA = dictTurtleAtDecision.get(key).acc;
+//				double cV = dictNearestTurtleAtDecision.get(key).v;
+//				double cA = dictNearestTurtleAtDecision.get(key).acc;
 //				ArrayList<Double> tempList = dictSpeedsSinceDecision.get(key);
 //				ArrayList<Double> tempListA = dictAccelsSinceDecision.get(key);
 //				ArrayList<Double> tempListM = dictDistMSinceDecision.get(key);
@@ -130,12 +130,12 @@ public class Ped extends Agent{
 //				dictSpeedsSinceDecision.put(key, tempList);
 //				dictAccelsSinceDecision.put(key, tempListA);
 //				dictDistMSinceDecision.put(key, tempListM);}
-//			for (Integer key : dictLeadTurtleAtDecision.keySet()) {
-//				if (dictLeadTurtleAtDecision.get(key) != null) {
-//					double cV = dictLeadTurtleAtDecision.get(key).v;
-//					ArrayList<Double> tempList = dictLeadCarSpeedsSinceDecision.get(key);
+//			for (Integer key : dictFollowingTurtleAtDecision.keySet()) {
+//				if (dictFollowingTurtleAtDecision.get(key) != null) {
+//					double cV = dictFollowingTurtleAtDecision.get(key).v;
+//					ArrayList<Double> tempList = dictFollowingCarSpeedsSinceDecision.get(key);
 //					tempList.add(cV);
-//					dictLeadCarSpeedsSinceDecision.put(key, tempList);}}}
+//					dictFollowingCarSpeedsSinceDecision.put(key, tempList);}}}
 	}
 	
 	
@@ -177,12 +177,12 @@ public class Ped extends Agent{
 //		dictRealTailTAtDecision = new HashMap<Integer,Double>();
 //		dictTTclearAtDecision = new HashMap<Integer,Double>();
 //		dictRealTTClearAtDecision = new HashMap<Integer,Double>();
-//		dictTurtleAtDecision = new HashMap<Integer, Turtle>();
+//		dictNearestTurtleAtDecision = new HashMap<Integer, Turtle>();
 //		dictDistMSinceDecision = new HashMap<Integer, ArrayList<Double>>();
 //		dictSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
 //		dictAccelsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
-//		dictLeadTurtleAtDecision = new HashMap<Integer, Turtle>();
-//		dictLeadCarSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
+//		dictFollowingTurtleAtDecision = new HashMap<Integer, Turtle>();
+//		dictFollowingCarSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
 		
 		ArrayList<Turtle> approaching  = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching0 = new ArrayList<Turtle>();
@@ -477,7 +477,9 @@ public class Ped extends Agent{
 								nearest3 = cClose.follower;
 								break;}}
 						if (ang.theta1 < thetaDriver && ang.theta2 > thetaDriver) {
-							lanesWithoutEyeContact.add(closests.indexOf(cClose));}}}}}
+							lanesWithoutEyeContact.add(closests.indexOf(cClose));}}}
+				}
+			}
 		
 			
 		
@@ -654,7 +656,7 @@ public class Ped extends Agent{
 		TTCol = 1000;
 		TTClear = 1000;
 		if (approachV != 0) {
-			if (approachA <= 0) {
+			if (approachA <= 1e-5) {
 				TTCol	= xDist/approachV;}
 			else {
 				TTCol = -(approachV/approachA) + Math.sqrt((approachV*approachV) + 2*approachA*xDist)/approachA;}
@@ -665,12 +667,12 @@ public class Ped extends Agent{
 //		dictRealTTcolAtDecision.put(ln, realTTCol);
 //		dictTTclearAtDecision.put(ln, TTClear);
 //		dictRealTTClearAtDecision.put(ln, realTTClear);
-//		dictTurtleAtDecision.put(ln, t);
+//		dictNearestTurtleAtDecision.put(ln, t);
 //		dictDistMSinceDecision.put(ln, new ArrayList<Double>());
 //		dictSpeedsSinceDecision.put(ln, new ArrayList<Double>());
 //		dictAccelsSinceDecision.put(ln, new ArrayList<Double>());
-//		dictLeadTurtleAtDecision.put(ln, t.leader);
-//		dictLeadCarSpeedsSinceDecision.put(ln, new ArrayList<Double>());
+//		dictFollowingTurtleAtDecision.put(ln, t.follower);
+//		dictFollowingCarSpeedsSinceDecision.put(ln, new ArrayList<Double>());
 		
 		//decide if lag is big enough to start crossing
 		if (threatBeg + critGap < TTCol) {
@@ -775,11 +777,11 @@ public class Ped extends Agent{
 			tailTWithFollowerV = thisTail/t2v;}
 		if (t1v != 0) {
 			tailTWithLeaderV = 1000;}
-		if (tailTWithLeaderV < tailTWithFollowerV) {
-			thisTailT = (tailTWithLeaderV + tailTWithFollowerV)/2;}
-		else {
-			thisTailT = tailTWithFollowerV;}								//TODO: add this to writeup
-		//thisTailT = Math.min(tailTWithLeaderV, tailTWithFollowerV);		//TODO: add this to writeup
+//		if (tailTWithLeaderV < tailTWithFollowerV) {
+//			thisTailT = (tailTWithLeaderV + tailTWithFollowerV)/2;}
+//		else {
+//			thisTailT = tailTWithFollowerV;}								
+		thisTailT = Math.min(tailTWithLeaderV, tailTWithFollowerV);		//TODO: add this to writeup
 		
 		if (ln == 0) {
 			threatBeg = 0;
@@ -811,17 +813,17 @@ public class Ped extends Agent{
 //		dictRealTTClearAtDecision.put(ln, realTTClear);
 //		dictTailTAtDecision.put(ln, thisTailT);
 //		dictRealTailTAtDecision.put(ln, realTailT);
-//		dictTurtleAtDecision.put(ln, t2);
+////		dictFollowingTurtleAtDecision.put(ln, t2);
 //		dictDistMSinceDecision.put(ln, new ArrayList<Double>());
 //		dictSpeedsSinceDecision.put(ln, new ArrayList<Double>());
 //		dictAccelsSinceDecision.put(ln, new ArrayList<Double>());
-//		dictLeadTurtleAtDecision.put(ln, t1);
-//		dictLeadCarSpeedsSinceDecision.put(ln, new ArrayList<Double>());
+////		dictFollowingTurtleAtDecision.put(ln, t1);
+//		dictFollowingCarSpeedsSinceDecision.put(ln, new ArrayList<Double>());
 		
 		//decide if gap is big enough to start crossing
 		if (thisTailT > critGap && threatBeg + critGap < TTCol) {
 			goes = 1;
-			front = 1;}
+			front = 2;}
 		//else if (threatBeg > TTClear) {
 		else if (confBeg > TTClear) {
 			if (t2.follower != null) {	//switch to observing next car
@@ -837,7 +839,7 @@ public class Ped extends Agent{
 				default: break;}}
 			else {
 				goes = 1;
-				front = -1;}}
+				front = -2;}}
 		else {
 			goes = -1;}
 
