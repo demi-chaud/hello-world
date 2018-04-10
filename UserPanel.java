@@ -40,6 +40,7 @@ public class UserPanel implements ActionListener{
 	public int    pedRho;
 	public double sLimitKH;
 	public double hPercLimM;
+	public double stopBarM;
 	
 	static public double confLimS	= 1.5;			// seconds			default:   1.5
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
@@ -48,7 +49,7 @@ public class UserPanel implements ActionListener{
 	static public boolean BRT		= true;
 	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
-	static public boolean calcFun	= true;  //build fundamental diagram
+	static public boolean calcFun	= false;  //build fundamental diagram
 	static public boolean bothCar	= !calcFun;   //cars both directions?
 	static public boolean IIDM		= true;   //include Improved IDM?
 	
@@ -109,6 +110,7 @@ public class UserPanel implements ActionListener{
 	static public int	 calcTSpan	= (int)(calcTSpanS / tStep);
 	public double hPercLim;
 	public double aPercLim;
+	public double stopBarDistance;
 	
 	// max/min vals for generated CF distributions
 	public double maxHeadT;
@@ -180,6 +182,7 @@ public class UserPanel implements ActionListener{
 		pedRho		= src.pedRho;
 		hPercLimM	= src.hPercLimM;	// human pedestrian perception (meters) default: 100
 		sLimitKH	= src.sLimitKH;		// km/hr								default:  45
+		stopBarM	= src.stopBarM;
 		
 		String outStr = "";
 		String[] pNames = src.getInitParam();
@@ -235,6 +238,7 @@ public class UserPanel implements ActionListener{
 		redDur		= (int)(redDurS / tStep);
 		hPercLim	= hPercLimM/spaceScale;
 		aPercLim	= aPercLimM/spaceScale;
+		stopBarDistance = stopBarM/spaceScale;
 		
 		// max/min vals for generated CF distributions
 		maxHeadT	= 3.294 / tStep;

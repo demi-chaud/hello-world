@@ -11,10 +11,11 @@ import java.util.Locale;
 public class CSVWriter {
 	
 	public static void writeConfCSV(String fileName, ArrayList<Turtle.Conflict> list) {
-		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, nDec, ttc, range, yDist, time, init, sinceD, timeD, conn, auto;
+		String cString, turtle, dirC, lane, ped, dirP, ying, vel, dec, nDec, ttc, range, yDist, 
+			time, init, sinceD, timeD, conn, auto, pedGap, brt, sinceBlocked, pedVBlocked;
 		String comma  = ",";
 		String nLine  = "\n";
-		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,nMaxDec,ttc,range,yDist,time,init,connected,automated" + nLine;
+		String header = "turtle,dirC,lane,ped,dirP,ying,sinceD,timeD,vel,dec,nMaxDec,ttc,range,yDist,time,init,connected,automated,pedGap,BRT,sinceBlocked,pedVBlck" + nLine;
 		FileWriter fileWriter = null;
 		try {
 			fileWriter = new FileWriter(fileName);
@@ -50,6 +51,12 @@ public class CSVWriter {
 				String init0	= String.valueOf(c.init);
 				String conn0	= String.valueOf(c.conn);
 				String auto0	= String.valueOf(c.auto);
+				Double pedGapS	= c.minGap * UserPanel.tStep;
+				String pedGap0	= form1.format(pedGapS);
+				String brt0		= form1.format(c.brt);
+				Double sinceBlockedS = c.sinceBlocked * UserPanel.tStep;
+				String sinceBlocked0 = form1.format(sinceBlockedS);
+				String pedVBlk0 = String.valueOf(c.pedVBlocked);
 				turtle	= turtle0 + comma;
 				dirC	= dirC0 + comma;
 				lane	= lane0 + comma;
@@ -68,8 +75,12 @@ public class CSVWriter {
 				init	= init0 + comma;
 				conn	= conn0 + comma;
 				auto	= auto0 + comma;
-				cString = turtle + dirC + lane + ped + dirP + ying + sinceD + timeD + 
-						vel + dec + nDec + ttc + range + yDist + time + init + conn + auto + nLine;
+				pedGap	= pedGap0 + comma;
+				brt		= brt0 + comma;
+				sinceBlocked = sinceBlocked0 + comma;
+				pedVBlocked = pedVBlk0 + comma;
+				cString = turtle + dirC + lane + ped + dirP + ying + sinceD + timeD + vel + dec + nDec + 
+						ttc + range + yDist + time + init + conn + auto + pedGap + brt + sinceBlocked + pedVBlocked + nLine;
 				fileWriter.append(cString);}}
 		catch (IOException e) {
 			System.out.print("Error in CSVWriter");

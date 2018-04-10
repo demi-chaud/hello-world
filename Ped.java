@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.math3.util.FastMath;
 
@@ -18,15 +19,16 @@ import repast.simphony.space.continuous.NdPoint;
  * @author Darryl Michaud
  */
 public class Ped extends Agent{
+	private boolean debug = false;
 	private	ContinuousSpace<Object> space;
 //	private	Grid<Object> grid;
 	private List<Double> forcesX, forcesY; 
 	private	NdPoint endPt;
 	private Random rnd = new Random();
 	//TODO: make sure there's a separate Wiener process for every single observation (think through which are related)
-	private boolean curbed, boxed;
+	public boolean curbed, boxed;
 	private int age;
-	private	double endPtDist, endPtTheta, critGap;
+	private	double endPtDist, endPtTheta;
 	private double side	= RoadBuilder.sidewalk;
 	private double wS1, wSn1, wV1, wVn1, etaS, etaV, sigR;	//errors
 	private double m, horiz, A, B, k;  					//interactive force constants (accT is also)
@@ -38,10 +40,26 @@ public class Ped extends Agent{
 	public Turtle nearest0, nearest1, nearest2, nearest3;
 	public NdPoint myLoc;
 	public double[] v, dv, newV;
-	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r;
+	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r, critGap, tickAtCrossDecision;
 	public int dir;			// dir = 1 walks up, -1 walks down
 	public int crossing;	// 0=not yet, 1=waiting, 2=yes, 3=done
 	public int front;		// 1=xing in front of car, -1=behind; for testing
+	public ArrayList<Turtle> blockedCars;
+	public Map<Integer,Double> dictThtBegAtDecision, dictTTcolAtDecision, dictRealTTcolAtDecision, 
+			dictTTclearAtDecision, dictRealTTClearAtDecision, dictTailTAtDecision, dictRealTailTAtDecision;
+	public Map<Integer,Turtle> dictNearestTurtleAtDecision = new HashMap<Integer,Turtle>();
+	public Map<Integer,Turtle> dictFollowingTurtleAtDecision = new HashMap<Integer,Turtle>();
+	public Map<Integer,ArrayList<Double>> dictDistMSinceDecision;
+	public Map<Integer,ArrayList<Double>> dictSpeedsSinceDecision;
+	public Map<Integer,ArrayList<Double>> dictAccelsSinceDecision;
+	public Map<Integer,ArrayList<Double>> dictFollowingCarSpeedsSinceDecision;
+	
+//	double realXDist = Math.sqrt(dist * dist - yDist*yDist);
+//	if (approachV != 0) realTTCol = realXDist / t.v;
+//	else realTTCol = 1e5;
+//	thtBegAtDecision.put(ln, threatBeg); 
+//	ttcolAtDecision.put(ln, TTCol);
+//	realTTcolAtDecision.put(ln, realTTCol);
 	
 	/**
 	 * Calculates ped acceleration
@@ -98,6 +116,28 @@ public class Ped extends Agent{
 			if (whichSide == -whichDir && Math.signum(newV[0]) == -whichDir) {
 				newV[0] = 0;}}
 		newV = limitV(newV);
+		
+		if (!curbed && debug) {
+			for (Integer key : dictNearestTurtleAtDecision.keySet()) {
+				double cLocat = dictNearestTurtleAtDecision.get(key).xLoc;
+				double cM = Math.abs(cLocat - this.xLoc) * RoadBuilder.spaceScale;
+				double cV = dictNearestTurtleAtDecision.get(key).v;
+				double cA = dictNearestTurtleAtDecision.get(key).acc;
+				ArrayList<Double> tempList = dictSpeedsSinceDecision.get(key);
+				ArrayList<Double> tempListA = dictAccelsSinceDecision.get(key);
+				ArrayList<Double> tempListM = dictDistMSinceDecision.get(key);
+				tempList.add(cV);
+				tempListA.add(cA);
+				tempListM.add(cM);
+				dictSpeedsSinceDecision.put(key, tempList);
+				dictAccelsSinceDecision.put(key, tempListA);
+				dictDistMSinceDecision.put(key, tempListM);}
+			for (Integer key : dictFollowingTurtleAtDecision.keySet()) {
+				if (dictFollowingTurtleAtDecision.get(key) != null) {
+					double cV = dictFollowingTurtleAtDecision.get(key).v;
+					ArrayList<Double> tempList = dictFollowingCarSpeedsSinceDecision.get(key);
+					tempList.add(cV);
+					dictFollowingCarSpeedsSinceDecision.put(key, tempList);}}}
 	}
 	
 	
@@ -132,11 +172,32 @@ public class Ped extends Agent{
 	 * @return output of accel() based on new value of curbed
 	 */
 	public double[] yield() {
+		if (debug) {
+			dictThtBegAtDecision = new HashMap<Integer,Double>();
+			dictTTcolAtDecision = new HashMap<Integer,Double>();
+			dictRealTTcolAtDecision = new HashMap<Integer,Double>();
+			dictTailTAtDecision = new HashMap<Integer,Double>();
+			dictRealTailTAtDecision = new HashMap<Integer,Double>();
+			dictTTclearAtDecision = new HashMap<Integer,Double>();
+			dictRealTTClearAtDecision = new HashMap<Integer,Double>();
+			dictNearestTurtleAtDecision = new HashMap<Integer, Turtle>();
+			dictDistMSinceDecision = new HashMap<Integer, ArrayList<Double>>();
+			dictSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
+			dictAccelsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
+			dictFollowingTurtleAtDecision = new HashMap<Integer, Turtle>();
+			dictFollowingCarSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();}
+		
+		blockedCars = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching  = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching0 = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching1 = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching2 = new ArrayList<Turtle>();
-		ArrayList<Turtle> approaching3 = new ArrayList<Turtle>();		
+		ArrayList<Turtle> approaching3 = new ArrayList<Turtle>();	
+		nearest0 = null;
+		nearest1 = null;
+		nearest2 = null;
+		nearest3 = null;
+		
 		double gap0, gap1, gap2, gap3;
 		double[] frogger;
 		boolean go0, go1, go2, go3;
@@ -146,11 +207,11 @@ public class Ped extends Agent{
 		gap0 = gap1 = gap2 = gap3 = RoadBuilder.roadL/2;
 		
 		//find nearest car in each lane
-		for (Turtle m : RoadBuilder.flowSource.allCars) {
-			double thisGap = xLoc - m.xLoc;
-			int threat = m.dir * (int)Math.signum(thisGap);
+		for (Turtle p : RoadBuilder.flowSource.allCars) {
+			double thisGap = xLoc - (p.xLoc - (double)p.dir*p.length);
+			int threat = p.dir * (int)Math.signum(thisGap);
 			if (threat == 1) {
-				approaching.add(m);}}
+				approaching.add(p);}}
 		if (!approaching.isEmpty()) {
 			for (Turtle n : approaching) {
 				if (n.dir == dir) {
@@ -165,85 +226,362 @@ public class Ped extends Agent{
 						approaching3.add(n);}}}
 			if(!approaching0.isEmpty()) {
 				for (Turtle o : approaching0) {
-					double thisGap = Math.abs(xLoc - o.xLoc);
-					if(thisGap < gap0) {
+					double thisGap = o.xLoc - xLoc;
+					if(Math.abs(thisGap) < Math.abs(gap0)) {
 						gap0 = thisGap;
 						nearest0 = o;}}}
 			if(!approaching1.isEmpty()) {
 				for (Turtle o : approaching1) {
-					double thisGap = Math.abs(xLoc - o.xLoc);
-					if(thisGap < gap1) {
+					double thisGap = o.xLoc - xLoc;
+					if(Math.abs(thisGap) < Math.abs(gap1)) {
 						gap1 = thisGap;
 						nearest1 = o;}}}
 			if(!approaching2.isEmpty()) {
 				for (Turtle o : approaching2) {
-					double thisGap = Math.abs(xLoc - o.xLoc);
-					if(thisGap < gap2) {
+					double thisGap = o.xLoc - xLoc;
+					if(Math.abs(thisGap) < Math.abs(gap2)) {
 						gap2 = thisGap;
 						nearest2 = o;}}}
 			if(!approaching3.isEmpty()) {
 				for (Turtle o : approaching3) {
-					double thisGap = Math.abs(xLoc - o.xLoc);
-					if(thisGap < gap3) {
+					double thisGap = o.xLoc - xLoc;
+					if(Math.abs(thisGap) < Math.abs(gap3)) {
 						gap3 = thisGap;
 						nearest3 = o;}}}}
+		
+		//double threat
+		double carW = UserPanel.carWidth;
+		double carL = UserPanel.carLength;
+		double[] gaps = new double[] {gap0, gap1, gap2, gap3};
+		for (double cGap : gaps) {
+			if (cGap == RoadBuilder.roadL/2) {
+				cGap = 0;}}
+		ArrayList<Turtle> closests = new ArrayList<Turtle>();
+		if (nearest0 != null) {
+			closests.add(nearest0);}
+		else {
+			closests.add(null);}
+		if (nearest1 != null) {
+			closests.add(nearest1);}
+		else {
+			closests.add(null);}
+		if (nearest2 != null) {
+			closests.add(nearest2);}
+		else {
+			closests.add(null);}
+		if (nearest3 != null) {
+			closests.add(nearest3);}
+		else {
+			closests.add(null);}
+		double maxRelevantXDiff = Math.max(gaps[0], Math.max(gaps[1], Math.max(gaps[2], gaps[3])));
+		double minRelevantXDiff = Math.min(gaps[0], Math.min(gaps[1], Math.min(gaps[2], gaps[3])));
+		if (maxRelevantXDiff > 150/RoadBuilder.spaceScale) maxRelevantXDiff = 150/RoadBuilder.spaceScale;
+		if (minRelevantXDiff < -150/RoadBuilder.spaceScale) minRelevantXDiff = -150/RoadBuilder.spaceScale;
+		double maxRelevantX = xLoc + maxRelevantXDiff;
+		double minRelevantX = xLoc + minRelevantXDiff;
+		ArrayList<ViewAngle> obstructers = new ArrayList<ViewAngle>();
+		ArrayList<ViewAngle> obstructees = new ArrayList<ViewAngle>();
+		ArrayList<Turtle> nearEnoughInX0 = new ArrayList<Turtle>();
+		ArrayList<Turtle> nearEnoughInX1 = new ArrayList<Turtle>();
+		ArrayList<Turtle> nearEnoughInX2 = new ArrayList<Turtle>();
+		ArrayList<Turtle> nearEnoughInX3 = new ArrayList<Turtle>();
+		ArrayList<Integer> lanesWithoutEyeContact = new ArrayList<Integer>();
+		
+		for (Turtle i : RoadBuilder.flowSource.allCars) {
+			if (i.xLoc > minRelevantX && i.xLoc < maxRelevantX) {
+				if (dir == 1) {
+					if (i.dir == 1) {
+						if (i.lane == 0) {
+							nearEnoughInX0.add(i);}
+						else {
+							nearEnoughInX1.add(i);}}
+					else {
+						if (i.lane == 1) {
+							nearEnoughInX2.add(i);}
+						else {
+							nearEnoughInX3.add(i);}}}
+				else {
+					if (i.dir == -1) {
+						if (i.lane == 0) {
+							nearEnoughInX0.add(i);}
+						else {
+							nearEnoughInX1.add(i);}}
+					else {
+						if (i.lane == 1) {
+							nearEnoughInX2.add(i);}
+						else {
+							nearEnoughInX3.add(i);}}}}}
+		for (Turtle cClose : closests) {
+			if (cClose == null) continue;
+			ArrayList<Turtle> nearEnoughInY = new ArrayList<Turtle>();
+			ArrayList<Turtle> nearEnough = new ArrayList<Turtle>();
+			if (dir == cClose.dir) {
+				if (cClose.lane == 0) {
+					continue;}
+				else {
+					nearEnoughInY = new ArrayList<Turtle>(nearEnoughInX0);}}
+			else {
+				nearEnoughInY = new ArrayList<Turtle>(nearEnoughInX0);
+				nearEnoughInY.addAll(nearEnoughInX1);
+				if (cClose.lane == 0) {
+					nearEnoughInY.addAll(nearEnoughInX2);}}
+			
+			if (dir == 1) {
+				if (cClose.dir == 1) {
+					for (Turtle j : nearEnoughInY) {
+						if (j.dir == 1) {
+							if (j.xLoc > cClose.xLoc && j.xLoc < xLoc + carL) {
+								nearEnough.add(j);}}}}
+				else {
+					for (Turtle j : nearEnoughInY) {
+						if (j.dir == 1) {
+							if (j.xLoc > xLoc && j.xLoc < cClose.xLoc + carL) {
+								nearEnough.add(j);}}
+						else {
+							if (j.xLoc > xLoc - carL && j.xLoc < cClose.xLoc) {
+								nearEnough.add(j);}}}}}
+			else {
+				if (cClose.dir == 1) {
+					for (Turtle j : nearEnoughInY) {
+						if (j.dir == 1) {
+							if (j.xLoc > cClose.xLoc && j.xLoc < xLoc + carL) {
+								nearEnough.add(j);}}
+						else {
+							if (j.xLoc > cClose.xLoc - carL && j.xLoc < xLoc) {
+								nearEnough.add(j);}}}}
+				else {
+					for (Turtle j : nearEnoughInY) {
+						if (j.dir == -1) {
+							if (j.xLoc > xLoc - carL && j.xLoc < cClose.xLoc) {
+								nearEnough.add(j);}}}}}
+			for (Turtle k : nearEnough) {
+				double front	= k.xLoc - (double)k.dir*carL/3;
+				double back		= k.xLoc - (double)k.dir*carL;
+				double inside	= k.yLoc - (double)dir*carW/2;
+				double outside	= k.yLoc + (double)dir*carW/2;
+				Double thisTheta1, thisTheta2;
+				ViewAngle thisView = null;
+				if (dir == 1) {
+					if (k.dir == 1) {
+						if (back < xLoc) {
+							thisTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							thisTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}
+						if (front > xLoc) {
+							thisTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							thisTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+					else {
+						if (front < xLoc) {
+							thisTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							thisTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}
+						if (back > xLoc) {
+							thisTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							thisTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+				else {
+					if (k.dir == 1) {
+						if (back < xLoc) {
+							thisTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							thisTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}
+						if (front > xLoc) {
+							thisTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							thisTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+					else {
+						if (front < xLoc) {
+							thisTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							thisTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}
+						if (back > xLoc) {
+							thisTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							thisTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+				if (thisTheta1 != null) {
+					thisTheta1 += Math.PI;
+					thisTheta2 += Math.PI;
+					thisView = new ViewAngle(k,thisTheta1,thisTheta2);
+					obstructers.add(thisView);}}
+			if (!obstructers.isEmpty()) {
+				double front	= cClose.xLoc - (double)cClose.dir*carL/3;
+				double back		= cClose.xLoc - (double)cClose.dir*carL;
+				double inside	= cClose.yLoc - (double)dir*carW/2;
+				double outside	= cClose.yLoc + (double)dir*carW/2;
+				Double blockeeTheta1, blockeeTheta2;
+				Double thetaDriver = FastMath.atan2(cClose.driverX - xLoc, cClose.driverY - yLoc);
+				thetaDriver += Math.PI;
+				if (dir == 1) {
+					if (cClose.dir == 1) {
+						if (back < xLoc) {
+							blockeeTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}
+						if (front > xLoc) {
+							blockeeTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+					else {
+						if (front < xLoc) {
+							blockeeTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}
+						if (back > xLoc) {
+							blockeeTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+				else {
+					if (cClose.dir == 1) {
+						if (back < xLoc) {
+							blockeeTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}
+						if (front > xLoc) {
+							blockeeTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+					else {
+						if (front < xLoc) {
+							blockeeTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}
+						if (back > xLoc) {
+							blockeeTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+						else {
+							blockeeTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+				if (blockeeTheta1 != null) {
+					blockeeTheta1 += Math.PI;
+					blockeeTheta2 += Math.PI;
+					ArrayList<Double[]> blockedAngles = new ArrayList<Double[]>();
+					blockedAngles.add(new Double[] {obstructers.get(0).theta1, obstructers.get(0).theta2});
+					for (ViewAngle ang0 : obstructers) {
+						double lowAngle0 = ang0.theta1;
+						double hiAngle0 = ang0.theta2;
+						boolean included = false;
+						for (Double[] ang1 : blockedAngles) {
+							if ((lowAngle0 >= ang1[0] && lowAngle0 <= ang1[1] ) && (hiAngle0 > ang1[1])) {
+								ang1[1] = hiAngle0;
+								included = true;}
+							if ((hiAngle0 >= ang1[0] && hiAngle0 <= ang1[1]) && (lowAngle0 < ang1[0])) {
+								ang1[0] = lowAngle0;
+								included = true;}
+							if (lowAngle0 < ang1[0] && hiAngle0 > ang1[1]) {
+								ang1[0] = lowAngle0;
+								ang1[1] = hiAngle0;
+								included = true;}
+							if (lowAngle0 == ang1[0] && hiAngle0 == ang1[1]) {
+								included = true;}}
+						if (!included) {
+							int foo = 0;
+							blockedAngles.add(new Double[] {lowAngle0, hiAngle0});}}
+					for (Double[] blockedThetas : blockedAngles) {
+						if (blockedThetas[0] < blockeeTheta1 && blockedThetas[1] > blockeeTheta2) {
+							if (!blockedCars.contains(cClose)) {
+								blockedCars.add(cClose);}
+							int laneWithNewTurtle = closests.indexOf(cClose);
+							switch (laneWithNewTurtle) {
+							case 0:
+								nearest0 = cClose.follower;
+								break;
+							case 1:
+								nearest1 = cClose.follower;
+								break;
+							case 2:
+								nearest2 = cClose.follower;
+								break;
+							case 3:
+								nearest3 = cClose.follower;
+								break;}}
+						if (blockedThetas[0] < thetaDriver && blockedThetas[1] > thetaDriver) {
+							lanesWithoutEyeContact.add(closests.indexOf(cClose));}}}}}	
 		
 		//decide crossing decision for each lane
 		int count0 = 0;
 		int count1 = 0;
 		int count2 = 0;
 		int count3 = 0;
+		HashMap<Integer,Integer> waits = new HashMap<Integer,Integer>();
+		for (int i = 0; i < 4; i++) {
+			waits.put(i, -1);}
 		if (nearest0 != null) {
-			goes0 = lag(nearest0,0);
+			int[] lagOut = lag(nearest0,0);
+			goes0 = lagOut[0];
+			waits.put(0, lagOut[1]);
 			while (goes0 == 0) {
-				goes0 = gap(nearest0,0);
+				int[] gapOut = gap(nearest0,0); 
+				goes0 = gapOut[0];
+				waits.put(0, gapOut[1]);
 				count0++;
 				if (count0 > 5) {
 					break;}}
 			if (goes0 ==  1) {go0 = true;}
 			if (goes0 == -1) {go0 = false;}}
 		else {
+			waits.put(0, 0);
 			go0 = true;}
 		if (nearest1 != null) {
-			goes1 = lag(nearest1,1);
+			int[] lagOut = lag(nearest1,1);
+			goes1 = lagOut[0];
+			waits.put(1, lagOut[1]);
 			while (goes1 == 0) {
-				goes1 = gap(nearest1,1);
+				int[] gapOut = gap(nearest1,1);
+				goes1 = gapOut[0];
+				waits.put(1, gapOut[1]);
 				count1++;
 				if (count1 > 5) {
 					break;}}
 			if (goes1 ==  1) {go1 = true;}
 			if (goes1 == -1) {go1 = false;}}
 		else {
+			waits.put(1, 0);
 			go1 = true;}
 		if (nearest2 != null) {
-			goes2 = lag(nearest2,2);
+			int[] lagOut = lag(nearest2,2);
+			goes2 = lagOut[0];
+			waits.put(2, lagOut[1]);
 			while (goes2 == 0) {
-				goes2 = gap(nearest2,2);
+				int[] gapOut = gap(nearest2,2);
+				goes2 = gapOut[0];
+				waits.put(2, gapOut[1]);
 				count2++;
 				if (count2 > 5) {
 					break;}}
 			if (goes2 ==  1) {go2 = true;}
 			if (goes2 == -1) {go2 = false;}}
 		else {
+			waits.put(2, 0);
 			go2 = true;}
 		if (nearest3 != null) {
-			goes3 = lag(nearest3,3);
+			int[] lagOut = lag(nearest3,3);
+			goes3 = lagOut[0];
+			waits.put(3, lagOut[1]);
 			while (goes3 == 0) {
-				goes3 = gap(nearest3,3);
+				int[] gapOut = gap(nearest3,3);
+				goes3 = gapOut[0];
+				waits.put(3, gapOut[1]);
 				count3++;
 				if (count3 > 5) {
 					break;}}
 			if (goes3 ==  1) {go3 = true;}
 			if (goes3 == -1) {go3 = false;}}		
 		else {
+			waits.put(3, 0);
 			go3 = true;}
+		
+		for (Integer blind : lanesWithoutEyeContact) {
+			waits.put(blind, 0);}
 		
 		//tally crossing decisions to give final result
 		curbed = true;
 		if (!approaching.isEmpty()) {
 			if (go0 && go1 && go2 && go3) {
-				curbed = false;}}
+				crossing = 2;
+				if (waits.get(0) == 0 && waits.get(1) == 0 && waits.get(2) == 0 && waits.get(3) == 0) {
+					tickAtCrossDecision = RoadBuilder.clock.getTickCount();
+					curbed = false;}}}
 		else {
+			tickAtCrossDecision = RoadBuilder.clock.getTickCount();
 			curbed = false;}
 		
 		frogger = accel(myLoc,dir);
@@ -255,12 +593,14 @@ public class Ped extends Agent{
 	 * If that car is passed, reassigns to following car
 	 * @param t  - next car
 	 * @param ln - lane car is in relative to ped
-	 * @return:	-1=don't go; 0=look to next car; 1=go
+	 * @return:	[goes, waitForYield]
+	 * goes: -1=don't go; 0=look to next car; 1=go
+	 * waitForYield: 0=just go, 1=wait
 	 */
-	public int lag(Turtle t, int ln) {
+	public int[] lag(Turtle t, int ln) {
 		//TODO: include estimation errors/delay
-		double approachV, approachX, dist, xDist, yDist, TTCol, TTClear;
-		double threatBeg; //, threatEnd;
+		double approachV, approachX, approachA, dist, xDist, yDist, TTCol, TTClear, realTTCol, realTTClear;
+		double threatBeg, confBeg; //, threatEnd;
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
 		int	goes = 0;
 		//TODO: make xTime lane-dependent for some peds
@@ -274,9 +614,18 @@ public class Ped extends Agent{
 		yDist	  = (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
 		dist	  = space.getDistance(myLoc, t.myLoc);
 		approachV = t.v;
+		approachA = Math.max(t.acc, t.newAcc);
+		
+		double realXDist = Math.sqrt(dist * dist - yDist*yDist);
+		if (approachV != 0) {
+			realTTCol = realXDist / t.v;
+			realTTClear = realTTCol + t.length/approachV + 1/UserPanel.tStep;}
+		else {
+			realTTCol = 1000;
+			realTTClear = 1000;}
 		
 		//include errors
-		if (UserPanel.estErr == true) {
+		if (UserPanel.estErr == true && approachV != 0) {
 			etaS = rnd.nextGaussian();
 			etaV = rnd.nextGaussian();
 			if (t.dir == 1) {
@@ -294,44 +643,76 @@ public class Ped extends Agent{
 		
 		//calculate relevant times
 		if (ln == 0) {
-			threatBeg = 0;}
+			threatBeg = 0;
+			confBeg = 0;}
 		else {
 			if (maxVY != 0) {
-				threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxVY;}	//ped enters lane //TODO:mention this 0.25 and 1 below in writeup
+				//threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxVY;}	//ped enters lane //TODO:mention this 0.25 and 1 below in writeup
+				threatBeg = accT + ln*RoadBuilder.laneW/maxVY;
+				if (ln == 1) {
+					confBeg = 0;}
+				else {
+					confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxVY;}}
 			else {
-				threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxV;}}
+				//threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxV;}}
+				threatBeg = accT + ln*RoadBuilder.laneW/maxV;
+				if (ln == 1) {
+					confBeg = 0;}
+				else {
+					confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxV;}}}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
 		TTCol = 1000;
 		TTClear = 1000;
 		if (approachV != 0) {
-			TTCol	= xDist/approachV;
-			TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
+			if (approachA <= 1e-5) {
+				TTCol	= xDist/approachV;}
+			else {
+				TTCol = -(approachV/approachA) + Math.sqrt((approachV*approachV) + 2*approachA*xDist)/approachA;}
+			TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep; //TODO: add radius of ped to this calculation
+		}
+		
+		if (debug) {
+			dictThtBegAtDecision.put(ln, threatBeg); 
+			dictTTcolAtDecision.put(ln, TTCol);
+			dictRealTTcolAtDecision.put(ln, realTTCol);
+			dictTTclearAtDecision.put(ln, TTClear);
+			dictRealTTClearAtDecision.put(ln, realTTClear);
+			dictNearestTurtleAtDecision.put(ln, t);
+			dictDistMSinceDecision.put(ln, new ArrayList<Double>());
+			dictSpeedsSinceDecision.put(ln, new ArrayList<Double>());
+			dictAccelsSinceDecision.put(ln, new ArrayList<Double>());
+			dictFollowingTurtleAtDecision.put(ln, t.follower);
+			dictFollowingCarSpeedsSinceDecision.put(ln, new ArrayList<Double>());}
 		
 		//decide if lag is big enough to start crossing
-		if (yielders.contains(t)) {
-			//TODO: add check to make sure car will be able to stop
+		if (threatBeg + critGap < TTCol) {
 			goes = 1;
 			front = 1;}
+		//else if (threatBeg > TTClear + 1/UserPanel.tStep && TTCol < (t.decelT-1)) {
+		else if (confBeg > TTClear && TTCol < (t.decelT - 1)) {
+			//TODO: 1 is arbitrary. scale w minGap, find literature
+			//TODO: decelT should be based on ped values
+			if (t.follower != null) {
+				goes = 0;}
+			else {
+				goes = 1;
+				front = -1;}}
 		else {
-//			if (t.ying == 1) {
-//				goes = 1;
-//				front = 1;}
-//			else {
-				if (threatBeg + critGap < TTCol) {
-					goes = 1;
-					front = 1;}
-				else if (threatBeg > TTClear + 1/UserPanel.tStep && TTCol < (t.decelT-1)) { 
-					//TODO: 1 is arbitrary. scale w minGap, find literature
-					//TODO: decelT should be based on ped values
-					if (t.follower != null) {
-						goes = 0;}
-					else {
-						goes = 1;
-						front = -1;}}
-				else {
-					goes = -1;}}
-//		}
-		return goes;
+			goes = -1;}
+		
+		int toWait = 0;
+		double stopBarX = 0;
+		if (t.dir == 1) {
+			stopBarX = RoadBuilder.xWalkx - RoadBuilder.panel.stopBarDistance;}
+		else {
+			stopBarX = RoadBuilder.xWalkx + RoadBuilder.panel.stopBarDistance;}
+		boolean withinStopBar = (t.dir * (int)Math.signum(t.xLoc - stopBarX)) == 1;
+		
+		if (withinStopBar && goes == 1 && front == 1 && !yielders.contains(t)) {
+			toWait = 1;}
+		
+		int[] outGoes = new int[] {goes, toWait};
+		return outGoes;
 	}
 	
 	/**
@@ -340,12 +721,12 @@ public class Ped extends Agent{
 	 * @param ln - lane car is in
 	 * @return: -1=don't go; 0=look to next car; 1=go
 	 */
-	public int gap(Turtle t1, int ln) {		//TODO: peds still fucking up the rolling gap
+	public int[] gap(Turtle t1, int ln) {		//TODO: peds still fucking up the rolling gap
 		int goes = 0;						//TODO: make the perception of necessary stopping speed error-prone
 		Turtle t2 = t1.follower;
-		double t1x, dist1, t1d, yDist, TTCol, TTClear; //, t1v;
+		double t1x, dist1, t1d, yDist, TTCol, TTClear, realTTCol, realTTClear, realTailT, t1v;
 		double t2v, t2x, dist2, t2d;
-		double threatBeg; //, threatEnd;
+		double threatBeg, confBeg; //, threatEnd;
 		double maxVY = Math.abs(maxV*Math.cos(endPtTheta));
 		if (maxVY != 0) {
 			xTime = accT + (endPtDist - side) / maxVY;}
@@ -359,15 +740,29 @@ public class Ped extends Agent{
 		yDist	= (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
 		dist1	= space.getDistance(myLoc, t1.myLoc);
 		dist2	= space.getDistance(myLoc, t2.myLoc);
+		t1v		= t1.v;
 		t2v		= t2.v;		
 		
+		double realXDist = t1d;
+		double realXDist2 = t2d;
+		double realTail = Math.abs(t2d - t1d) - t1.length;
+		if (t2v != 0) {
+			realTTCol = realXDist2 / t2v;
+			realTTClear = realTTCol + t2.length/t2v + 1/UserPanel.tStep;
+			realTailT = realTail/t2v;}
+		else {
+			realTTCol = 1000;
+			realTTClear = 1000;
+			realTailT = 1000;}
+		
 		//include errors
-		if (UserPanel.estErr == true) {
+		if (UserPanel.estErr == true && t2v != 0) {
 			etaS	= rnd.nextGaussian();
 			etaV	= rnd.nextGaussian();
 			if (t1.dir == 1) {
 				wS1		= UserPanel.wien1*wS1 + UserPanel.wien2*etaS;
 				wV1		= UserPanel.wien1*wV1 + UserPanel.wien2*etaV;
+				t1v		= t1v - dist1*sigR*wV1;
 				t2v		= t2v - dist2*sigR*wV1;
 				dist1	= dist1*Math.exp(UserPanel.Vs*wS1);
 				dist2	= dist2*Math.exp(UserPanel.Vs*wS1);
@@ -376,6 +771,7 @@ public class Ped extends Agent{
 			else {
 				wSn1	= UserPanel.wien1*wSn1 + UserPanel.wien2*etaS;
 				wVn1	= UserPanel.wien1*wVn1 + UserPanel.wien2*etaV;
+				t1v		= t1v - dist1*sigR*wVn1;
 				t2v		= t2v - dist2*sigR*wVn1;
 				dist1	= dist1*Math.exp(UserPanel.Vs*wSn1);
 				dist2	= dist2*Math.exp(UserPanel.Vs*wSn1);
@@ -385,15 +781,34 @@ public class Ped extends Agent{
 		//calculate relevant times
 		double thisTail   = Math.abs(t2d - t1d) - t1.length;
 		double thisTailT  = 1000;
+		double tailTWithFollowerV = 1000;
+		double tailTWithLeaderV = 1000;
 		if (t2v != 0) {
-			thisTailT  = thisTail/t2v;}
+			tailTWithFollowerV = thisTail/t2v;}
+		if (t1v != 0) {
+			tailTWithLeaderV = 1000;}
+//		if (tailTWithLeaderV < tailTWithFollowerV) {
+//			thisTailT = (tailTWithLeaderV + tailTWithFollowerV)/2;}
+//		else {
+//			thisTailT = tailTWithFollowerV;}								
+		thisTailT = Math.min(tailTWithLeaderV, tailTWithFollowerV);		//TODO: add this to writeup
+		
 		if (ln == 0) {
-			threatBeg = 0;}
+			threatBeg = 0;
+			confBeg = 0;}
 		else {
 			if (maxVY != 0) {
-				threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);}
+				threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);
+				if (ln == 1) {
+					confBeg = 0;}
+				else {
+					 confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxVY;}}
 			else {
-				threatBeg = accT + (ln*RoadBuilder.laneW/maxV);}}
+				threatBeg = accT + (ln*RoadBuilder.laneW/maxV);
+				if (ln == 1) {
+					confBeg = 0;}
+				else {
+					 confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxV;}}}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;
 		TTCol	= 1000;
 		TTClear = 1000;
@@ -401,32 +816,57 @@ public class Ped extends Agent{
 			TTCol	= Math.abs(t2d/t2v);
 			TTClear	= TTCol + t2.length/t2v + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
 		
+		if (debug) {
+			dictThtBegAtDecision.put(ln, threatBeg); 
+			dictTTcolAtDecision.put(ln, TTCol);
+			dictRealTTcolAtDecision.put(ln, realTTCol);
+			dictTTclearAtDecision.put(ln, TTClear);
+			dictRealTTClearAtDecision.put(ln, realTTClear);
+			dictTailTAtDecision.put(ln, thisTailT);
+			dictRealTailTAtDecision.put(ln, realTailT);
+	//		dictFollowingTurtleAtDecision.put(ln, t2);
+			dictDistMSinceDecision.put(ln, new ArrayList<Double>());
+			dictSpeedsSinceDecision.put(ln, new ArrayList<Double>());
+			dictAccelsSinceDecision.put(ln, new ArrayList<Double>());
+	//		dictFollowingTurtleAtDecision.put(ln, t1);
+			dictFollowingCarSpeedsSinceDecision.put(ln, new ArrayList<Double>());}
+		
 		//decide if gap is big enough to start crossing
-		if (yielders.contains(t2)) {
+		if (thisTailT > critGap && threatBeg + critGap < TTCol) {
 			goes = 1;
-			front = 1;}
-		else {
-			if (thisTailT > critGap && threatBeg + critGap < TTCol) {
-				goes = 1;
-				front = 1;}
-			else if (threatBeg > TTClear) {
-				if (t2.follower != null) {	//switch to observing next car
-					switch (ln) {
-					case 0:	nearest0 = t2;
-							break;
-					case 1: nearest1 = t2;
-							break;
-					case 2: nearest2 = t2;
-							break;
-					case 3: nearest3 = t2;
-							break;	
-					default: break;}}
-				else {
-					goes = 1;
-					front = -1;}}
+			front = 2;}
+		//else if (threatBeg > TTClear) {
+		else if (confBeg > TTClear) {
+			if (t2.follower != null) {	//switch to observing next car
+				switch (ln) {
+				case 0:	nearest0 = t2;
+						break;
+				case 1: nearest1 = t2;
+						break;
+				case 2: nearest2 = t2;
+						break;
+				case 3: nearest3 = t2;
+						break;	
+				default: break;}}
 			else {
-				goes = -1;}}
-		return goes;
+				goes = 1;
+				front = -2;}}
+		else {
+			goes = -1;}
+
+		int toWait = 0;
+		double stopBarX = 0;
+		if (t2.dir == 1) {
+			stopBarX = RoadBuilder.xWalkx - RoadBuilder.panel.stopBarDistance;}
+		else {
+			stopBarX = RoadBuilder.xWalkx + RoadBuilder.panel.stopBarDistance;}
+		boolean withinStopBar = (t2.dir * (int)Math.signum(t2.xLoc - stopBarX)) == 1;
+		
+		if (withinStopBar && goes == 1 && !yielders.contains(t2)) {
+			toWait = 1;}
+		
+		int[] outGoes = new int[] {goes, toWait};
+		return outGoes;
 	}
 	
 	/**
@@ -442,7 +882,73 @@ public class Ped extends Agent{
 		double[] acc;
 		xF = yF = curbF = 0;
 		
-		//calculate heading to endpoint
+		double carW = UserPanel.carWidth;
+		double carL = UserPanel.carLength;
+		boolean carInPath = false;
+		Turtle theCar = null;
+		NdPoint cornerOfCar = new NdPoint();
+		double absDistCar = 0;
+		if (crossing == 2) {
+			for (Turtle b : RoadBuilder.flowSource.allCars) {
+				boolean carAhead = false;
+				double carY = 0;
+				if (dir == 1) {
+					carY = b.yLoc - carW/2;
+					if (carY > yLoc) carAhead = true;
+					absDistCar = Math.abs(carY - yLoc) - r;}
+				else {
+					carY = b.yLoc + carW/2;
+					if (carY < yLoc) carAhead = true;
+					absDistCar = Math.abs(carY - yLoc) - r;}
+				if (!carAhead) continue;
+				if (absDistCar > RoadBuilder.laneW) continue;
+				double backOfCar = 0;
+				double frontOfCar = b.xLoc;
+				if (b.dir == 1) {
+					frontOfCar += 1/RoadBuilder.spaceScale;
+					if (b.xLoc > (xLoc - r) && (b.xLoc - carL) < (xLoc + r)) {
+						backOfCar = b.xLoc - carL - 1/RoadBuilder.spaceScale;
+						if (yielders.contains(b)) {
+							cornerOfCar = new NdPoint(frontOfCar, carY);}
+						else {
+							cornerOfCar = new NdPoint(backOfCar, carY);}
+						carInPath = true;
+						theCar = b;
+						break;}}
+				else {
+					frontOfCar -= 1/RoadBuilder.spaceScale;
+					if (b.xLoc < (xLoc + r) && (b.xLoc + carL) > (xLoc - r)) {
+						backOfCar = b.xLoc + carL + 1/RoadBuilder.spaceScale;
+						if (yielders.contains(b)) {
+							cornerOfCar = new NdPoint(frontOfCar, carY);}
+						else {
+							cornerOfCar = new NdPoint(backOfCar, carY);}
+						carInPath = true;
+						theCar = b;
+						break;}}}}
+		
+		if (carInPath) {
+			double cornerTheta;
+			double cornerDist  = space.getDistance(location, cornerOfCar);
+			double cornerDelX  = cornerOfCar.getX() - location.getX();
+			if (cornerDist != 0) {
+				cornerTheta = FastMath.asin((double)direct*cornerDelX/cornerDist);}
+			else {
+				cornerTheta = 0;}
+			if (direct == -1) {
+				cornerTheta += Math.PI;}
+			
+			Double aroundCarFx = (maxV*Math.sin(cornerTheta) - v[0])/accT;
+			Double aroundCarFy = (maxV*Math.cos(cornerTheta) - v[1])/accT;
+			forcesX.add(aroundCarFx);
+			forcesY.add(aroundCarFy);
+			
+			Double forceCar = -(double)dir*A*Math.exp((-absDistCar)/B)/m;
+			forcesY.add(forceCar);}
+		
+			
+			
+		//calculate heading to endpoint (or around car)
 		endPtDist  = space.getDistance(location, endPt); 
 		double endPtDelX  = endPt.getX()-location.getX();
 		if (endPtDist != 0) {
@@ -457,9 +963,11 @@ public class Ped extends Agent{
 		Double motFy = (maxV*Math.cos(endPtTheta) - v[1])/accT;
 		forcesX.add(motFx);
 		forcesY.add(motFy);
+			
+		
 		
 		//calculate interactive forces
-		//TODO: write code to make a threshold for interaction instead of the arbitrary horizon
+		//TODO: write code to make a threshold for interaction instead of the arbitrary horizon		
 		if (RoadBuilder.flowSource.nXing < 20) {
 			for (Ped a : RoadBuilder.flowSource.allPeds) {
 				if (a != this && (a.dir == dir || a.crossing == 2)) {
@@ -617,6 +1125,25 @@ public class Ped extends Agent{
 		//store endpoint
 		if (dir == 1) endPt = new NdPoint(RoadBuilder.xWalkx + 1/RoadBuilder.spaceScale, RoadBuilder.worldW + 1);
 		else endPt = new NdPoint(RoadBuilder.xWalkx - 1/RoadBuilder.spaceScale, -1);
+	}
+	
+	public void Clear() {
+		yielders = new ArrayList<Turtle>();
+	}
+	
+	class ViewAngle {
+		Turtle blocker;
+		Turtle blockee;
+		double theta;
+		double theta1;
+		double theta2;
+		ViewAngle(Turtle _blockee, double theta) {
+			this.blockee = _blockee;
+			this.theta = theta;}
+		ViewAngle(Turtle _blocker, double theta1, double theta2) {
+			this.blocker = _blocker;
+			this.theta1 = theta1;
+			this.theta2 = theta2;}
 	}
 	
 	/**

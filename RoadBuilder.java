@@ -47,6 +47,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	public int	  pedRho;
 	public double hPercLimM;
 	public double sLimitKH;
+	public double stopBarM;
 	
 	@Override
 	public Context<Object> build(Context<Object> context) {
@@ -65,6 +66,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		pedRho	 = (int)param.getValue("pedRho");
 		hPercLimM= (double)param.getValue("hPercLimM");
 		sLimitKH = (double)param.getValue("sLimitKH");
+		stopBarM = 9;
 		panel = new UserPanel(this);
 		flowSource = new Scheduler();
 		flowSource.allConf = new ArrayList<Turtle.Conflict>();

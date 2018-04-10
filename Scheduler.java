@@ -99,10 +99,12 @@ public class Scheduler extends Agent {
 				diagramIt();}}
 		if (!killListC.isEmpty()) {
 			for (Turtle c : killListC) {
+				c.blockedPeds.clear();
 				c.die();}
 			killListC = new ArrayList<Turtle>();}
 		if (!killListP.isEmpty()) {
 			for (Ped c : killListP) {
+				c.yielders.clear();
 				c.die();}
 			killListP = new ArrayList<Ped>();}
 //		if(!allConf.isEmpty()) {

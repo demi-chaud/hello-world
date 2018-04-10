@@ -37,3 +37,4 @@ public class Agent {
 	public boolean isPed() {
 		return false;}
 }
+
