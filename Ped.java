@@ -19,7 +19,7 @@ import repast.simphony.space.continuous.NdPoint;
  * @author Darryl Michaud
  */
 public class Ped extends Agent{
-	private boolean debug = false;
+	private boolean debug = true;
 	private	ContinuousSpace<Object> space;
 //	private	Grid<Object> grid;
 	private List<Double> forcesX, forcesY; 
@@ -38,6 +38,7 @@ public class Ped extends Agent{
 		//2 here is more or less arbitrary, but has to match Turtle.stopBar variable
 	public ArrayList<Turtle> yielders;
 	public Turtle nearest0, nearest1, nearest2, nearest3;
+	public double pGap0, pGap1, pGap2, pGap3;
 	public NdPoint myLoc;
 	public double[] v, dv, newV;
 	public double xTime, accT, maxV, xLoc, yLoc, whichSide, r, critGap, tickAtCrossDecision;
@@ -78,23 +79,123 @@ public class Ped extends Agent{
 		else {boxed = false;}
 //		newV  = limitV(newV);
 		
+		Observation currentScene = null;
+		ArrayList<Turtle> approaching  = new ArrayList<Turtle>();
+		
+		if (crossing < 2 || curbed) {	
+			for (Turtle p : RoadBuilder.flowSource.allCars) {
+				double thisGap = xLoc - (p.xLoc - (double)p.dir*p.length);
+				int threat = p.dir * (int)Math.signum(thisGap);
+				if (threat == 1) {
+					approaching.add(p);}}
+			
+			if (!approaching.isEmpty()) {
+				currentScene = LookForApproachingCars(approaching);}}
+		
+		if (currentScene != null) {
+			blockedCars = new ArrayList<Turtle>(currentScene.blockedCars);
+			if (nearest0 == null) {
+				nearest0 = currentScene.nearest0;}
+			else {
+				if (Math.abs(currentScene.gap0) < Math.abs(pGap0) ) {
+					nearest0 = currentScene.nearest0;}
+				else {
+					if (!approaching.contains(nearest0)) {
+						if (nearest0.follower != null) {
+							Turtle back1 = nearest0.follower;
+							if (!currentScene.blockedCars.contains(back1)) {
+								nearest0 = back1;}
+							else {
+								if (back1.follower != null) {
+									if (!currentScene.blockedCars.contains(back1.follower)) {
+											nearest0 = back1.follower;}
+									else {
+										nearest0 = null;}}
+								else {
+									nearest0 = null;}}}
+						else {
+							nearest0 = null;}}}}
+			if (nearest1 == null) {
+				nearest1 = currentScene.nearest1;}
+			else {
+				if (Math.abs(currentScene.gap1) < Math.abs(pGap1) ) {
+					nearest1 = currentScene.nearest1;}
+				else {
+					if (!approaching.contains(nearest1)) {
+						if (nearest1.follower != null) {
+							Turtle back1 = nearest1.follower;
+							if (!currentScene.blockedCars.contains(back1)) {
+								nearest1 = back1;}
+							else {
+								if (back1.follower != null) {
+									if (!currentScene.blockedCars.contains(back1.follower)) {
+											nearest1 = back1.follower;}
+									else {
+										nearest1 = null;}}
+								else {
+									nearest1 = null;}}}
+						else {
+							nearest1 = null;}}}}
+			if (nearest2 == null) {
+				nearest2 = currentScene.nearest2;}
+			else {
+				if (Math.abs(currentScene.gap2) < Math.abs(pGap2) ) {
+					nearest2 = currentScene.nearest2;}
+				else {
+					if (!approaching.contains(nearest2)) {
+						if (nearest2.follower != null) {
+							Turtle back1 = nearest2.follower;
+							if (!currentScene.blockedCars.contains(back1)) {
+								nearest2 = back1;}
+							else {
+								if (back1.follower != null) {
+									if (!currentScene.blockedCars.contains(back1.follower)) {
+											nearest2 = back1.follower;}
+									else {
+										nearest2 = null;}}
+								else {
+									nearest2 = null;}}}
+						else {
+							nearest2 = null;}}}}
+			if (nearest3 == null) {
+				nearest3 = currentScene.nearest3;}
+			else {
+				if (Math.abs(currentScene.gap3) < Math.abs(pGap3) ) {
+					nearest3 = currentScene.nearest3;}
+				else {
+					if (!approaching.contains(nearest3)) {
+						if (nearest3.follower != null) {
+							Turtle back1 = nearest3.follower;
+							if (!currentScene.blockedCars.contains(back1)) {
+								nearest3 = back1;}
+							else {
+								if (back1.follower != null) {
+									if (!currentScene.blockedCars.contains(back1.follower)) {
+											nearest3 = back1.follower;}
+									else {
+										nearest3 = null;}}
+								else {
+									nearest3 = null;}}}
+						else {
+							nearest3 = null;}}}}}
+		
 		switch (crossing) {
 		case 0: if (dir == 1) {
 					if (curbed == true) {
 						crossing = 1;}
 					if (yLoc + newV[1] >= side - r) {
 						curbed = true;
-						dv = yield();
+						dv = yield(approaching,currentScene);
 						newV = sumV(v,dv);}}
 				else {
 					if (curbed == true) {
 						crossing = 1;}
 					if (yLoc + newV[1] <= side + RoadBuilder.roadW + r) {
 						curbed = true;
-						dv = yield();
+						dv = yield(approaching,currentScene);
 						newV = sumV(v,dv);}}
 				break;
-		case 1: dv = yield();
+		case 1: dv = yield(approaching,currentScene);
 				newV = sumV(v,dv);
 				if (dir == 1) {
 					if (yLoc + newV[1] > side) {
@@ -106,7 +207,7 @@ public class Ped extends Agent{
 						crossing = 2;}}
 				break;
 		case 2: if (curbed == true) {
-					dv	 = yield();
+					dv	 = yield(approaching,currentScene);
 					newV = sumV(v,dv);}
 				break;
 		default: break;}
@@ -116,6 +217,12 @@ public class Ped extends Agent{
 			if (whichSide == -whichDir && Math.signum(newV[0]) == -whichDir) {
 				newV[0] = 0;}}
 		newV = limitV(newV);
+		
+		if (currentScene != null) {
+			pGap0 = currentScene.gap0;
+			pGap1 = currentScene.gap1;
+			pGap2 = currentScene.gap2;
+			pGap3 = currentScene.gap3;}
 		
 		if (!curbed && debug) {
 			for (Integer key : dictNearestTurtleAtDecision.keySet()) {
@@ -167,51 +274,28 @@ public class Ped extends Agent{
 		age ++;
 	}
 	
-	/**
-	 * Determines value of curbed by calling lag() and/or gap() for each lane
-	 * @return output of accel() based on new value of curbed
-	 */
-	public double[] yield() {
-		if (debug) {
-			dictThtBegAtDecision = new HashMap<Integer,Double>();
-			dictTTcolAtDecision = new HashMap<Integer,Double>();
-			dictRealTTcolAtDecision = new HashMap<Integer,Double>();
-			dictTailTAtDecision = new HashMap<Integer,Double>();
-			dictRealTailTAtDecision = new HashMap<Integer,Double>();
-			dictTTclearAtDecision = new HashMap<Integer,Double>();
-			dictRealTTClearAtDecision = new HashMap<Integer,Double>();
-			dictNearestTurtleAtDecision = new HashMap<Integer, Turtle>();
-			dictDistMSinceDecision = new HashMap<Integer, ArrayList<Double>>();
-			dictSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
-			dictAccelsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
-			dictFollowingTurtleAtDecision = new HashMap<Integer, Turtle>();
-			dictFollowingCarSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();}
-		
-		blockedCars = new ArrayList<Turtle>();
-		ArrayList<Turtle> approaching  = new ArrayList<Turtle>();
+	public class Observation {
+		Turtle nearest0, nearest1, nearest2, nearest3;
+		ArrayList<Integer> lanesWithoutEyeContact = new ArrayList<Integer>();
+		ArrayList<Turtle> blockedCars = new ArrayList<Turtle>();
+		double gap0, gap1, gap2, gap3;
+	}
+	
+	public Observation LookForApproachingCars(ArrayList<Turtle> approaching) {
+		Observation cScene = new Observation();
+		cScene.blockedCars = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching0 = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching1 = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching2 = new ArrayList<Turtle>();
 		ArrayList<Turtle> approaching3 = new ArrayList<Turtle>();	
-		nearest0 = null;
-		nearest1 = null;
-		nearest2 = null;
-		nearest3 = null;
+		cScene.nearest0 = null;
+		cScene.nearest1 = null;
+		cScene.nearest2 = null;
+		cScene.nearest3 = null;
 		
-		double gap0, gap1, gap2, gap3;
-		double[] frogger;
-		boolean go0, go1, go2, go3;
-		go0 = go1 = go2 = go3 = false;
-		int goes0, goes1, goes2, goes3;
-		goes0 = goes1 = goes2 = goes3 = 0;
-		gap0 = gap1 = gap2 = gap3 = RoadBuilder.roadL/2;
+		cScene.gap0 = cScene.gap1 = cScene.gap2 = cScene.gap3 = RoadBuilder.roadL/2;
 		
 		//find nearest car in each lane
-		for (Turtle p : RoadBuilder.flowSource.allCars) {
-			double thisGap = xLoc - (p.xLoc - (double)p.dir*p.length);
-			int threat = p.dir * (int)Math.signum(thisGap);
-			if (threat == 1) {
-				approaching.add(p);}}
 		if (!approaching.isEmpty()) {
 			for (Turtle n : approaching) {
 				if (n.dir == dir) {
@@ -227,56 +311,56 @@ public class Ped extends Agent{
 			if(!approaching0.isEmpty()) {
 				for (Turtle o : approaching0) {
 					double thisGap = o.xLoc - xLoc;
-					if(Math.abs(thisGap) < Math.abs(gap0)) {
-						gap0 = thisGap;
-						nearest0 = o;}}}
+					if(Math.abs(thisGap) < Math.abs(cScene.gap0)) {
+						cScene.gap0 = thisGap;
+						cScene.nearest0 = o;}}}
 			if(!approaching1.isEmpty()) {
 				for (Turtle o : approaching1) {
 					double thisGap = o.xLoc - xLoc;
-					if(Math.abs(thisGap) < Math.abs(gap1)) {
-						gap1 = thisGap;
-						nearest1 = o;}}}
+					if(Math.abs(thisGap) < Math.abs(cScene.gap1)) {
+						cScene.gap1 = thisGap;
+						cScene.nearest1 = o;}}}
 			if(!approaching2.isEmpty()) {
 				for (Turtle o : approaching2) {
 					double thisGap = o.xLoc - xLoc;
-					if(Math.abs(thisGap) < Math.abs(gap2)) {
-						gap2 = thisGap;
-						nearest2 = o;}}}
+					if(Math.abs(thisGap) < Math.abs(cScene.gap2)) {
+						cScene.gap2 = thisGap;
+						cScene.nearest2 = o;}}}
 			if(!approaching3.isEmpty()) {
 				for (Turtle o : approaching3) {
 					double thisGap = o.xLoc - xLoc;
-					if(Math.abs(thisGap) < Math.abs(gap3)) {
-						gap3 = thisGap;
-						nearest3 = o;}}}}
+					if(Math.abs(thisGap) < Math.abs(cScene.gap3)) {
+						cScene.gap3 = thisGap;
+						cScene.nearest3 = o;}}}}
 		
 		//double threat
 		double carW = UserPanel.carWidth;
 		double carL = UserPanel.carLength;
-		double[] gaps = new double[] {gap0, gap1, gap2, gap3};
+		double[] gaps = new double[] {cScene.gap0, cScene.gap1, cScene.gap2, cScene.gap3};
 		for (double cGap : gaps) {
 			if (cGap == RoadBuilder.roadL/2) {
 				cGap = 0;}}
 		ArrayList<Turtle> closests = new ArrayList<Turtle>();
-		if (nearest0 != null) {
-			closests.add(nearest0);}
+		if (cScene.nearest0 != null) {
+			closests.add(cScene.nearest0);}
 		else {
 			closests.add(null);}
-		if (nearest1 != null) {
-			closests.add(nearest1);}
+		if (cScene.nearest1 != null) {
+			closests.add(cScene.nearest1);}
 		else {
 			closests.add(null);}
-		if (nearest2 != null) {
-			closests.add(nearest2);}
+		if (cScene.nearest2 != null) {
+			closests.add(cScene.nearest2);}
 		else {
 			closests.add(null);}
-		if (nearest3 != null) {
-			closests.add(nearest3);}
+		if (cScene.nearest3 != null) {
+			closests.add(cScene.nearest3);}
 		else {
 			closests.add(null);}
 		double maxRelevantXDiff = Math.max(gaps[0], Math.max(gaps[1], Math.max(gaps[2], gaps[3])));
 		double minRelevantXDiff = Math.min(gaps[0], Math.min(gaps[1], Math.min(gaps[2], gaps[3])));
-		if (maxRelevantXDiff > 150/RoadBuilder.spaceScale) maxRelevantXDiff = 150/RoadBuilder.spaceScale;
-		if (minRelevantXDiff < -150/RoadBuilder.spaceScale) minRelevantXDiff = -150/RoadBuilder.spaceScale;
+		if (maxRelevantXDiff > 200/RoadBuilder.spaceScale) maxRelevantXDiff = 200/RoadBuilder.spaceScale;
+		if (minRelevantXDiff < -200/RoadBuilder.spaceScale) minRelevantXDiff = -200/RoadBuilder.spaceScale;
 		double maxRelevantX = xLoc + maxRelevantXDiff;
 		double minRelevantX = xLoc + minRelevantXDiff;
 		ArrayList<ViewAngle> obstructers = new ArrayList<ViewAngle>();
@@ -285,7 +369,6 @@ public class Ped extends Agent{
 		ArrayList<Turtle> nearEnoughInX1 = new ArrayList<Turtle>();
 		ArrayList<Turtle> nearEnoughInX2 = new ArrayList<Turtle>();
 		ArrayList<Turtle> nearEnoughInX3 = new ArrayList<Turtle>();
-		ArrayList<Integer> lanesWithoutEyeContact = new ArrayList<Integer>();
 		
 		for (Turtle i : RoadBuilder.flowSource.allCars) {
 			if (i.xLoc > minRelevantX && i.xLoc < maxRelevantX) {
@@ -477,24 +560,55 @@ public class Ped extends Agent{
 							blockedAngles.add(new Double[] {lowAngle0, hiAngle0});}}
 					for (Double[] blockedThetas : blockedAngles) {
 						if (blockedThetas[0] < blockeeTheta1 && blockedThetas[1] > blockeeTheta2) {
-							if (!blockedCars.contains(cClose)) {
-								blockedCars.add(cClose);}
+							if (!cScene.blockedCars.contains(cClose)) {
+								cScene.blockedCars.add(cClose);}
 							int laneWithNewTurtle = closests.indexOf(cClose);
 							switch (laneWithNewTurtle) {
 							case 0:
-								nearest0 = cClose.follower;
+								cScene.nearest0 = cClose.follower;
 								break;
 							case 1:
-								nearest1 = cClose.follower;
+								cScene.nearest1 = cClose.follower;
 								break;
 							case 2:
-								nearest2 = cClose.follower;
+								cScene.nearest2 = cClose.follower;
 								break;
 							case 3:
-								nearest3 = cClose.follower;
+								cScene.nearest3 = cClose.follower;
 								break;}}
 						if (blockedThetas[0] < thetaDriver && blockedThetas[1] > thetaDriver) {
-							lanesWithoutEyeContact.add(closests.indexOf(cClose));}}}}}	
+							cScene.lanesWithoutEyeContact.add(closests.indexOf(cClose));}}}}}
+		return cScene;
+	}
+	
+	
+	/**
+	 * Determines value of curbed by calling lag() and/or gap() for each lane
+	 * @return output of accel() based on new value of curbed
+	 */
+	public double[] yield(ArrayList<Turtle> approaching, Observation currentScene) {
+		if (debug) {
+			dictThtBegAtDecision = new HashMap<Integer,Double>();
+			dictTTcolAtDecision = new HashMap<Integer,Double>();
+			dictRealTTcolAtDecision = new HashMap<Integer,Double>();
+			dictTailTAtDecision = new HashMap<Integer,Double>();
+			dictRealTailTAtDecision = new HashMap<Integer,Double>();
+			dictTTclearAtDecision = new HashMap<Integer,Double>();
+			dictRealTTClearAtDecision = new HashMap<Integer,Double>();
+			dictNearestTurtleAtDecision = new HashMap<Integer, Turtle>();
+			dictDistMSinceDecision = new HashMap<Integer, ArrayList<Double>>();
+			dictSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
+			dictAccelsSinceDecision = new HashMap<Integer, ArrayList<Double>>();
+			dictFollowingTurtleAtDecision = new HashMap<Integer, Turtle>();
+			dictFollowingCarSpeedsSinceDecision = new HashMap<Integer, ArrayList<Double>>();}
+		
+		double[] frogger;
+		boolean go0, go1, go2, go3;
+		go0 = go1 = go2 = go3 = false;
+		int goes0, goes1, goes2, goes3;
+		goes0 = goes1 = goes2 = goes3 = 0;
+		
+		ArrayList<Integer> lanesWithoutEyeContact = new ArrayList<Integer>();
 		
 		//decide crossing decision for each lane
 		int count0 = 0;
@@ -569,7 +683,7 @@ public class Ped extends Agent{
 			waits.put(3, 0);
 			go3 = true;}
 		
-		for (Integer blind : lanesWithoutEyeContact) {
+		for (Integer blind : currentScene.lanesWithoutEyeContact) {
 			waits.put(blind, 0);}
 		
 		//tally crossing decisions to give final result
