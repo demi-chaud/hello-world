@@ -271,7 +271,46 @@ public class Turtle extends Agent{
 		else {a = maxa*(1 - Math.pow(v/maxv,deltaIDM));}
 		if (xLoc > RoadBuilder.roadL/10 && xLoc < 9*RoadBuilder.roadL/10 && a < -UserPanel.emergDec) {
 			a = -UserPanel.emergDec;}
+		
+		if (a < 0 || v == 0) {
+			a = DontStopOnXWalk(a);
+		}
+		
 		return a;	
+	}
+	
+	public double DontStopOnXWalk(double originalAccel) {
+		double stopD = stopBar - xLoc;
+		stopDab	= dir*stopD;
+		if (stopDab > percLimit) return originalAccel;
+		if (leader == null) return originalAccel;
+		double leaderStopD = stopBar - leader.xLoc;
+		double leaderStillBlocking = Math.signum(dir*leaderStopD);
+		if (leaderStillBlocking == 1) return originalAccel;
+		double xwalkD	= RoadBuilder.xWalkx - xLoc;
+		double threat	= Math.signum(dir*xwalkD);
+		double politeDecel; 
+		if (threat == 1) {
+			if (v == 0) {
+				if (head < xwalkD + length) {
+					politeDecel = 0;}
+				else {
+					politeDecel = originalAccel;}}
+			else {
+				if ((leader.v == 0 || (leader.acc < 0 && leader.v < 5/UserPanel.vBase)) && (head < xwalkD + length)) {
+					double potentialAcc = -v*v/(2*stopDab);
+					if (potentialAcc > -3*UserPanel.tStep*UserPanel.tStep/RoadBuilder.spaceScale) {
+						if (potentialAcc < originalAccel) {
+							politeDecel = potentialAcc;}
+						else {
+							politeDecel = originalAccel;}}
+					else {
+						politeDecel = originalAccel;}}
+				else {
+					politeDecel = originalAccel;}}}
+		else {
+			politeDecel = originalAccel;}
+		return politeDecel;
 	}
 	
 	/*
@@ -809,6 +848,12 @@ public class Turtle extends Agent{
 				for (Ped n : crossingP2) {
 					conflict(n);}}}}
 	public void conflict(Ped p) {
+		if (leader != null) {
+			double dist = p.xLoc - xLoc;
+			double leaderDist = p.xLoc - leader.xLoc;
+			double absDist = (double)dir*dist;
+			double leaderAbsDist = (double)dir*leaderDist;
+			if (leaderAbsDist + leader.length > 0) return;}
 		double sinceBlocked = -1;
 		double stamp = RoadBuilder.clock.getTickCount();
 		if (blockedPeds.containsKey(p)) {

@@ -45,7 +45,7 @@ public class UserPanel implements ActionListener{
 	static public double confLimS	= 1.5;			// seconds			default:   1.5
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
 	
-	static public boolean estErr 	= true;		// estimation errors
+	static public boolean estErr 	= false;		// estimation errors
 	static public boolean BRT		= true;
 	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
@@ -251,6 +251,8 @@ public class UserPanel implements ActionListener{
 		minMinA		= 0.376 * tStep * tStep / spaceScale;
 		maxMaxV		= sLimitMu + 4*sLimit_sd;
 		minMaxV		= sLimitMu - 4*sLimit_sd;
+		if (minMaxV < 5/vBase) {
+			minMaxV = 5/vBase;}
 		
 		// convert initial values to strings for JPanel
 		sLimits	= String.valueOf(sLimitKH);

@@ -2,6 +2,7 @@ package driving1;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -47,8 +48,8 @@ public class Scheduler extends Agent {
 	Random  rndPed = new Random(); //ditto for peds so the two are independent
 	Random	rndCAV = new Random(); //ditto for choosing connected/automated
 	String  homeDir = System.getProperty("user.home");
-	//String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
-	String	directory = homeDir + "\\workspace\\driving1\\results\\";
+	String	directory = homeDir + "\\Desktop\\thesis\\driving1\\results\\";
+	//String	directory = homeDir + "\\workspace\\driving1\\results\\";
 	DateFormat dateFormat = new SimpleDateFormat("MM-dd_HH-mm");
 	double  rndC, rndP, rndC2, rndP2, yPlacement;
 	public static double thisTick;
@@ -62,12 +63,20 @@ public class Scheduler extends Agent {
 	double	dxM = 5.;
 	double	dx = dxM/RoadBuilder.spaceScale;
 	public int nXing = 0;
+	public LocalTime endTime;
 	
 	/**
 	 * The scheduled method that contains all major steps
 	 */
 	@ScheduledMethod(start = 1, interval = 1, priority = 1)
 	public void doStuff() {
+		LocalTime nowTime = LocalTime.now();
+		if (nowTime.compareTo(endTime) > 1) {
+			System.out.println(RoadBuilder.panel.paramStr + "aborted after 15min");
+			RunEnvironment.getInstance().endRun();}
+		if (RoadBuilder.flowSource.allCars.size() > 500) {
+			System.out.println(RoadBuilder.panel.paramStr + "got stuck and aborted");
+			RunEnvironment.getInstance().endRun();}
 		if (RoadBuilder.panel.deathKnell) {
 			RunEnvironment.getInstance().endRun();}
 		RoadBuilder.flowSource.calc();
@@ -412,5 +421,7 @@ public class Scheduler extends Agent {
 		allPeds = new ArrayList<Ped>();
 		allConf = new ArrayList<Turtle.Conflict>();		
 		allCrash = new ArrayList<Turtle.Crash>();
+		LocalTime startTime = LocalTime.now();
+		endTime = startTime.plusMinutes(15);
 	}
 }

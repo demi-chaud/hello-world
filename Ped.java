@@ -590,8 +590,9 @@ public class Ped extends Agent{
 								else {
 									cScene.gap3 = RoadBuilder.roadL/2;}
 								break;}}
-						if (blockedThetas[0] < thetaDriver && blockedThetas[1] > thetaDriver) {
-							cScene.lanesWithoutEyeContact.add(closests.indexOf(cClose));}}}}}
+//						if (blockedThetas[0] < thetaDriver && blockedThetas[1] > thetaDriver) {
+//							cScene.lanesWithoutEyeContact.add(closests.indexOf(cClose));}
+						}}}}
 		return cScene;
 	}
 	
@@ -622,7 +623,7 @@ public class Ped extends Agent{
 		int goes0, goes1, goes2, goes3;
 		goes0 = goes1 = goes2 = goes3 = 0;
 		
-		ArrayList<Integer> lanesWithoutEyeContact = new ArrayList<Integer>();
+//		ArrayList<Integer> lanesWithoutEyeContact = new ArrayList<Integer>();
 		
 		//decide crossing decision for each lane
 		int count0 = 0;
@@ -697,16 +698,19 @@ public class Ped extends Agent{
 			waits.put(3, 0);
 			go3 = true;}
 		
-		if (currentScene != null) {
-			for (Integer blind : currentScene.lanesWithoutEyeContact) {
-				waits.put(blind, 0);}}
+//		if (currentScene != null) {
+//			for (Integer blind : currentScene.lanesWithoutEyeContact) {
+//				waits.put(blind, 0);}}
 		
 		//tally crossing decisions to give final result
 		curbed = true;
 		if (!approaching.isEmpty()) {
 			if (go0 && go1 && go2 && go3) {
 				crossing = 2;
-				if (waits.get(0) == 0 && waits.get(1) == 0 && waits.get(2) == 0 && waits.get(3) == 0) {
+				if ((waits.get(0) == 0 || (nearest0.v == 0 && nearest0.ying == 1)) && 
+						(waits.get(1) == 0 || (nearest1.v == 0 && nearest1.ying == 1)) &&
+						(waits.get(2) == 0 || (nearest2.v == 0 && nearest2.ying == 1)) && 
+						(waits.get(3) == 0 || (nearest3.v == 0 && nearest3.ying == 1))) {
 					tickAtCrossDecision = RoadBuilder.clock.getTickCount();
 					curbed = false;}}}
 		else {
@@ -792,13 +796,16 @@ public class Ped extends Agent{
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
 		TTCol = 1000;
 		TTClear = 1000;
+		//double relevantAcc = Math.max(t.acc, t.newAcc);
+		double relevantAcc = t.acc;
 		if (approachV != 0) {
 			if (approachA <= 1e-5) {
 				TTCol	= xDist/approachV;}
 			else {
 				TTCol = -(approachV/approachA) + Math.sqrt((approachV*approachV) + 2*approachA*xDist)/approachA;}
-			TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep; //TODO: add radius of ped to this calculation
-		}
+			TTClear	= TTCol + t.length/approachV + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
+		else if (relevantAcc > 0) {
+			TTCol = Math.sqrt(2*relevantAcc*xDist)/relevantAcc;}
 		
 		if (debug) {
 			dictThtBegAtDecision.put(ln, threatBeg); 
@@ -832,9 +839,9 @@ public class Ped extends Agent{
 		int toWait = 0;
 		double stopBarX = 0;
 		if (t.dir == 1) {
-			stopBarX = RoadBuilder.xWalkx - RoadBuilder.panel.stopBarDistance;}
+			stopBarX = RoadBuilder.xWalkx - 2*RoadBuilder.panel.stopBarDistance;}
 		else {
-			stopBarX = RoadBuilder.xWalkx + RoadBuilder.panel.stopBarDistance;}
+			stopBarX = RoadBuilder.xWalkx + 2*RoadBuilder.panel.stopBarDistance;}
 		boolean withinStopBar = (t.dir * (int)Math.signum(t.xLoc - stopBarX)) == 1;
 		
 		if (withinStopBar && goes == 1 && front == 1 && !yielders.contains(t)) {
@@ -941,9 +948,13 @@ public class Ped extends Agent{
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;
 		TTCol	= 1000;
 		TTClear = 1000;
+		//double relevantAcc = Math.max(t2.acc, t2.newAcc);
+		double relevantAcc = t2.acc;
 		if (t2v != 0) {
 			TTCol	= Math.abs(t2d/t2v);
 			TTClear	= TTCol + t2.length/t2v + 1/UserPanel.tStep;} //TODO: add radius of ped to this calculation
+		else if (relevantAcc > 0) {
+			TTCol = Math.sqrt(2*relevantAcc*t2d)/relevantAcc;}
 		
 		if (debug) {
 			dictThtBegAtDecision.put(ln, threatBeg); 
@@ -1019,6 +1030,7 @@ public class Ped extends Agent{
 		double absDistCar = 0;
 		if (crossing == 2) {
 			for (Turtle b : RoadBuilder.flowSource.allCars) {
+				if (yielders.contains(b) && b.v == 0) continue;
 				boolean carAhead = false;
 				double carY = 0;
 				if (dir == 1) {
