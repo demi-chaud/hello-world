@@ -42,11 +42,16 @@ public class UserPanel implements ActionListener{
 	public double hPercLimM;
 	public double stopBarM;
 	
+	public boolean estErr;
+	public boolean BRT;
+	public boolean inclDist;
+	public boolean inclObstruct;
+	
 	static public double confLimS	= 1.5;			// seconds			default:   1.5
 	static public double aPercLimM	= 60;			// automated ped perception (meters)
 	
-	static public boolean estErr 	= false;		// estimation errors
-	static public boolean BRT		= true;
+	//static public boolean estErr 	= true;		// estimation errors
+	//static public boolean BRT		= true;
 	static public boolean ADRT		= true;
 	static public boolean inclRL	= false;  //include red lights?
 	static public boolean calcFun	= false;  //build fundamental diagram
@@ -76,7 +81,7 @@ public class UserPanel implements ActionListener{
 	static public double SsigHat	= 0.486;		// stopBar dist shape param (already in model units)
 	static public int	 cycleTimeS	= 90;
 	static public int	 greenDurS	= 60;			// duration of green light in sec
-	static public double calcTSpanS	= 15;			// timespan for fundamental diagram calculations (in seconds)
+	static public double calcTSpanS	= 120;			// timespan for fundamental diagram calculations (in seconds)
 	//TODO: add ped gap coefficients
 	
 	// calculate population range constants
@@ -184,6 +189,11 @@ public class UserPanel implements ActionListener{
 		sLimitKH	= src.sLimitKH;		// km/hr								default:  45
 		stopBarM	= src.stopBarM;
 		
+		estErr = src.estErr;
+		BRT = src.BRT;
+		inclDist = src.inclDist;
+		inclObstruct = src.inclObstruct;
+		
 		String outStr = "";
 		String[] pNames = src.getInitParam();
 		for (String cName : pNames) {
@@ -209,6 +219,18 @@ public class UserPanel implements ActionListener{
 					break;
 				case "hPercLimM":
 					valStr = String.valueOf(hPercLimM);
+					break;
+				case "estErr":
+					valStr = String.valueOf(estErr);
+					break;
+				case "BRT":
+					valStr = String.valueOf(BRT);
+					break;
+				case "inclDist":
+					valStr = String.valueOf(inclDist);
+					break;
+				case "inclObstruct":
+					valStr = String.valueOf(inclObstruct);
 					break;
 				default:
 					break;}
@@ -260,6 +282,15 @@ public class UserPanel implements ActionListener{
 		pedRhos	= String.valueOf(pedRho);
 		
 		JPanel newPanel = new JPanel();
+		
+		int nBoolTrue = 0;
+		if (estErr) nBoolTrue++;
+		if (BRT) nBoolTrue++;
+		if (inclDist) nBoolTrue++;
+		if (inclObstruct) nBoolTrue++;
+		if (nBoolTrue == 2) {
+			deathKnell = true;}
+		
 		if(percV2X + percAuto + percBoth > 100.001) {
 			deathKnell = true;}
 		JButton carBtn = new JButton("car");
@@ -520,6 +551,27 @@ public class UserPanel implements ActionListener{
 		return hPercLimM;}
 	public void setHPercLimM(double src) {
 		hPercLimM = src;}
+	@Parameter(usageName="estErr",displayName="Include Estimation Errors")
+	public boolean getEstErr() {
+		return estErr;}
+	public void setEstErr(boolean src) {
+		estErr = src;}
+	@Parameter(usageName="BRT",displayName="Include BRT")
+	public boolean getBRT() {
+		return BRT;}
+	public void setBRT(boolean src) {
+		BRT = src;}
+	@Parameter(usageName="inclDist",displayName="Include Distraction")
+	public boolean getInclDist() {
+		return inclDist;}
+	public void setInclDist(boolean src) {
+		inclDist = src;}
+	@Parameter(usageName="inclObstruct",displayName="Include Obstruction")
+	public boolean getInclObstruct() {
+		return inclObstruct;}
+	public void setInclObstruct(boolean src) {
+		inclObstruct = src;}
+	
 	/*
 	@Parameter(usageName="",displayName="")
 	public double get() {

@@ -93,91 +93,98 @@ public class Ped extends Agent{
 				currentScene = LookForApproachingCars(approaching);}}
 		
 		if (currentScene != null) {
-			blockedCars = new ArrayList<Turtle>(currentScene.blockedCars);
-			if (nearest0 == null) {
-				nearest0 = currentScene.nearest0;}
-			else {
-				if (Math.abs(currentScene.gap0) < Math.abs(pGap0) ) {
+			if (!RoadBuilder.panel.inclObstruct) {
+				nearest0 = currentScene.nearest0;
+				nearest1 = currentScene.nearest1;
+				nearest2 = currentScene.nearest2;
+				nearest3 = currentScene.nearest3;
+				blockedCars = new ArrayList<Turtle>();}
+			else {			
+				blockedCars = new ArrayList<Turtle>(currentScene.blockedCars);
+				if (nearest0 == null) {
 					nearest0 = currentScene.nearest0;}
 				else {
-					if (!approaching.contains(nearest0)) {
-						if (nearest0.follower != null) {
-							Turtle back1 = nearest0.follower;
-							if (!currentScene.blockedCars.contains(back1)) {
-								nearest0 = back1;}
-							else {
-								if (back1.follower != null) {
-									if (!currentScene.blockedCars.contains(back1.follower)) {
-											nearest0 = back1.follower;}
-									else {
-										nearest0 = null;}}
+					if (Math.abs(currentScene.gap0) < Math.abs(pGap0) ) {
+						nearest0 = currentScene.nearest0;}
+					else {
+						if (!approaching.contains(nearest0)) {
+							if (nearest0.follower != null) {
+								Turtle back1 = nearest0.follower;
+								if (!currentScene.blockedCars.contains(back1)) {
+									nearest0 = back1;}
 								else {
-									nearest0 = null;}}}
-						else {
-							nearest0 = null;}}}}
-			if (nearest1 == null) {
-				nearest1 = currentScene.nearest1;}
-			else {
-				if (Math.abs(currentScene.gap1) < Math.abs(pGap1) ) {
+									if (back1.follower != null) {
+										if (!currentScene.blockedCars.contains(back1.follower)) {
+												nearest0 = back1.follower;}
+										else {
+											nearest0 = null;}}
+									else {
+										nearest0 = null;}}}
+							else {
+								nearest0 = null;}}}}
+				if (nearest1 == null) {
 					nearest1 = currentScene.nearest1;}
 				else {
-					if (!approaching.contains(nearest1)) {
-						if (nearest1.follower != null) {
-							Turtle back1 = nearest1.follower;
-							if (!currentScene.blockedCars.contains(back1)) {
-								nearest1 = back1;}
-							else {
-								if (back1.follower != null) {
-									if (!currentScene.blockedCars.contains(back1.follower)) {
-											nearest1 = back1.follower;}
-									else {
-										nearest1 = null;}}
+					if (Math.abs(currentScene.gap1) < Math.abs(pGap1) ) {
+						nearest1 = currentScene.nearest1;}
+					else {
+						if (!approaching.contains(nearest1)) {
+							if (nearest1.follower != null) {
+								Turtle back1 = nearest1.follower;
+								if (!currentScene.blockedCars.contains(back1)) {
+									nearest1 = back1;}
 								else {
-									nearest1 = null;}}}
-						else {
-							nearest1 = null;}}}}
-			if (nearest2 == null) {
-				nearest2 = currentScene.nearest2;}
-			else {
-				if (Math.abs(currentScene.gap2) < Math.abs(pGap2) ) {
+									if (back1.follower != null) {
+										if (!currentScene.blockedCars.contains(back1.follower)) {
+												nearest1 = back1.follower;}
+										else {
+											nearest1 = null;}}
+									else {
+										nearest1 = null;}}}
+							else {
+								nearest1 = null;}}}}
+				if (nearest2 == null) {
 					nearest2 = currentScene.nearest2;}
 				else {
-					if (!approaching.contains(nearest2)) {
-						if (nearest2.follower != null) {
-							Turtle back1 = nearest2.follower;
-							if (!currentScene.blockedCars.contains(back1)) {
-								nearest2 = back1;}
-							else {
-								if (back1.follower != null) {
-									if (!currentScene.blockedCars.contains(back1.follower)) {
-											nearest2 = back1.follower;}
-									else {
-										nearest2 = null;}}
+					if (Math.abs(currentScene.gap2) < Math.abs(pGap2) ) {
+						nearest2 = currentScene.nearest2;}
+					else {
+						if (!approaching.contains(nearest2)) {
+							if (nearest2.follower != null) {
+								Turtle back1 = nearest2.follower;
+								if (!currentScene.blockedCars.contains(back1)) {
+									nearest2 = back1;}
 								else {
-									nearest2 = null;}}}
-						else {
-							nearest2 = null;}}}}
-			if (nearest3 == null) {
-				nearest3 = currentScene.nearest3;}
-			else {
-				if (Math.abs(currentScene.gap3) < Math.abs(pGap3) ) {
+									if (back1.follower != null) {
+										if (!currentScene.blockedCars.contains(back1.follower)) {
+												nearest2 = back1.follower;}
+										else {
+											nearest2 = null;}}
+									else {
+										nearest2 = null;}}}
+							else {
+								nearest2 = null;}}}}
+				if (nearest3 == null) {
 					nearest3 = currentScene.nearest3;}
 				else {
-					if (!approaching.contains(nearest3)) {
-						if (nearest3.follower != null) {
-							Turtle back1 = nearest3.follower;
-							if (!currentScene.blockedCars.contains(back1)) {
-								nearest3 = back1;}
-							else {
-								if (back1.follower != null) {
-									if (!currentScene.blockedCars.contains(back1.follower)) {
-											nearest3 = back1.follower;}
-									else {
-										nearest3 = null;}}
+					if (Math.abs(currentScene.gap3) < Math.abs(pGap3) ) {
+						nearest3 = currentScene.nearest3;}
+					else {
+						if (!approaching.contains(nearest3)) {
+							if (nearest3.follower != null) {
+								Turtle back1 = nearest3.follower;
+								if (!currentScene.blockedCars.contains(back1)) {
+									nearest3 = back1;}
 								else {
-									nearest3 = null;}}}
-						else {
-							nearest3 = null;}}}}}
+									if (back1.follower != null) {
+										if (!currentScene.blockedCars.contains(back1.follower)) {
+												nearest3 = back1.follower;}
+										else {
+											nearest3 = null;}}
+									else {
+										nearest3 = null;}}}
+							else {
+								nearest3 = null;}}}}}}
 		
 		switch (crossing) {
 		case 0: if (dir == 1) {
@@ -333,266 +340,268 @@ public class Ped extends Agent{
 						cScene.gap3 = thisGap;
 						cScene.nearest3 = o;}}}}
 		
-		//double threat
-		double carW = UserPanel.carWidth;
-		double carL = UserPanel.carLength;
-		double[] gaps = new double[] {cScene.gap0, cScene.gap1, cScene.gap2, cScene.gap3};
-		for (double cGap : gaps) {
-			if (cGap == RoadBuilder.roadL/2) {
-				cGap = 0;}}
-		ArrayList<Turtle> closests = new ArrayList<Turtle>();
-		if (cScene.nearest0 != null) {
-			closests.add(cScene.nearest0);}
-		else {
-			closests.add(null);}
-		if (cScene.nearest1 != null) {
-			closests.add(cScene.nearest1);}
-		else {
-			closests.add(null);}
-		if (cScene.nearest2 != null) {
-			closests.add(cScene.nearest2);}
-		else {
-			closests.add(null);}
-		if (cScene.nearest3 != null) {
-			closests.add(cScene.nearest3);}
-		else {
-			closests.add(null);}
-		double maxRelevantXDiff = Math.max(gaps[0], Math.max(gaps[1], Math.max(gaps[2], gaps[3])));
-		double minRelevantXDiff = Math.min(gaps[0], Math.min(gaps[1], Math.min(gaps[2], gaps[3])));
-		if (maxRelevantXDiff > 200/RoadBuilder.spaceScale) maxRelevantXDiff = 200/RoadBuilder.spaceScale;
-		if (minRelevantXDiff < -200/RoadBuilder.spaceScale) minRelevantXDiff = -200/RoadBuilder.spaceScale;
-		double maxRelevantX = xLoc + maxRelevantXDiff;
-		double minRelevantX = xLoc + minRelevantXDiff;
-		ArrayList<ViewAngle> obstructers = new ArrayList<ViewAngle>();
-		ArrayList<Turtle> nearEnoughInX0 = new ArrayList<Turtle>();
-		ArrayList<Turtle> nearEnoughInX1 = new ArrayList<Turtle>();
-		ArrayList<Turtle> nearEnoughInX2 = new ArrayList<Turtle>();
-		ArrayList<Turtle> nearEnoughInX3 = new ArrayList<Turtle>();
-		
-		for (Turtle i : RoadBuilder.flowSource.allCars) {
-			if (i.xLoc > minRelevantX && i.xLoc < maxRelevantX) {
-				if (dir == 1) {
-					if (i.dir == 1) {
-						if (i.lane == 0) {
-							nearEnoughInX0.add(i);}
-						else {
-							nearEnoughInX1.add(i);}}
-					else {
-						if (i.lane == 1) {
-							nearEnoughInX2.add(i);}
-						else {
-							nearEnoughInX3.add(i);}}}
-				else {
-					if (i.dir == -1) {
-						if (i.lane == 0) {
-							nearEnoughInX0.add(i);}
-						else {
-							nearEnoughInX1.add(i);}}
-					else {
-						if (i.lane == 1) {
-							nearEnoughInX2.add(i);}
-						else {
-							nearEnoughInX3.add(i);}}}}}
-		for (Turtle cClose : closests) {
-			if (cClose == null) continue;
-			ArrayList<Turtle> nearEnoughInY = new ArrayList<Turtle>();
-			ArrayList<Turtle> nearEnough = new ArrayList<Turtle>();
-			if (dir == cClose.dir) {
-				if (cClose.lane == 0) {
-					continue;}
-				else {
-					nearEnoughInY = new ArrayList<Turtle>(nearEnoughInX0);}}
+		if (RoadBuilder.panel.inclObstruct) {
+			//double threat
+			double carW = UserPanel.carWidth;
+			double carL = UserPanel.carLength;
+			double[] gaps = new double[] {cScene.gap0, cScene.gap1, cScene.gap2, cScene.gap3};
+			for (double cGap : gaps) {
+				if (cGap == RoadBuilder.roadL/2) {
+					cGap = 0;}}
+			ArrayList<Turtle> closests = new ArrayList<Turtle>();
+			if (cScene.nearest0 != null) {
+				closests.add(cScene.nearest0);}
 			else {
-				nearEnoughInY = new ArrayList<Turtle>(nearEnoughInX0);
-				nearEnoughInY.addAll(nearEnoughInX1);
-				if (cClose.lane == 0) {
-					nearEnoughInY.addAll(nearEnoughInX2);}}
+				closests.add(null);}
+			if (cScene.nearest1 != null) {
+				closests.add(cScene.nearest1);}
+			else {
+				closests.add(null);}
+			if (cScene.nearest2 != null) {
+				closests.add(cScene.nearest2);}
+			else {
+				closests.add(null);}
+			if (cScene.nearest3 != null) {
+				closests.add(cScene.nearest3);}
+			else {
+				closests.add(null);}
+			double maxRelevantXDiff = Math.max(gaps[0], Math.max(gaps[1], Math.max(gaps[2], gaps[3])));
+			double minRelevantXDiff = Math.min(gaps[0], Math.min(gaps[1], Math.min(gaps[2], gaps[3])));
+			if (maxRelevantXDiff > 200/RoadBuilder.spaceScale) maxRelevantXDiff = 200/RoadBuilder.spaceScale;
+			if (minRelevantXDiff < -200/RoadBuilder.spaceScale) minRelevantXDiff = -200/RoadBuilder.spaceScale;
+			double maxRelevantX = xLoc + maxRelevantXDiff;
+			double minRelevantX = xLoc + minRelevantXDiff;
+			ArrayList<ViewAngle> obstructers = new ArrayList<ViewAngle>();
+			ArrayList<Turtle> nearEnoughInX0 = new ArrayList<Turtle>();
+			ArrayList<Turtle> nearEnoughInX1 = new ArrayList<Turtle>();
+			ArrayList<Turtle> nearEnoughInX2 = new ArrayList<Turtle>();
+			ArrayList<Turtle> nearEnoughInX3 = new ArrayList<Turtle>();
 			
-			if (dir == 1) {
-				if (cClose.dir == 1) {
-					for (Turtle j : nearEnoughInY) {
-						if (j.dir == 1) {
-							if (j.xLoc > cClose.xLoc && j.xLoc < xLoc + carL) {
-								nearEnough.add(j);}}}}
-				else {
-					for (Turtle j : nearEnoughInY) {
-						if (j.dir == 1) {
-							if (j.xLoc > xLoc && j.xLoc < cClose.xLoc + carL) {
-								nearEnough.add(j);}}
+			for (Turtle i : RoadBuilder.flowSource.allCars) {
+				if (i.xLoc > minRelevantX && i.xLoc < maxRelevantX) {
+					if (dir == 1) {
+						if (i.dir == 1) {
+							if (i.lane == 0) {
+								nearEnoughInX0.add(i);}
+							else {
+								nearEnoughInX1.add(i);}}
 						else {
-							if (j.xLoc > xLoc - carL && j.xLoc < cClose.xLoc) {
-								nearEnough.add(j);}}}}}
-			else {
-				if (cClose.dir == 1) {
-					for (Turtle j : nearEnoughInY) {
-						if (j.dir == 1) {
-							if (j.xLoc > cClose.xLoc && j.xLoc < xLoc + carL) {
-								nearEnough.add(j);}}
-						else {
-							if (j.xLoc > cClose.xLoc - carL && j.xLoc < xLoc) {
-								nearEnough.add(j);}}}}
-				else {
-					for (Turtle j : nearEnoughInY) {
-						if (j.dir == -1) {
-							if (j.xLoc > xLoc - carL && j.xLoc < cClose.xLoc) {
-								nearEnough.add(j);}}}}}
-			for (Turtle k : nearEnough) {
-				double front	= k.xLoc - (double)k.dir*carL/3;
-				double back		= k.xLoc - (double)k.dir*carL;
-				double inside	= k.yLoc - (double)dir*carW/2;
-				double outside	= k.yLoc + (double)dir*carW/2;
-				Double thisTheta1, thisTheta2;
-				ViewAngle thisView = null;
-				if (dir == 1) {
-					if (k.dir == 1) {
-						if (back < xLoc) {
-							thisTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
-						else {
-							thisTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}
-						if (front > xLoc) {
-							thisTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
-						else {
-							thisTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+							if (i.lane == 1) {
+								nearEnoughInX2.add(i);}
+							else {
+								nearEnoughInX3.add(i);}}}
 					else {
-						if (front < xLoc) {
-							thisTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						if (i.dir == -1) {
+							if (i.lane == 0) {
+								nearEnoughInX0.add(i);}
+							else {
+								nearEnoughInX1.add(i);}}
 						else {
-							thisTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}
-						if (back > xLoc) {
-							thisTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
-						else {
-							thisTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
-				else {
-					if (k.dir == 1) {
-						if (back < xLoc) {
-							thisTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
-						else {
-							thisTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}
-						if (front > xLoc) {
-							thisTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
-						else {
-							thisTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+							if (i.lane == 1) {
+								nearEnoughInX2.add(i);}
+							else {
+								nearEnoughInX3.add(i);}}}}}
+			for (Turtle cClose : closests) {
+				if (cClose == null) continue;
+				ArrayList<Turtle> nearEnoughInY = new ArrayList<Turtle>();
+				ArrayList<Turtle> nearEnough = new ArrayList<Turtle>();
+				if (dir == cClose.dir) {
+					if (cClose.lane == 0) {
+						continue;}
 					else {
-						if (front < xLoc) {
-							thisTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
-						else {
-							thisTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}
-						if (back > xLoc) {
-							thisTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
-						else {
-							thisTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
-				if (thisTheta1 != null) {
-					thisTheta1 += Math.PI;
-					thisTheta2 += Math.PI;
-					thisView = new ViewAngle(k,thisTheta1,thisTheta2);
-					obstructers.add(thisView);}}
-			if (!obstructers.isEmpty()) {
-				double front	= cClose.xLoc - (double)cClose.dir*carL/3;
-				double back		= cClose.xLoc - (double)cClose.dir*carL;
-				double inside	= cClose.yLoc - (double)dir*carW/2;
-				double outside	= cClose.yLoc + (double)dir*carW/2;
-				Double blockeeTheta1, blockeeTheta2;
-				Double thetaDriver = FastMath.atan2(cClose.driverX - xLoc, cClose.driverY - yLoc);
-				thetaDriver += Math.PI;
+						nearEnoughInY = new ArrayList<Turtle>(nearEnoughInX0);}}
+				else {
+					nearEnoughInY = new ArrayList<Turtle>(nearEnoughInX0);
+					nearEnoughInY.addAll(nearEnoughInX1);
+					if (cClose.lane == 0) {
+						nearEnoughInY.addAll(nearEnoughInX2);}}
+				
 				if (dir == 1) {
 					if (cClose.dir == 1) {
-						if (back < xLoc) {
-							blockeeTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
-						else {
-							blockeeTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}
-						if (front > xLoc) {
-							blockeeTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
-						else {
-							blockeeTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+						for (Turtle j : nearEnoughInY) {
+							if (j.dir == 1) {
+								if (j.xLoc > cClose.xLoc && j.xLoc < xLoc + carL) {
+									nearEnough.add(j);}}}}
 					else {
-						if (front < xLoc) {
-							blockeeTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
-						else {
-							blockeeTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}
-						if (back > xLoc) {
-							blockeeTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
-						else {
-							blockeeTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+						for (Turtle j : nearEnoughInY) {
+							if (j.dir == 1) {
+								if (j.xLoc > xLoc && j.xLoc < cClose.xLoc + carL) {
+									nearEnough.add(j);}}
+							else {
+								if (j.xLoc > xLoc - carL && j.xLoc < cClose.xLoc) {
+									nearEnough.add(j);}}}}}
 				else {
 					if (cClose.dir == 1) {
-						if (back < xLoc) {
-							blockeeTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
-						else {
-							blockeeTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}
-						if (front > xLoc) {
-							blockeeTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
-						else {
-							blockeeTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+						for (Turtle j : nearEnoughInY) {
+							if (j.dir == 1) {
+								if (j.xLoc > cClose.xLoc && j.xLoc < xLoc + carL) {
+									nearEnough.add(j);}}
+							else {
+								if (j.xLoc > cClose.xLoc - carL && j.xLoc < xLoc) {
+									nearEnough.add(j);}}}}
 					else {
-						if (front < xLoc) {
-							blockeeTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+						for (Turtle j : nearEnoughInY) {
+							if (j.dir == -1) {
+								if (j.xLoc > xLoc - carL && j.xLoc < cClose.xLoc) {
+									nearEnough.add(j);}}}}}
+				for (Turtle k : nearEnough) {
+					double front	= k.xLoc - (double)k.dir*carL/3;
+					double back		= k.xLoc - (double)k.dir*carL;
+					double inside	= k.yLoc - (double)dir*carW/2;
+					double outside	= k.yLoc + (double)dir*carW/2;
+					Double thisTheta1, thisTheta2;
+					ViewAngle thisView = null;
+					if (dir == 1) {
+						if (k.dir == 1) {
+							if (back < xLoc) {
+								thisTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								thisTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}
+							if (front > xLoc) {
+								thisTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								thisTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}}
 						else {
-							blockeeTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}
-						if (back > xLoc) {
-							blockeeTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							if (front < xLoc) {
+								thisTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								thisTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}
+							if (back > xLoc) {
+								thisTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								thisTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+					else {
+						if (k.dir == 1) {
+							if (back < xLoc) {
+								thisTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								thisTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}
+							if (front > xLoc) {
+								thisTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								thisTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}}
 						else {
-							blockeeTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
-				if (blockeeTheta1 != null) {
-					blockeeTheta1 += Math.PI;
-					blockeeTheta2 += Math.PI;
-					ArrayList<Double[]> blockedAngles = new ArrayList<Double[]>();
-					blockedAngles.add(new Double[] {obstructers.get(0).theta1, obstructers.get(0).theta2});
-					for (ViewAngle ang0 : obstructers) {
-						double lowAngle0 = ang0.theta1;
-						double hiAngle0 = ang0.theta2;
-						boolean included = false;
-						for (Double[] ang1 : blockedAngles) {
-							if ((lowAngle0 >= ang1[0] && lowAngle0 <= ang1[1] ) && (hiAngle0 > ang1[1])) {
-								ang1[1] = hiAngle0;
-								included = true;}
-							if ((hiAngle0 >= ang1[0] && hiAngle0 <= ang1[1]) && (lowAngle0 < ang1[0])) {
-								ang1[0] = lowAngle0;
-								included = true;}
-							if (lowAngle0 < ang1[0] && hiAngle0 > ang1[1]) {
-								ang1[0] = lowAngle0;
-								ang1[1] = hiAngle0;
-								included = true;}
-							if (lowAngle0 == ang1[0] && hiAngle0 == ang1[1]) {
-								included = true;}}
-						if (!included) {
-							blockedAngles.add(new Double[] {lowAngle0, hiAngle0});}}
-					for (Double[] blockedThetas : blockedAngles) {
-						if (blockedThetas[0] < blockeeTheta1 && blockedThetas[1] > blockeeTheta2) {
-							if (!cScene.blockedCars.contains(cClose)) {
-								cScene.blockedCars.add(cClose);}
-							int laneWithNewTurtle = closests.indexOf(cClose);
-							switch (laneWithNewTurtle) {
-							case 0:
-								cScene.nearest0 = cClose.follower;
-								if (cClose.follower != null) {
-									cScene.gap0 = cClose.follower.xLoc - xLoc;}
-								else {
-									cScene.gap0 = RoadBuilder.roadL/2;}
-								break;
-							case 1:
-								cScene.nearest1 = cClose.follower;
-								if (cClose.follower != null) {
-									cScene.gap1 = cClose.follower.xLoc - xLoc;}
-								else {
-									cScene.gap1 = RoadBuilder.roadL/2;}
-								break;
-							case 2:
-								cScene.nearest2 = cClose.follower;
-								if (cClose.follower != null) {
-									cScene.gap2 = cClose.follower.xLoc - xLoc;}
-								else {
-									cScene.gap2 = RoadBuilder.roadL/2;}
-								break;
-							case 3:
-								cScene.nearest3 = cClose.follower;
-								if (cClose.follower != null) {
-									cScene.gap3 = cClose.follower.xLoc - xLoc;}
-								else {
-									cScene.gap3 = RoadBuilder.roadL/2;}
-								break;}}
-//						if (blockedThetas[0] < thetaDriver && blockedThetas[1] > thetaDriver) {
+							if (front < xLoc) {
+								thisTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								thisTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}
+							if (back > xLoc) {
+								thisTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								thisTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+					if (thisTheta1 != null) {
+						thisTheta1 += Math.PI;
+						thisTheta2 += Math.PI;
+						thisView = new ViewAngle(k,thisTheta1,thisTheta2);
+						obstructers.add(thisView);}}
+				if (!obstructers.isEmpty()) {
+					double front	= cClose.xLoc - (double)cClose.dir*carL/3;
+					double back		= cClose.xLoc - (double)cClose.dir*carL;
+					double inside	= cClose.yLoc - (double)dir*carW/2;
+					double outside	= cClose.yLoc + (double)dir*carW/2;
+					Double blockeeTheta1, blockeeTheta2;
+					Double thetaDriver = FastMath.atan2(cClose.driverX - xLoc, cClose.driverY - yLoc);
+					thetaDriver += Math.PI;
+					if (dir == 1) {
+						if (cClose.dir == 1) {
+							if (back < xLoc) {
+								blockeeTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}
+							if (front > xLoc) {
+								blockeeTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+						else {
+							if (front < xLoc) {
+								blockeeTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}
+							if (back > xLoc) {
+								blockeeTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+					else {
+						if (cClose.dir == 1) {
+							if (back < xLoc) {
+								blockeeTheta2 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta2 = FastMath.atan2(back - xLoc, outside - yLoc);}
+							if (front > xLoc) {
+								blockeeTheta1 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta1 = FastMath.atan2(front - xLoc, outside - yLoc);}}
+						else {
+							if (front < xLoc) {
+								blockeeTheta2 = FastMath.atan2(front - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta2 = FastMath.atan2(front - xLoc, outside - yLoc);}
+							if (back > xLoc) {
+								blockeeTheta1 = FastMath.atan2(back - xLoc, inside - yLoc);}
+							else {
+								blockeeTheta1 = FastMath.atan2(back - xLoc, outside - yLoc);}}}
+					if (blockeeTheta1 != null) {
+						blockeeTheta1 += Math.PI;
+						blockeeTheta2 += Math.PI;
+						ArrayList<Double[]> blockedAngles = new ArrayList<Double[]>();
+						blockedAngles.add(new Double[] {obstructers.get(0).theta1, obstructers.get(0).theta2});
+						for (ViewAngle ang0 : obstructers) {
+							double lowAngle0 = ang0.theta1;
+							double hiAngle0 = ang0.theta2;
+							boolean included = false;
+							for (Double[] ang1 : blockedAngles) {
+								if ((lowAngle0 >= ang1[0] && lowAngle0 <= ang1[1] ) && (hiAngle0 > ang1[1])) {
+									ang1[1] = hiAngle0;
+									included = true;}
+								if ((hiAngle0 >= ang1[0] && hiAngle0 <= ang1[1]) && (lowAngle0 < ang1[0])) {
+									ang1[0] = lowAngle0;
+									included = true;}
+								if (lowAngle0 < ang1[0] && hiAngle0 > ang1[1]) {
+									ang1[0] = lowAngle0;
+									ang1[1] = hiAngle0;
+									included = true;}
+								if (lowAngle0 == ang1[0] && hiAngle0 == ang1[1]) {
+									included = true;}}
+							if (!included) {
+								blockedAngles.add(new Double[] {lowAngle0, hiAngle0});}}
+						for (Double[] blockedThetas : blockedAngles) {
+							if (blockedThetas[0] < blockeeTheta1 && blockedThetas[1] > blockeeTheta2) {
+								if (!cScene.blockedCars.contains(cClose)) {
+									cScene.blockedCars.add(cClose);}
+								int laneWithNewTurtle = closests.indexOf(cClose);
+								switch (laneWithNewTurtle) {
+								case 0:
+									cScene.nearest0 = cClose.follower;
+									if (cClose.follower != null) {
+										cScene.gap0 = cClose.follower.xLoc - xLoc;}
+									else {
+										cScene.gap0 = RoadBuilder.roadL/2;}
+									break;
+								case 1:
+									cScene.nearest1 = cClose.follower;
+									if (cClose.follower != null) {
+										cScene.gap1 = cClose.follower.xLoc - xLoc;}
+									else {
+										cScene.gap1 = RoadBuilder.roadL/2;}
+									break;
+								case 2:
+									cScene.nearest2 = cClose.follower;
+									if (cClose.follower != null) {
+										cScene.gap2 = cClose.follower.xLoc - xLoc;}
+									else {
+										cScene.gap2 = RoadBuilder.roadL/2;}
+									break;
+								case 3:
+									cScene.nearest3 = cClose.follower;
+									if (cClose.follower != null) {
+										cScene.gap3 = cClose.follower.xLoc - xLoc;}
+									else {
+										cScene.gap3 = RoadBuilder.roadL/2;}
+									break;}}
+//							if (blockedThetas[0] < thetaDriver && blockedThetas[1] > thetaDriver) {
 //							cScene.lanesWithoutEyeContact.add(closests.indexOf(cClose));}
-						}}}}
+							}}}}
+		}
 		return cScene;
 	}
 	
@@ -707,10 +716,10 @@ public class Ped extends Agent{
 		if (!approaching.isEmpty()) {
 			if (go0 && go1 && go2 && go3) {
 				crossing = 2;
-				if ((waits.get(0) == 0 || (nearest0.v == 0 && nearest0.ying == 1)) && 
-						(waits.get(1) == 0 || (nearest1.v == 0 && nearest1.ying == 1)) &&
-						(waits.get(2) == 0 || (nearest2.v == 0 && nearest2.ying == 1)) && 
-						(waits.get(3) == 0 || (nearest3.v == 0 && nearest3.ying == 1))) {
+				if ((waits.get(0) == 0 || (nearest0.v < 1e-8 && nearest0.ying == 1)) && 
+						(waits.get(1) == 0 || (nearest1.v < 1e-8 && nearest1.ying == 1)) &&
+						(waits.get(2) == 0 || (nearest2.v < 1e-8 && nearest2.ying == 1)) && 
+						(waits.get(3) == 0 || (nearest3.v < 1e-8 && nearest3.ying == 1))) {
 					tickAtCrossDecision = RoadBuilder.clock.getTickCount();
 					curbed = false;}}}
 		else {
@@ -747,7 +756,8 @@ public class Ped extends Agent{
 		yDist	  = (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
 		dist	  = space.getDistance(myLoc, t.myLoc);
 		approachV = t.v;
-		approachA = Math.max(t.acc, t.newAcc);
+		//approachA = Math.max(t.acc, t.newAcc);
+		approachA = t.acc;
 		
 		double realXDist = Math.sqrt(dist * dist - yDist*yDist);
 		if (approachV != 0) {
@@ -758,7 +768,7 @@ public class Ped extends Agent{
 			realTTClear = 1000;}
 		
 		//include errors
-		if (UserPanel.estErr == true && approachV != 0) {
+		if (RoadBuilder.panel.estErr == true && approachV != 0) {
 			etaS = rnd.nextGaussian();
 			etaV = rnd.nextGaussian();
 			if (t.dir == 1) {
@@ -892,7 +902,7 @@ public class Ped extends Agent{
 			realTailT = 1000;}
 		
 		//include errors
-		if (UserPanel.estErr == true && t2v != 0) {
+		if (RoadBuilder.panel.estErr == true && t2v != 0) {
 			etaS	= rnd.nextGaussian();
 			etaV	= rnd.nextGaussian();
 			if (t1.dir == 1) {

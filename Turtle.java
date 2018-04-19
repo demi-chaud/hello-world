@@ -28,7 +28,7 @@ public class Turtle extends Agent{
 //	private ArrayList<Yieldage> yieldage = new ArrayList<Yieldage>();
 //	private ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
 //	private ArrayList<Yieldage> pYields = new ArrayList<Yieldage>();
-	private Map<Integer,ArrayList<Yieldage>> delayedYields = new HashMap<Integer,ArrayList<Yieldage>>();
+	public Map<Integer,ArrayList<Yieldage>> delayedYields = new HashMap<Integer,ArrayList<Yieldage>>();
 	private List<double[]> storage = new ArrayList<double[]>();
 	private List<double[]> shldBrakeStorage = new ArrayList<double[]>();
 	private Random  rnd  = new Random();	//initiates random number generator for vehicle properties
@@ -56,6 +56,7 @@ public class Turtle extends Agent{
 	public  int		lane;	//  0 = outer lane, 1 = inner lane
 	public	int		dir;	//  1 = going right, -1 = going left
 	public	int		ying;	// -1 = none, 0 = soft, 1 = hard
+	public boolean paintedStopBar = true;
 	
 	/**
 	* Calculates driver acceleration (if not distracted)
@@ -69,16 +70,16 @@ public class Turtle extends Agent{
 		if (xLoc > RoadBuilder.roadL/15 && xLoc < 14*RoadBuilder.roadL/15) {
 			if (v > 2 * maxv) {
 				int foo = 0;}
-			if (interD != 0 && timeSinceD >= interD && !autonomous) {
+			if (interD != 0 && timeSinceD >= interD && RoadBuilder.panel.inclDist) {
 				if (ying == -1) { //don't get distracted if yielding
 					distracted = true;
 					timeSinceD = 0;
 					interD = 0;}}
-			if (durD != 0 && timeD >= durD && !autonomous) {
+			if (durD != 0 && timeD >= durD && RoadBuilder.panel.inclDist) {
 				distracted = false;
 				timeD = 0;
 				durD = 0;}
-			if (!autonomous && distracted) {
+			if (RoadBuilder.panel.inclDist && distracted) {
 				if (timeD == 0) {
 					double durD0 = rndD.nextGaussian()*UserPanel.DsigHat + UserPanel.DmuHat;
 					durD = Math.exp(durD0);}
@@ -118,7 +119,7 @@ public class Turtle extends Agent{
 			//yieldDec = newbAccel;
 			ying = (int)Math.round(brakeOutput[1]);
 //			}
-		if (!distracted || autonomous) {
+		if (!distracted || !RoadBuilder.panel.inclDist) {
 			if (oldbAccel <= 0 && newbAccel <= 0) {
 				if (oldbAccel < acc && newbAccel < acc) {
 					yieldDec = newbAccel;
@@ -225,7 +226,7 @@ public class Turtle extends Agent{
 		
 		//calculate CF acceleration (with errors)
 		if (leader != null) {
-			if (UserPanel.estErr /*&& !autonomous*/) {		//includes estimation error in headway measurement
+			if (RoadBuilder.panel.estErr /*&& !autonomous*/) {		//includes estimation error in headway measurement
 				etaS = rnd.nextGaussian();
 				etaV = rnd.nextGaussian();
 				wS = UserPanel.wien1*wS + UserPanel.wien2*etaS;
@@ -292,12 +293,12 @@ public class Turtle extends Agent{
 		double politeDecel; 
 		if (threat == 1) {
 			if (v == 0) {
-				if (head < xwalkD + length) {
+				if (head < xwalkD + length + jamHead) {
 					politeDecel = 0;}
 				else {
 					politeDecel = originalAccel;}}
 			else {
-				if ((leader.v == 0 || (leader.acc < 0 && leader.v < 5/UserPanel.vBase)) && (head < xwalkD + length)) {
+				if ((leader.v == 0 || (leader.acc < 0 && leader.v < 5/UserPanel.vBase)) && (head < xwalkD + length + Ped.xWalkHalfWidth + jamHead + 2/UserPanel.spaceScale)) {
 					double potentialAcc = -v*v/(2*stopDab);
 					if (potentialAcc > -3*UserPanel.tStep*UserPanel.tStep/RoadBuilder.spaceScale) {
 						if (potentialAcc < originalAccel) {
@@ -391,7 +392,7 @@ public class Turtle extends Agent{
 		double realStopDist = stopDist;
 		double realConDist	= conDist;
 		int stamp = (int)RoadBuilder.clock.getTickCount();
-		if (UserPanel.estErr /* && !autonomous*/) {		//includes estimation error
+		if (RoadBuilder.panel.estErr /* && !autonomous*/) {		//includes estimation error
 			etaPed = rnd.nextGaussian();
 			etaPedV = rnd.nextGaussian();
 			wPed = UserPanel.wien1*wPed + UserPanel.wien2*etaPed;
@@ -453,54 +454,54 @@ public class Turtle extends Agent{
 		if (!tooFar.isEmpty()) {
 			crossingP.removeAll(tooFar);}
 		
-		//double threat
-		for (Turtle i : ahead) {				//are there any cars potentially blocking view?
-			if (!connected || !i.connected) {		//TODO: find accuracy of passive ped detection, add v2i functionality
-				double otherD	= RoadBuilder.xWalkx - i.xLoc;
-				double threat	= Math.signum(dir*otherD);
-				ViewAngle thisView = null;
-				if (i.lane != lane && threat == 1) {		//TODO: make this only happen if the car is close enough for it to matter
-					double front	= i.xLoc - (double)dir*i.length/3;
-					double back		= i.xLoc - (double)dir*i.length;
-					double inside	= i.yLoc + (double)dir*carW/2;
-					double outside	= i.yLoc - (double)dir*carW/2;
-					Double thisTheta1, thisTheta2;
-					if (lane == 0) {
-						thisTheta1 = FastMath.atan2((outside - driverY), (front - driverX));
-						thisTheta2 = FastMath.atan2((inside  - driverY), (back  - driverX));}
-					else {
-						thisTheta1 = FastMath.atan2((outside - driverY), (back  - driverX));
-						thisTheta2 = FastMath.atan2((inside  - driverY), (front - driverX));}
-					if (thisTheta1 != null) {
-						if (thisTheta1 < 0) {
-							thisTheta1 = thisTheta1 + 2*Math.PI;}
-						if (thisTheta2 < 0) {
-							thisTheta2 = thisTheta2 + 2*Math.PI;}
-						thisView = new ViewAngle(i,thisTheta1,thisTheta2);
-						obstructers.add(thisView);}}}}
-		if (!obstructers.isEmpty()){
-			for (Ped j : crossingP) {				//calculate angle to any relevant peds
-				Double thisTheta = null;
-				if (dir == j.dir && lane == 1) {
-					thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
-				else if (dir != j.dir && lane == 0) {
-					thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
-				if (thisTheta != null) {
-					if (thisTheta < 0) {
-						thisTheta = thisTheta + 2*Math.PI;}
-					ViewAngle thisView = new ViewAngle(j,thisTheta);
-					obstructees.add(thisView);}}}
-		if (!obstructees.isEmpty()) {
-			for (ViewAngle i : obstructers) {
-				double theta1 = i.theta1;
-				double theta2 = i.theta2;
-				for (ViewAngle j : obstructees) {
-					Ped thisPed = j.ped;
-					double pedTheta = j.theta;
-					if (pedTheta >= theta1 && pedTheta <= theta2) {
-						blockedPeds.put(thisPed, (double)stamp);
-						crossingP.remove(thisPed);}}}}
-		
+		if (RoadBuilder.panel.inclObstruct) { 
+			//double threat
+			for (Turtle i : ahead) {				//are there any cars potentially blocking view?
+				if (!connected || !i.connected) {		//TODO: find accuracy of passive ped detection, add v2i functionality
+					double otherD	= RoadBuilder.xWalkx - i.xLoc;
+					double threat	= Math.signum(dir*otherD);
+					ViewAngle thisView = null;
+					if (i.lane != lane && threat == 1) {		//TODO: make this only happen if the car is close enough for it to matter
+						double front	= i.xLoc - (double)dir*i.length/3;
+						double back		= i.xLoc - (double)dir*i.length;
+						double inside	= i.yLoc + (double)dir*carW/2;
+						double outside	= i.yLoc - (double)dir*carW/2;
+						Double thisTheta1, thisTheta2;
+						if (lane == 0) {
+							thisTheta1 = FastMath.atan2((outside - driverY), (front - driverX));
+							thisTheta2 = FastMath.atan2((inside  - driverY), (back  - driverX));}
+						else {
+							thisTheta1 = FastMath.atan2((outside - driverY), (back  - driverX));
+							thisTheta2 = FastMath.atan2((inside  - driverY), (front - driverX));}
+						if (thisTheta1 != null) {
+							if (thisTheta1 < 0) {
+								thisTheta1 = thisTheta1 + 2*Math.PI;}
+							if (thisTheta2 < 0) {
+								thisTheta2 = thisTheta2 + 2*Math.PI;}
+							thisView = new ViewAngle(i,thisTheta1,thisTheta2);
+							obstructers.add(thisView);}}}}
+			if (!obstructers.isEmpty()){
+				for (Ped j : crossingP) {				//calculate angle to any relevant peds
+					Double thisTheta = null;
+					if (dir == j.dir && lane == 1) {
+						thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
+					else if (dir != j.dir && lane == 0) {
+						thisTheta = FastMath.atan2((j.yLoc - driverY), (j.xLoc - driverX));}
+					if (thisTheta != null) {
+						if (thisTheta < 0) {
+							thisTheta = thisTheta + 2*Math.PI;}
+						ViewAngle thisView = new ViewAngle(j,thisTheta);
+						obstructees.add(thisView);}}}
+			if (!obstructees.isEmpty()) {
+				for (ViewAngle i : obstructers) {
+					double theta1 = i.theta1;
+					double theta2 = i.theta2;
+					for (ViewAngle j : obstructees) {
+						Ped thisPed = j.ped;
+						double pedTheta = j.theta;
+						if (pedTheta >= theta1 && pedTheta <= theta2) {
+							blockedPeds.put(thisPed, (double)stamp);
+							crossingP.remove(thisPed);}}}}}
 		int lastKey;
 		if (!delayedYields.isEmpty()) {
 			lastKey = Collections.max(delayedYields.keySet());
@@ -699,7 +700,7 @@ public class Turtle extends Agent{
 						threatEnd = 1e12;}
 					
 					//decide whether or not to yield for this ped
-					if (percV != 0) {				//ttstop is undefined if car is already stopped
+					if (percV > 1e-8) {				//ttstop is undefined if car is already stopped
 						if (realStopDist >= 0) {
 							if (stopDist < 0) {
 								int foo = 0;}
@@ -753,7 +754,7 @@ public class Turtle extends Agent{
 		
 		delayedYields.put(stamp,cYields);
 		int wayBack = (int)Math.round(BRTs/UserPanel.tStep);
-		if (UserPanel.BRT && stamp > wayBack + 3) {
+		if (RoadBuilder.panel.BRT && stamp > wayBack + 3) {
 			int thenKey = stamp - wayBack;
 			if (delayedYields.size() > wayBack) {
 				if (delayedYields.containsKey(thenKey)) {
@@ -1109,14 +1110,17 @@ public class Turtle extends Agent{
 	
 	/* Fits driver's distance from stopBar to lognormal distribution in model units */
 	public double calcStopBar(int dir) {
-		double dist0 = rndS.nextGaussian()*UserPanel.SsigHat + UserPanel.SmuHat;
-		double stopDistance0 = Math.exp(dist0);
-		if (stopDistance0 > RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale) {
-			stopDistance0 = RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale;}
-		if (stopDistance0 < 1/RoadBuilder.spaceScale) {
-			stopDistance0 = 1/RoadBuilder.spaceScale;}
-		double stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
-		return stopDistance;
+		if (!paintedStopBar) {
+			double dist0 = rndS.nextGaussian()*UserPanel.SsigHat + UserPanel.SmuHat;
+			double stopDistance0 = Math.exp(dist0);
+			if (stopDistance0 > RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale) {
+				stopDistance0 = RoadBuilder.panel.stopBarDistance + 1/RoadBuilder.spaceScale;}
+			if (stopDistance0 < 1/RoadBuilder.spaceScale) {
+				stopDistance0 = 1/RoadBuilder.spaceScale;}
+			double stopDistance = RoadBuilder.xWalkx - (double)dir*stopDistance0;
+		return stopDistance;}
+		else {
+			return RoadBuilder.xWalkx - (double)dir*RoadBuilder.panel.stopBarDistance;}
 	}
 	
 	/* Fits human driver's brake reaction time to shifted Weibull distribution */

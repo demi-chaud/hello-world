@@ -48,6 +48,10 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	public double hPercLimM;
 	public double sLimitKH;
 	public double stopBarM;
+	public boolean estErr;
+	public boolean BRT;
+	public boolean inclDist;
+	public boolean inclObstruct;
 	
 	@Override
 	public Context<Object> build(Context<Object> context) {
@@ -66,6 +70,10 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		pedRho	 = (int)param.getValue("pedRho");
 		hPercLimM= (double)param.getValue("hPercLimM");
 		sLimitKH = (double)param.getValue("sLimitKH");
+		estErr = (boolean)param.getValue("estErr");
+		BRT = (boolean)param.getValue("BRT");
+		inclDist = (boolean)param.getValue("inclDist");
+		inclObstruct = (boolean)param.getValue("inclObstruct");
 		stopBarM = 9;
 		panel = new UserPanel(this);
 		flowSource = new Scheduler();
@@ -94,7 +102,7 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	}
 	
 	public String[] getInitParam() {
-		String[] params = {"pedRho","vehRho","sLimitKH","hPercLimM","percV2X","percAuto","percBoth"};
+		String[] params = {"pedRho","vehRho","sLimitKH","hPercLimM","percV2X","percAuto","percBoth","estErr","BRT","inclDist","inclObstruct"};
 		return params;
 	}
 	

@@ -72,9 +72,9 @@ public class Scheduler extends Agent {
 	public void doStuff() {
 		LocalTime nowTime = LocalTime.now();
 		if (nowTime.compareTo(endTime) > 1) {
-			System.out.println(RoadBuilder.panel.paramStr + "aborted after 15min");
+			System.out.println(RoadBuilder.panel.paramStr + "aborted after 20min");
 			RunEnvironment.getInstance().endRun();}
-		if (RoadBuilder.flowSource.allCars.size() > 500) {
+		if (RoadBuilder.flowSource.allCars.size() > 2000) {
 			System.out.println(RoadBuilder.panel.paramStr + "got stuck and aborted");
 			RunEnvironment.getInstance().endRun();}
 		if (RoadBuilder.panel.deathKnell) {
@@ -234,10 +234,14 @@ public class Scheduler extends Agent {
 			String lim	= "s" + String.valueOf((int)RoadBuilder.panel.sLimitKH) + "_";
 			String perc = "d" + String.valueOf((int)RoadBuilder.panel.hPercLimM) + "_";
 			String dur  = "h" + String.valueOf((int)UserPanel.simHours) + "_";
-			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
-					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
-			String thisRunC = nP + nC + lim + perc + dur + percs;
-			String thisRunD = nP + nC + lim + perc + percs;
+			String bools = String.valueOf(RoadBuilder.panel.estErr) + '.' + String.valueOf(RoadBuilder.panel.BRT) + '.' + 
+					String.valueOf(RoadBuilder.panel.inclDist) + '.' + String.valueOf(RoadBuilder.panel.inclObstruct);
+			String thisRunC = nP + nC + lim + perc + dur + bools;
+			String thisRunD = nP + nC + lim + perc + bools;
+//			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
+//					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
+//			String thisRunC = nP + nC + lim + perc + dur + percs;
+//			String thisRunD = nP + nC + lim + perc + percs;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";
 			String fileString = now + thisRunC;
@@ -422,6 +426,6 @@ public class Scheduler extends Agent {
 		allConf = new ArrayList<Turtle.Conflict>();		
 		allCrash = new ArrayList<Turtle.Crash>();
 		LocalTime startTime = LocalTime.now();
-		endTime = startTime.plusMinutes(15);
+		endTime = startTime.plusMinutes(20);
 	}
 }
