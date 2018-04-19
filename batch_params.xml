@@ -1,16 +1,50 @@
 <?xml version="1.0" ?>
-<sweep runs="1">
-	<parameter name="vehRho" type="constant" constant_type="int" value="600"></parameter>
-	<parameter name="pedRho" type="constant" constant_type="int" value="60"></parameter>
+<sweep runs="5">
+
+<parameter name="percBoth" type="constant" constant_type="double" value="0.0"></parameter>
+<parameter name="percAuto" type="constant" constant_type="double" value="0.0"></parameter>
+<parameter name="percV2X" type="constant" constant_type="double" value="0.0"></parameter>
+
+<!--	
+	<parameter name="pedRho" type="constant" constant_type="int" value="100"></parameter>
+	<parameter name="vehRho" type="constant" constant_type="int" value="300"></parameter>
 	<parameter name="sLimitKH" type="constant" constant_type="double" value="90"></parameter>
+	<parameter name="estErr" type="constant" constant_type="boolean" value="true"></parameter>
+	<parameter name="BRT" type="constant" constant_type="boolean" value="true"></parameter>
+	<parameter name="inclDist" type="constant" constant_type="boolean" value="true"></parameter>
+	<parameter name="inclObstruct" type="constant" constant_type="boolean" value="true"></parameter>
+	<parameter name="hPercLimM" type="constant" constant_type="double" value="100"></parameter>
 	<parameter name="percBoth" type="constant" constant_type="double" value="0"></parameter>
 	<parameter name="percV2X" type="constant" constant_type="double" value="0"></parameter>
-	<parameter name="percAuto" type="constant" constant_type="double" value="0"></parameter>
-	<parameter name="hPercLimM" type="constant" constant_type="double" value="60"></parameter>
+	<parameter name="percAuto" type="constant" constant_type="double" value="0"></parameter> 
 	
+-->
+
+<parameter name="hPercLimM" type="constant" constant_type="double" value="100"></parameter>
+
+<parameter name="vehRho" type="constant" constant_type="int" value="400"></parameter>
+<parameter name="pedRho" type="constant" constant_type="int" value="200"></parameter>
+
+
+<!--
+<parameter name="estErr" type="constant" constant_type="boolean" value="true"></parameter>
+<parameter name="BRT" type="constant" constant_type="boolean" value="false"></parameter>
+<parameter name="inclDist" type="constant" constant_type="boolean" value="true"></parameter>
+<parameter name="inclObstruct" type="constant" constant_type="boolean" value="true"></parameter>  
+-->
+
+
+<parameter name="sLimitKH" type="list" value_type="double" values="20">
+		<parameter name="estErr" type="list" value_type="boolean" values="true false">
+			<parameter name="BRT" type="list" value_type="boolean" values="true false"> 
+			<parameter name="inclDist" type="list" value_type="boolean" values="true false">
+					<parameter name="inclObstruct" type="list" value_type="boolean" values="true false"> 
+</parameter></parameter></parameter></parameter></parameter>
+
 <!-- 
 <parameter name="" type="list" value_type="" values=""></parameter>
 <parameter name="" type="constant" constant_type="" value=""></parameter>
 <parameter name="" type="number" start=".0" end="" step=""></parameter>
 -->
+
 </sweep>
