@@ -871,80 +871,92 @@ public class Turtle extends Agent{
 //		if (ttc < 0 && ttc >= -length/worstV) {
 //			int foo = 0;}
 		if (ttc >= 0 && ttc <= confLim) {
-			if (p.dir == 1 && pedY <= (lnTop)) {
-			//if (p.dir == 1 && pedY <= (lnTop + lw)) {
-			//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
-				if (pedY >= (lnBot)) {
-				//if (pedY >= (lnBot - lw)) {
-				//if (pedY >= (yLoc - carW/2)) {
-					pedTlo = 0;}
-				else {
-					pedTlo = 1000;
-					if (p.v[1] != 0) {
-						pedTlo = ((lnBot) - pedY)/p.v[1];}}
-						//pedTlo = ((lnBot - lw) - pedY)/p.v[1];}}
-						//pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
-				pedThi = 1000;
-				if (p.v[1] != 0) {
-					pedThi = ((lnTop) - pedY)/p.v[1];}}
-					//pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
-					//pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
-			else if (p.dir == -1 && pedY >= (lnBot)) {
-			//else if (p.dir == -1 && pedY >= (lnBot - lw)) {
-			//else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
-				//if (pedY <= (yLoc + carW/2)) {
-				//if (pedY <= (lnTop + lw)) {
-				if (pedY <= (lnTop)) {
-					pedTlo = 0;}
-				else {
-					pedTlo = 1000;
-					if (p.v[1] != 0) {
-						pedTlo = -(pedY - (lnTop))/p.v[1];}}
-						//pedTlo = -(pedY - (lnTop + lw))/p.v[1];}}
-						//pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}}		//TODO: include ped r and make ped calc 2D
-				pedThi = 1000;
-				if (p.v[1] != 0) {
-					pedThi = -(pedY - (lnBot))/p.v[1];}}
-					//pedThi = -(pedY - (lnBot - lw))/p.v[1];}}
-					//pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
-			if (pedTlo != -1) {
-				if (ttc >= pedTlo && ttc <= pedThi) {
-					int init = 1;
-					int dup = 0;
-					int hasDup = 0;
-					double range = (double)dir*(pedX - xLoc);
-					Conflict thisConf = new Conflict(this,p,ttc,range,init,hasDup,sinceBlocked);
-					Conflict toAdd = null;
-					Conflict toRem = null;
-					for (Conflict c : RoadBuilder.flowSource.allConf) {
-						if (c.ped == p && c.car != this) {
-							Turtle otherCar = c.car;	//make sure not counting cars behind as extra conflicts
-							if (otherCar.dir == this.dir && otherCar.lane == this.lane) {
-								if (c.TTC < ttc) {
-									int foo = 0;}}}
-						if (c.car == this && c.ped == p) {
-							dup = 1;			//make sure no duplicates added unless lower TTC than first
-							if (c.init == 1) {
-								if (c.hasDup == 0) {
-									if (ttc < c.TTC) {
-										c.hasDup = 1;
-										thisConf.init = 0;
-										toAdd = thisConf;}}
-								else {
-									for (Conflict c1 : RoadBuilder.flowSource.allConf) {
-										if (c1.car == this && c1.ped == p) {
-											if (c1 != c) {
-												if (ttc < c1.TTC) {
-													thisConf.init = 0;
-													toAdd = thisConf;
-													toRem = c1;}}}}}}}}
-					if (dup == 0) {
-						RoadBuilder.flowSource.allConf.add(thisConf);}
+			if (RoadBuilder.panel.myTTC) {
+				if (p.dir == 1 && pedY <= (lnTop)) {
+				//if (p.dir == 1 && pedY <= (lnTop + lw)) {
+				//if (p.dir == 1 && pedY <= (yLoc + carW/2)) {
+					if (pedY >= (lnBot)) {
+					//if (pedY >= (lnBot - lw)) {
+					//if (pedY >= (yLoc - carW/2)) {
+						pedTlo = 0;}
 					else {
-						if (toAdd != null) {
-							RoadBuilder.flowSource.allConf.add(toAdd);}
-						if (toRem != null) {
-							RoadBuilder.flowSource.allConf.remove(toRem);}}}}}
+						pedTlo = 1000;
+						if (p.v[1] != 0) {
+							pedTlo = ((lnBot) - pedY)/p.v[1];}}
+							//pedTlo = ((lnBot - lw) - pedY)/p.v[1];}}
+							//pedTlo = ((yLoc - carW/2) - pedY)/p.v[1];}}		//TODO: include ped r and make ped calc 2D
+					pedThi = 1000;
+					if (p.v[1] != 0) {
+						pedThi = ((lnTop) - pedY)/p.v[1];}}
+						//pedThi = ((lnTop + lw) - pedY)/p.v[1];}}
+						//pedThi = ((yLoc + carW/2) - pedY)/p.v[1];}}
+				else if (p.dir == -1 && pedY >= (lnBot)) {
+				//else if (p.dir == -1 && pedY >= (lnBot - lw)) {
+				//else if (p.dir == -1 && pedY >= (yLoc - carW/2)) {
+					//if (pedY <= (yLoc + carW/2)) {
+					//if (pedY <= (lnTop + lw)) {
+					if (pedY <= (lnTop)) {
+						pedTlo = 0;}
+					else {
+						pedTlo = 1000;
+						if (p.v[1] != 0) {
+							pedTlo = -(pedY - (lnTop))/p.v[1];}}
+							//pedTlo = -(pedY - (lnTop + lw))/p.v[1];}}
+							//pedTlo = -(pedY - (yLoc + carW/2))/p.v[1];}}		//TODO: include ped r and make ped calc 2D
+					pedThi = 1000;
+					if (p.v[1] != 0) {
+						pedThi = -(pedY - (lnBot))/p.v[1];}}
+						//pedThi = -(pedY - (lnBot - lw))/p.v[1];}}
+						//pedThi = -(pedY - (yLoc - carW/2))/p.v[1];}}
+			}
+			else {
+				double pedYThen = pedY + p.v[1]*ttc;
+				if (p.dir == 1 && pedYThen <= (yLoc + carW/2 + p.r)) {
+					if (pedYThen >= (yLoc - carW/2 - p.r)) {
+						pedTlo = ttc;
+						pedThi = ttc;}}
+				else if (p.dir == -1 && pedYThen >= (yLoc - carW/2 - p.r)) {
+					if (pedYThen <= (yLoc + carW/2 + p.r)) {
+							pedTlo = ttc;
+							pedThi = ttc;}}}}
+		if (pedTlo != -1) {
+			if (ttc >= pedTlo && ttc <= pedThi) {
+				int init = 1;
+				int dup = 0;
+				int hasDup = 0;
+				double range = (double)dir*(pedX - xLoc);
+				Conflict thisConf = new Conflict(this,p,ttc,range,init,hasDup,sinceBlocked);
+				Conflict toAdd = null;
+				Conflict toRem = null;
+				for (Conflict c : RoadBuilder.flowSource.allConf) {
+					if (c.ped == p && c.car != this) {
+						Turtle otherCar = c.car;	//make sure not counting cars behind as extra conflicts
+						if (otherCar.dir == this.dir && otherCar.lane == this.lane) {
+							if (c.TTC < ttc) {
+								int foo = 0;}}}
+					if (c.car == this && c.ped == p) {
+						dup = 1;			//make sure no duplicates added unless lower TTC than first
+						if (c.init == 1) {
+							if (c.hasDup == 0) {
+								if (ttc < c.TTC) {
+									c.hasDup = 1;
+									thisConf.init = 0;
+									toAdd = thisConf;}}
+							else {
+								for (Conflict c1 : RoadBuilder.flowSource.allConf) {
+									if (c1.car == this && c1.ped == p) {
+										if (c1 != c) {
+											if (ttc < c1.TTC) {
+												thisConf.init = 0;
+												toAdd = thisConf;
+												toRem = c1;}}}}}}}}
+				if (dup == 0) {
+					RoadBuilder.flowSource.allConf.add(thisConf);}
+				else {
+					if (toAdd != null) {
+						RoadBuilder.flowSource.allConf.add(toAdd);}
+					if (toRem != null) {
+						RoadBuilder.flowSource.allConf.remove(toRem);}}}}
 		
 		//check for impending crashes
 		double crashPedTlo = -1e15;
