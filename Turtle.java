@@ -388,7 +388,7 @@ public class Turtle extends Agent{
 		ArrayList<Yieldage> cYields = new ArrayList<Yieldage>();
 		ArrayList<Yieldage> reactTo = new ArrayList<Yieldage>();
 		double threatBeg, threatEnd, tHardYield, outYing;
-		double lnW		 = RoadBuilder.laneW;
+		double lnW		 = RoadBuilder.panel.laneWidth;
 		double realStopDist = stopDist;
 		double realConDist	= conDist;
 		int stamp = (int)RoadBuilder.clock.getTickCount();
@@ -864,7 +864,7 @@ public class Turtle extends Agent{
 		double pedTlo = -1;		//time until ped at conflict point
 		double pedThi = -1;		//time until ped leaves CP
 		double ttc = -1;
-		double lw = RoadBuilder.laneW;
+		double lw = RoadBuilder.panel.laneWidth;
 		double worstV = Math.max(v, vNew);
 		if (worstV != 0) {
 			ttc = ((double)dir*(pedX - xLoc) - p.r)/worstV;}
@@ -1099,13 +1099,13 @@ public class Turtle extends Agent{
 			if (lane == 0) {
 				lnBot = RoadBuilder.sidewalk;}
 			else {
-				lnBot = RoadBuilder.sidewalk + RoadBuilder.laneW;}}
+				lnBot = RoadBuilder.sidewalk + RoadBuilder.panel.laneWidth;}}
 		else {
 			if (lane == 0) {
-				lnBot = RoadBuilder.sidewalk + 3*RoadBuilder.laneW;}
+				lnBot = RoadBuilder.sidewalk + 3*RoadBuilder.panel.laneWidth;}
 			else {
-				lnBot = RoadBuilder.sidewalk + 2*RoadBuilder.laneW;}}
-		lnTop		= lnBot + RoadBuilder.laneW;
+				lnBot = RoadBuilder.sidewalk + 2*RoadBuilder.panel.laneWidth;}}
+		lnTop		= lnBot + RoadBuilder.panel.laneWidth;
 		confLim		= UserPanel.confLimS/UserPanel.tStep;
 		age			= 0;
 		ying		= -1;

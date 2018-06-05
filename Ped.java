@@ -32,7 +32,7 @@ public class Ped extends Agent{
 	private double side	= RoadBuilder.sidewalk;
 	private double wS1, wSn1, wV1, wVn1, etaS, etaV, sigR;	//errors
 	private double m, horiz, A, B, k;  					//interactive force constants (accT is also)
-	static double xWalkHalfWidth = 2/RoadBuilder.spaceScale;
+	static double xWalkHalfWidth = RoadBuilder.panel.xWalkWidth/2;
 	private double boxL = RoadBuilder.xWalkx - xWalkHalfWidth;
 	private double boxR = RoadBuilder.xWalkx + xWalkHalfWidth;
 		//2 here is more or less arbitrary, but has to match Turtle.stopBar variable
@@ -197,7 +197,7 @@ public class Ped extends Agent{
 				else {
 					if (curbed == true) {
 						crossing = 1;}
-					if (yLoc + newV[1] <= side + RoadBuilder.roadW + r) {
+					if (yLoc + newV[1] <= side + RoadBuilder.panel.roadW + r) {
 						curbed = true;
 						dv = yield(approaching,currentScene);
 						newV = sumV(v,dv);}}
@@ -209,7 +209,7 @@ public class Ped extends Agent{
 						newV[0]  = 0;
 						crossing = 2;}}
 				else {
-					if (yLoc + newV[1] < side + RoadBuilder.roadW) {
+					if (yLoc + newV[1] < side + RoadBuilder.panel.roadW) {
 						newV[0]  = 0;
 						crossing = 2;}}
 				break;
@@ -269,11 +269,11 @@ public class Ped extends Agent{
 					if (side - yLoc < r) {
 						crossing = 1;}}
 				else {
-					if (yLoc - RoadBuilder.roadW - side < r) {
+					if (yLoc - RoadBuilder.panel.roadW - side < r) {
 						crossing = 1;}}
 				break;
 		case 2: if (dir == 1) {
-					if (yLoc >= side + RoadBuilder.roadW) crossing = 3;}
+					if (yLoc >= side + RoadBuilder.panel.roadW) crossing = 3;}
 				else {
 					if (yLoc <= side) crossing = 3;}
 				break;
@@ -753,7 +753,7 @@ public class Ped extends Agent{
 		sigR	  = 0.01*UserPanel.tStep;	//st. dev. of relative approach rate
 		approachX = t.xLoc;
 		xDist	  = Math.abs(xLoc - approachX);
-		yDist	  = (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
+		yDist	  = (double)ln*RoadBuilder.panel.laneWidth + RoadBuilder.panel.laneWidth/2;
 		dist	  = space.getDistance(myLoc, t.myLoc);
 		approachV = t.v;
 		//approachA = Math.max(t.acc, t.newAcc);
@@ -791,18 +791,18 @@ public class Ped extends Agent{
 		else {
 			if (maxVY != 0) {
 				//threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxVY;}	//ped enters lane //TODO:mention this 0.25 and 1 below in writeup
-				threatBeg = accT + ln*RoadBuilder.laneW/maxVY;
+				threatBeg = accT + ln*RoadBuilder.panel.laneWidth/maxVY;
 				if (ln == 1) {
 					confBeg = 0;}
 				else {
-					confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxVY;}}
+					confBeg = accT + (ln - 1)*RoadBuilder.panel.laneWidth/maxVY;}}
 			else {
 				//threatBeg = accT + (ln-.25)*RoadBuilder.laneW/maxV;}}
-				threatBeg = accT + ln*RoadBuilder.laneW/maxV;
+				threatBeg = accT + ln*RoadBuilder.panel.laneWidth/maxV;
 				if (ln == 1) {
 					confBeg = 0;}
 				else {
-					confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxV;}}}
+					confBeg = accT + (ln - 1)*RoadBuilder.panel.laneWidth/maxV;}}}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;		//ped exits lane
 		TTCol = 1000;
 		TTClear = 1000;
@@ -883,7 +883,7 @@ public class Ped extends Agent{
 		t2x 	= t2.xLoc;
 		t1d		= Math.abs(xLoc - t1x);
 		t2d		= Math.abs(xLoc - t2x);
-		yDist	= (double)ln*RoadBuilder.laneW + RoadBuilder.laneW/2;
+		yDist	= (double)ln*RoadBuilder.panel.laneWidth + RoadBuilder.panel.laneWidth/2;
 		dist1	= space.getDistance(myLoc, t1.myLoc);
 		dist2	= space.getDistance(myLoc, t2.myLoc);
 		t1v		= t1.v;
@@ -944,17 +944,17 @@ public class Ped extends Agent{
 			confBeg = 0;}
 		else {
 			if (maxVY != 0) {
-				threatBeg = accT + (ln*RoadBuilder.laneW/maxVY);
+				threatBeg = accT + (ln*RoadBuilder.panel.laneWidth/maxVY);
 				if (ln == 1) {
 					confBeg = 0;}
 				else {
-					 confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxVY;}}
+					 confBeg = accT + (ln - 1)*RoadBuilder.panel.laneWidth/maxVY;}}
 			else {
-				threatBeg = accT + (ln*RoadBuilder.laneW/maxV);
+				threatBeg = accT + (ln*RoadBuilder.panel.laneWidth/maxV);
 				if (ln == 1) {
 					confBeg = 0;}
 				else {
-					 confBeg = accT + (ln - 1)*RoadBuilder.laneW/maxV;}}}
+					 confBeg = accT + (ln - 1)*RoadBuilder.panel.laneWidth/maxV;}}}
 //		threatEnd = accT + (ln+1)*RoadBuilder.laneW/maxVY;
 		TTCol	= 1000;
 		TTClear = 1000;
@@ -1052,7 +1052,7 @@ public class Ped extends Agent{
 					if (carY < yLoc) carAhead = true;
 					absDistCar = Math.abs(carY - yLoc) - r;}
 				if (!carAhead) continue;
-				if (absDistCar > RoadBuilder.laneW) continue;
+				if (absDistCar > RoadBuilder.panel.laneWidth) continue;
 				double backOfCar = 0;
 				double frontOfCar = b.xLoc;
 				if (b.dir == 1) {
@@ -1148,7 +1148,7 @@ public class Ped extends Agent{
 		if (curbed == true /*&& !UserPanel.calcFun*/) {
 			double dCurb;
 			if (direct == 1) {dCurb = side - yLoc;}
-			else {dCurb = yLoc - side - RoadBuilder.roadW;}
+			else {dCurb = yLoc - side - RoadBuilder.panel.roadW;}
 			curbF = -(double)direct*(A*Math.exp((r-dCurb)/B) + k*(r-dCurb))/m;
 			forcesY.add(curbF);}
 
@@ -1180,7 +1180,7 @@ public class Ped extends Agent{
 	public void move(NdPoint loc, double[] displacement) {
 		double[] zero = new double[] {0,0};
 		double yl = loc.getY();
-		if (yl + displacement[1] > RoadBuilder.worldW || yl + displacement[1] < 0) {
+		if (yl + displacement[1] > RoadBuilder.panel.worldW || yl + displacement[1] < 0) {
 			RoadBuilder.flowSource.killListP.add(this);}
 		else if (displacement != zero) {	
 			space.moveByDisplacement(this,displacement);
@@ -1190,7 +1190,7 @@ public class Ped extends Agent{
 	public void move(NdPoint loc, NdPoint destination) {
 		double xd = destination.getX();
 		double yd = destination.getY();
-		if (yd > RoadBuilder.worldW || yd < 0) {
+		if (yd > RoadBuilder.panel.worldW || yd < 0) {
 			RoadBuilder.flowSource.killListP.add(this);}
 		else if (loc != destination) {
 				space.moveTo(this,xd,yd);
@@ -1274,7 +1274,7 @@ public class Ped extends Agent{
 		r     = 0.275/RoadBuilder.spaceScale;					//ped radius (space units)
 		
 		//store endpoint
-		if (dir == 1) endPt = new NdPoint(RoadBuilder.xWalkx + 1/RoadBuilder.spaceScale, RoadBuilder.worldW + 1);
+		if (dir == 1) endPt = new NdPoint(RoadBuilder.xWalkx + 1/RoadBuilder.spaceScale, RoadBuilder.panel.worldW + 1);
 		else endPt = new NdPoint(RoadBuilder.xWalkx - 1/RoadBuilder.spaceScale, -1);
 	}
 	

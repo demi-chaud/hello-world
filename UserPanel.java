@@ -41,6 +41,8 @@ public class UserPanel implements ActionListener{
 	public double sLimitKH;
 	public double hPercLimM;
 	public double stopBarM;
+	public double pXWalkM;
+	public double pLaneWM;
 	
 	public boolean estErr;
 	public boolean BRT;
@@ -52,8 +54,8 @@ public class UserPanel implements ActionListener{
 	
 	//static public boolean estErr 	= true;		// estimation errors
 	//static public boolean BRT		= true;
-	static public boolean myTTC		= true;
-	static public boolean ADRT		= true;
+	static public boolean myTTC		= false;
+	static public boolean ADRT		= false;
 	static public boolean inclRL	= false;  //include red lights?
 	static public boolean calcFun	= false;  //build fundamental diagram
 	static public boolean bothCar	= !calcFun;   //cars both directions?
@@ -117,6 +119,10 @@ public class UserPanel implements ActionListener{
 	public double hPercLim;
 	public double aPercLim;
 	public double stopBarDistance;
+	public double xWalkWidth;
+	public double laneWidth;
+	public double roadW;
+	public double worldW;
 	
 	// max/min vals for generated CF distributions
 	public double maxHeadT;
@@ -189,6 +195,8 @@ public class UserPanel implements ActionListener{
 		hPercLimM	= src.hPercLimM;	// human pedestrian perception (meters) default: 100
 		sLimitKH	= src.sLimitKH;		// km/hr								default:  45
 		stopBarM	= src.stopBarM;
+		pXWalkM		= src.xwalkM;
+		pLaneWM		= src.laneWM;
 		
 		estErr = src.estErr;
 		BRT = src.BRT;
@@ -233,6 +241,15 @@ public class UserPanel implements ActionListener{
 				case "inclObstruct":
 					valStr = String.valueOf(inclObstruct);
 					break;
+				case "pStopBar":
+					valStr = String.valueOf(stopBarM);
+					break;
+				case "pXWalkW":
+					valStr = String.valueOf(pXWalkM);
+					break;
+				case "pLaneW":
+					valStr = String.valueOf(pLaneWM);
+					break;
 				default:
 					break;}
 			outStr += cName + ":" + param.getValueAsString(cName) + " ";}
@@ -262,6 +279,10 @@ public class UserPanel implements ActionListener{
 		hPercLim	= hPercLimM/spaceScale;
 		aPercLim	= aPercLimM/spaceScale;
 		stopBarDistance = stopBarM/spaceScale;
+		xWalkWidth  = pXWalkM/spaceScale;
+		laneWidth	= pLaneWM/spaceScale;
+		roadW		= 4*laneWidth;
+		worldW		= roadW + 2*RoadBuilder.sidewalk;
 		
 		// max/min vals for generated CF distributions
 		maxHeadT	= 3.294 / tStep;
@@ -572,13 +593,27 @@ public class UserPanel implements ActionListener{
 		return inclObstruct;}
 	public void setInclObstruct(boolean src) {
 		inclObstruct = src;}
-	
+	@Parameter(usageName="pStopBar",displayName="Stop Bar Dist")
+	public double getpStopBar() {
+		return stopBarM;}
+	public void setpStopBar(double src) {
+		stopBarM = src;}
+	@Parameter(usageName="pXWalkW",displayName="X-Walk Width")
+	public double getpXWalkW() {
+		return pXWalkM;}
+	public void setpXWalkM(double src) {
+		pXWalkM = src;}
+	@Parameter(usageName="pLaneW",displayName="Lane Width")
+	public double getpLaneW() {
+		return pLaneWM;}
+	public void setpLaneW(double src) {
+		pLaneWM = src;}
 	/*
 	@Parameter(usageName="",displayName="")
 	public double get() {
 		return ;}
-	public void set() {
-		 = ;}
+	public void set(src) {
+		 = src;}
 	*/
 }
 

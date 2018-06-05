@@ -229,19 +229,25 @@ public class Scheduler extends Agent {
 		thisTick = RoadBuilder.clock.getTickCount();
 		if (thisTick == UserPanel.simLength) {
 			System.out.println(RoadBuilder.panel.paramStr + " - END");
-			String nP	= "p" + String.valueOf((int)RoadBuilder.panel.pedRho) + "_";
-			String nC	= "v" + String.valueOf((int)RoadBuilder.panel.vehRho) + "_";
-			String lim	= "s" + String.valueOf((int)RoadBuilder.panel.sLimitKH) + "_";
-			String perc = "d" + String.valueOf((int)RoadBuilder.panel.hPercLimM) + "_";
-			String dur  = "h" + String.valueOf((int)UserPanel.simHours) + "_";
+//			String nP	= "p" + String.valueOf((int)RoadBuilder.panel.pedRho) + "_";
+//			String nC	= "v" + String.valueOf((int)RoadBuilder.panel.vehRho) + "_";
+//			String lim	= "s" + String.valueOf((int)RoadBuilder.panel.sLimitKH) + "_";
+//			String perc = "d" + String.valueOf((int)RoadBuilder.panel.hPercLimM) + "_";
+//			String dur  = "h" + String.valueOf((int)UserPanel.simHours) + "_";
 			String bools = String.valueOf(RoadBuilder.panel.estErr) + '.' + String.valueOf(RoadBuilder.panel.BRT) + '.' + 
 					String.valueOf(RoadBuilder.panel.inclDist) + '.' + String.valueOf(RoadBuilder.panel.inclObstruct);
-			String thisRunC = nP + nC + lim + perc + dur + bools;
-			String thisRunD = nP + nC + lim + perc + bools;
-//			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
-//					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
-//			String thisRunC = nP + nC + lim + perc + dur + percs;
-//			String thisRunD = nP + nC + lim + perc + percs;
+//			String thisRunC = nP + nC + lim + perc + dur + bools;
+//			String thisRunD = nP + nC + lim + perc + bools;
+////			String percs = String.valueOf((int)RoadBuilder.panel.percV2X) + '.' + String.valueOf((int)RoadBuilder.panel.percAuto) +
+////					'.' + String.valueOf((int)RoadBuilder.panel.percBoth);
+////			String thisRunC = nP + nC + lim + perc + dur + percs;
+////			String thisRunD = nP + nC + lim + perc + percs;
+			String perc = "d" + String.valueOf((int)RoadBuilder.panel.hPercLimM) + "_";
+			String stop = "b" + String.valueOf((int)RoadBuilder.panel.stopBarM) + "_";
+			String xw	= "x" + String.valueOf((int)RoadBuilder.panel.pXWalkM) + "_";
+			String lane = "l" + String.valueOf((int)RoadBuilder.panel.pLaneWM) + "_";
+			String thisRunC = perc + stop + xw + lane + bools;
+			String thisRunD = thisRunC;
 			Date date = new Date();
 			String now = dateFormat.format(date) + "_";
 			String fileString = now + thisRunC;
@@ -350,12 +356,12 @@ public class Scheduler extends Agent {
 //		if (blocked) newTurtle.v = 0;
 		context.add(newTurtle);
 		if (dir == 1) {				//1 = going right, -1 = going left
-			yPlacement = RoadBuilder.sidewalk + (double)lane * (RoadBuilder.laneW) + (RoadBuilder.laneW/2);
+			yPlacement = RoadBuilder.sidewalk + (double)lane * (RoadBuilder.panel.laneWidth) + (RoadBuilder.panel.laneWidth/2);
 			space.moveTo(newTurtle,0,yPlacement);
 			newTurtle.yLoc = yPlacement;			//if lane-change is added, move this within calc
 			newTurtle.driverY = yPlacement + (double)dir*carW/6;}
 		else {
-			yPlacement = RoadBuilder.sidewalk + RoadBuilder.roadW - (double)lane * (RoadBuilder.laneW) - (RoadBuilder.laneW/2);
+			yPlacement = RoadBuilder.sidewalk + RoadBuilder.panel.roadW - (double)lane * (RoadBuilder.panel.laneWidth) - (RoadBuilder.panel.laneWidth/2);
 			space.moveTo(newTurtle,RoadBuilder.roadL - 1,yPlacement);
 			newTurtle.yLoc = yPlacement;			//if lane-change is added, move this within calc
 			newTurtle.driverY = yPlacement - (double)dir*carW/6;}
@@ -371,7 +377,7 @@ public class Scheduler extends Agent {
 		Context<Object> context = ContextUtils.getContext(this);
 		ContinuousSpace<Object> space = (ContinuousSpace<Object>) context.getProjection("space");
 		double dir0 = (direction == 1) ? 0 : 0.9999999;
-		double yPlacement = dir0 * RoadBuilder.worldW;
+		double yPlacement = dir0 * RoadBuilder.panel.worldW;
 		if (direction == -1) yPlacement -= 1e-15;
 		
 		Ped newPed = new Ped(space,direction);

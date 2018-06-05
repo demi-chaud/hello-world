@@ -25,10 +25,10 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	// if unspecified, units are model space units and ticks 
 	static final  double spaceScale	= 0.5;		// m (length of 1 spatial unit)
 	static final  double roadL		= 3000;		// standard: 3000 = 1.5km
-	static final  double laneW		= 3.3/spaceScale;
-	static final  double roadW		= 4*laneW;
+	//static final  double laneW		= 3.3/spaceScale;
+	//static final  double roadW		= 4*laneW;
 	static final  double sidewalk	= 4/spaceScale;
-	static final  double worldW		= roadW + 2*sidewalk;
+	//static final  double worldW		= roadW + 2*sidewalk;
 	static final  double xWalkx		= roadL/2;	// places x-walk in middle of environment
 	static final  double rl1x		= roadL/4;	// places left red light
 	static final  double rl2x		= 3*roadL/4;// places right red light
@@ -48,6 +48,8 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	public double hPercLimM;
 	public double sLimitKH;
 	public double stopBarM;
+	public double xwalkM;
+	public double laneWM;
 	public boolean estErr;
 	public boolean BRT;
 	public boolean inclDist;
@@ -55,13 +57,6 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	
 	@Override
 	public Context<Object> build(Context<Object> context) {
-		context.setId("driving1");
-		ContinuousSpaceFactory spaceFactory = 
-				ContinuousSpaceFactoryFinder.createContinuousSpaceFactory(null);
-		ContinuousSpace<Object> space =	
-				spaceFactory.createContinuousSpace("space",context, new SimpleCartesianAdder<Object>(),
-												   new StrictBorders(), roadL, worldW);
-		clock = RunEnvironment.getInstance().getCurrentSchedule();
 		Parameters param = RunEnvironment.getInstance().getParameters();
 		percV2X  = (double)param.getValue("percV2X");
 		percAuto = (double)param.getValue("percAuto");
@@ -74,8 +69,18 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 		BRT = (boolean)param.getValue("BRT");
 		inclDist = (boolean)param.getValue("inclDist");
 		inclObstruct = (boolean)param.getValue("inclObstruct");
-		stopBarM = 9;
+		//stopBarM = 9;
+		stopBarM = (double)param.getValue("pStopBar");
+		xwalkM = (double)param.getValue("pXWalkW");
+		laneWM = (double)param.getValue("pLaneW");
 		panel = new UserPanel(this);
+		context.setId("driving1");
+		ContinuousSpaceFactory spaceFactory = 
+				ContinuousSpaceFactoryFinder.createContinuousSpaceFactory(null);
+		ContinuousSpace<Object> space =	
+				spaceFactory.createContinuousSpace("space",context, new SimpleCartesianAdder<Object>(),
+												   new StrictBorders(), roadL, panel.worldW);
+		clock = RunEnvironment.getInstance().getCurrentSchedule();
 		flowSource = new Scheduler();
 		flowSource.allConf = new ArrayList<Turtle.Conflict>();
 		flowSource.allCrash = new ArrayList<Turtle.Crash>();
@@ -102,7 +107,8 @@ public class RoadBuilder extends DefaultContext<Object> implements ContextBuilde
 	}
 	
 	public String[] getInitParam() {
-		String[] params = {"pedRho","vehRho","sLimitKH","hPercLimM","percV2X","percAuto","percBoth","estErr","BRT","inclDist","inclObstruct"};
+		String[] params = {"pedRho","vehRho","sLimitKH","hPercLimM","percV2X","percAuto","percBoth",
+				"estErr","BRT","inclDist","inclObstruct","pStopBar","pXWalkW","pLaneW"};
 		return params;
 	}
 	
